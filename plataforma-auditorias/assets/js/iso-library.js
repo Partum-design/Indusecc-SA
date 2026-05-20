@@ -1,4 +1,4 @@
-export const ISO_LIBRARY = [
+const ISO_LIBRARY = [
   {
     id: 'iso9001',
     code: 'ISO 9001',
@@ -264,3 +264,5 @@ export const ISO_LIBRARY = [
     ]
   }
 ];
+
+window.ISO_LIBRARY = ISO_LIBRARY;

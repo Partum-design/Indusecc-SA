@@ -1,4 +1,4 @@
-import { ISO_LIBRARY } from './iso-library.js';
+const ISO_LIBRARY = Array.isArray(window.ISO_LIBRARY) ? window.ISO_LIBRARY : [];
 
 const STORAGE_KEY = 'oda_auditoria_v2';
 
@@ -46,6 +46,10 @@ let cameraTargetClauseId = null;
 init();
 
 function init() {
+  if (ISO_LIBRARY.length === 0) {
+    showToast('No se pudo cargar el catalogo ISO. Recarga la pagina.');
+    return;
+  }
   loadState();
   renderIsoOptions();
   bindEvents();
