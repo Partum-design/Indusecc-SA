@@ -22,7 +22,20 @@
     <span></span>
   </div>
 
-  <section id="iso-onboarding" class="onboarding">
+  <section id="app-splash" class="app-splash" aria-hidden="false">
+    <div class="splash-glow" aria-hidden="true"></div>
+    <div class="splash-card">
+      <img src="assets/img/logo_indusecc.png" alt="Logo INDUSECC" class="splash-logo" />
+      <p class="splash-brand">INDUSECC</p>
+      <h2>Cargando plataforma de auditoría</h2>
+      <p class="splash-copy">Inicializando módulos, normas y panel operativo móvil.</p>
+      <div class="splash-track" role="progressbar" aria-label="Cargando aplicación">
+        <span id="splash-progress-fill"></span>
+      </div>
+    </div>
+  </section>
+
+  <section id="iso-onboarding" class="onboarding is-active">
     <div class="onboarding-card">
       <div class="hero-brand">
         <img src="assets/img/logo_indusecc.png" alt="Logo INDUSECC" class="hero-logo" />
@@ -215,6 +228,13 @@
         </section>
       </section>
     </section>
+
+    <nav class="mobile-bottom-nav app-bottom-nav" aria-label="Navegación de auditoría">
+      <button id="nav-go-frameworks" type="button"><i class="fa-solid fa-grid-2"></i><span>Marcos Normativos</span></button>
+      <button type="button" class="active" aria-current="page"><i class="fa-solid fa-clipboard-check"></i><span>Mi Auditoría</span></button>
+      <button id="nav-open-reports" type="button"><i class="fa-solid fa-file-lines"></i><span>Informes</span></button>
+      <button id="nav-open-profile" type="button"><i class="fa-solid fa-user"></i><span>Perfil</span></button>
+    </nav>
   </main>
 
   <section id="camera-modal" class="camera-modal hidden" aria-hidden="true">
