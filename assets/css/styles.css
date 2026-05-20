@@ -1597,6 +1597,20 @@ h5 {
   .audit-meta-grid {
     grid-template-columns: repeat(2, minmax(220px, 1fr));
   }
+
+  .workspace {
+    grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+  }
+
+  .project-panel {
+    position: sticky;
+    top: 14px;
+    max-height: calc(100vh - 160px);
+    overflow: auto;
+    padding-right: 10px;
+  }
 }
 
 @media (min-width: 1320px) {
