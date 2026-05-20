@@ -19,6 +19,10 @@
   var ISO_LIBRARY = [];
   var dom = {};
   var toastTimer = null;
+  var uiFilters = {
+    query: '',
+    sectionId: 'all'
+  };
 
   document.addEventListener('DOMContentLoaded', init);
 
@@ -68,6 +72,8 @@
     dom.checklistRoot = document.getElementById('checklist-root');
     dom.isoUpdatedNote = document.getElementById('iso-updated-note');
     dom.metrics = document.getElementById('metrics');
+    dom.clauseSearch = document.getElementById('clause-search');
+    dom.sectionTabs = document.getElementById('section-tabs');
 
     dom.projectName = document.getElementById('project-name');
     dom.auditorName = document.getElementById('auditor-name');
@@ -172,6 +178,14 @@
     bindProjectField(dom.auditDate, 'date');
     bindProjectField(dom.auditScope, 'scope');
 
+    if (dom.clauseSearch) {
+      dom.clauseSearch.addEventListener('input', function () {
+        uiFilters.query = String(dom.clauseSearch.value || '').trim().toLowerCase();
+        var activeIso = findIsoById(state.selectedIsoId);
+        if (activeIso) renderChecklist(activeIso);
+      });
+    }
+
     if (dom.checklistRoot) {
       dom.checklistRoot.addEventListener('input', onChecklistInput);
       dom.checklistRoot.addEventListener('change', onChecklistInput);
@@ -275,10 +289,55 @@
       dom.isoUpdatedNote.textContent = iso.updatedNote || '';
     }
 
+    ensureActiveSection(iso);
     syncProjectForm();
+    renderSectionTabs(iso);
     renderChecklist(iso);
     renderMetrics(iso);
     saveState();
+  }
+
+  function ensureActiveSection(iso) {
+    if (uiFilters.sectionId === 'all') return;
+
+    var exists = false;
+    var i;
+    for (i = 0; i < iso.sections.length; i += 1) {
+      if (iso.sections[i].id === uiFilters.sectionId) {
+        exists = true;
+        break;
+      }
+    }
+
+    if (!exists) {
+      uiFilters.sectionId = 'all';
+    }
+  }
+
+  function renderSectionTabs(iso) {
+    if (!dom.sectionTabs) return;
+
+    var html = '';
+    html += '<button type=\"button\" class=\"' + (uiFilters.sectionId === 'all' ? 'active' : '') + '\" data-tab=\"all\"><i class=\"fa-solid fa-table-cells\"></i>Todas</button>';
+
+    var i;
+    for (i = 0; i < iso.sections.length; i += 1) {
+      var section = iso.sections[i];
+      var icon = section.icon || 'fa-solid fa-layer-group';
+      var activeClass = uiFilters.sectionId === section.id ? 'active' : '';
+      html += '<button type=\"button\" class=\"' + activeClass + '\" data-tab=\"' + esc(section.id) + '\"><i class=\"' + esc(icon) + '\"></i>' + esc(section.title) + '</button>';
+    }
+
+    dom.sectionTabs.innerHTML = html;
+
+    var tabs = dom.sectionTabs.querySelectorAll('button[data-tab]');
+    for (i = 0; i < tabs.length; i += 1) {
+      tabs[i].addEventListener('click', function () {
+        uiFilters.sectionId = this.getAttribute('data-tab') || 'all';
+        renderSectionTabs(iso);
+        renderChecklist(iso);
+      });
+    }
   }
 
   function ensureFindingsSkeleton(iso) {
@@ -358,16 +417,53 @@
 
     var html = '';
     var s;
+    var visibleSections = 0;
 
     for (s = 0; s < iso.sections.length; s += 1) {
       var section = iso.sections[s];
-      html += renderSection(section);
+      if (uiFilters.sectionId !== 'all' && uiFilters.sectionId !== section.id) {
+        continue;
+      }
+
+      var filteredClauses = [];
+      var c;
+      for (c = 0; c < section.clauses.length; c += 1) {
+        if (clauseMatchesFilter(section.clauses[c])) {
+          filteredClauses.push(section.clauses[c]);
+        }
+      }
+
+      if (!filteredClauses.length) continue;
+
+      visibleSections += 1;
+      html += renderSection(section, filteredClauses);
+    }
+
+    if (!visibleSections) {
+      html = '<div class=\"empty-results\"><i class=\"fa-solid fa-filter-circle-xmark\"></i><br />No hay resultados para este filtro. Ajusta busqueda o tab.</div>';
     }
 
     dom.checklistRoot.innerHTML = html;
   }
 
-  function renderSection(section) {
+  function clauseMatchesFilter(clause) {
+    if (!uiFilters.query) return true;
+
+    var textBag = [
+      clause.id,
+      clause.title,
+      clause.definition,
+      clause.question
+    ];
+
+    if (clause.evidence && clause.evidence.length) {
+      textBag = textBag.concat(clause.evidence);
+    }
+
+    return textBag.join(' ').toLowerCase().indexOf(uiFilters.query) !== -1;
+  }
+
+  function renderSection(section, clauses) {
     var html = '';
     var c;
     var sectionIcon = section.icon || 'fa-solid fa-layer-group';
@@ -376,8 +472,8 @@
     html += '<header class="section-head"><h4><i class="' + esc(sectionIcon) + '"></i> ' + esc(section.title) + '</h4></header>';
     html += '<div class="findings-list">';
 
-    for (c = 0; c < section.clauses.length; c += 1) {
-      html += renderClauseCard(section.clauses[c]);
+    for (c = 0; c < clauses.length; c += 1) {
+      html += renderClauseCard(clauses[c]);
     }
 
     html += '</div>';
@@ -795,6 +891,7 @@
     var iso = findIsoById(state.selectedIsoId);
     if (iso) {
       ensureFindingsSkeleton(iso);
+      renderSectionTabs(iso);
       renderChecklist(iso);
       renderMetrics(iso);
     }
