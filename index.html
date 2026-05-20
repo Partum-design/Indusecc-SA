@@ -66,6 +66,42 @@
   </section>
 
   <main id="app" class="app hidden">
+    <header class="mobile-appbar" aria-label="Barra principal móvil">
+      <button id="mobile-menu-toggle" class="mobile-appbar-btn" type="button" aria-label="Abrir menú">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div class="mobile-appbar-title">
+        <span>Indusecc SO</span>
+        <strong>Mi Panel</strong>
+      </div>
+      <div class="mobile-appbar-actions">
+        <button id="mobile-open-tutorial" class="mobile-appbar-btn" type="button" aria-label="Abrir tutorial">
+          <i class="fa-regular fa-bell"></i>
+        </button>
+        <button id="mobile-open-profile" class="mobile-avatar-btn" type="button" aria-label="Perfil">
+          CP
+        </button>
+      </div>
+    </header>
+
+    <aside id="mobile-offcanvas" class="mobile-offcanvas hidden" aria-hidden="true">
+      <div class="mobile-offcanvas-head">
+        <p class="eyebrow">Centro de Navegación</p>
+        <h3>Acceso Rápido</h3>
+      </div>
+      <div class="mobile-offcanvas-grid">
+        <button id="mobile-menu-go-metrics" type="button"><i class="fa-solid fa-gauge-high"></i> Indicadores</button>
+        <button id="mobile-menu-go-checklist" type="button"><i class="fa-solid fa-list-check"></i> Checklist</button>
+        <button id="mobile-menu-export" type="button"><i class="fa-solid fa-file-export"></i> Exportar</button>
+        <button id="mobile-menu-clear" type="button"><i class="fa-solid fa-trash-can"></i> Borrar Todo</button>
+      </div>
+      <div class="mobile-offcanvas-actions">
+        <button id="mobile-menu-tutorial" class="btn btn-secondary" type="button"><i class="fa-solid fa-book-open"></i> Tutorial</button>
+        <button id="mobile-menu-change-iso" class="btn btn-secondary" type="button"><i class="fa-solid fa-repeat"></i> Cambiar ISO</button>
+      </div>
+    </aside>
+    <div id="mobile-offcanvas-overlay" class="mobile-offcanvas-overlay hidden" aria-hidden="true"></div>
+
     <section class="panel audit-meta-panel">
       <div class="audit-meta-grid">
         <label>NOMBRE DEL PROYECTO / EMPRESA
