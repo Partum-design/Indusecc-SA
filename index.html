@@ -15,6 +15,12 @@
 
 <body>
   <div class="bg-layer"></div>
+  <div class="liquid-orbs" aria-hidden="true">
+    <span></span>
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
 
   <section id="iso-onboarding" class="onboarding">
     <div class="onboarding-card">
@@ -24,12 +30,26 @@
       <p class="eyebrow">INDUSECC</p>
       <h1>Plataforma de Gesti&oacute;n de Auditor&iacute;as</h1>
       <p class="subtitle">Elige primero el marco normativo y despu&eacute;s arrancamos la auditor&iacute;a completa.</p>
+      <label class="onboarding-search" for="framework-search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input id="framework-search" type="search" placeholder="Buscar marco normativo..." />
+      </label>
+      <div id="framework-tabs" class="framework-tabs" aria-label="Filtro de marcos normativos"></div>
       <div id="iso-options" class="iso-grid"></div>
       <div class="onboarding-actions">
         <button id="open-tutorial-onboarding" class="btn btn-secondary"><i class="fa-solid fa-circle-info"></i> Mini tutorial</button>
-        <button id="start-audit" class="btn btn-primary" disabled><i class="fa-solid fa-play"></i> Iniciar auditor&iacute;a</button>
       </div>
     </div>
+    <button id="start-audit" class="fab-start" type="button" disabled>
+      <i class="fa-solid fa-play"></i>
+      Iniciar auditor&iacute;a
+    </button>
+    <nav class="mobile-bottom-nav" aria-label="Navegaci&oacute;n principal">
+      <button type="button" class="active" aria-current="page"><i class="fa-solid fa-grid-2"></i><span>Marcos Normativos</span></button>
+      <button type="button"><i class="fa-solid fa-clipboard-check"></i><span>Mi Auditor&iacute;a</span></button>
+      <button type="button"><i class="fa-solid fa-file-lines"></i><span>Informes</span></button>
+      <button type="button"><i class="fa-solid fa-user"></i><span>Perfil</span></button>
+    </nav>
   </section>
 
   <main id="app" class="app hidden">

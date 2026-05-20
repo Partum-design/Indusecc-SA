@@ -10,11 +10,19 @@
   var logoDataUrl = '';
   var signatureCtx = null;
   var isDrawing = false;
+  var FRAMEWORK_FILTERS = [
+    { id: 'calidad', label: 'Calidad', icon: 'fa-solid fa-award' },
+    { id: 'seguridad', label: 'Seguridad', icon: 'fa-solid fa-shield-halved' },
+    { id: 'alimentos', label: 'Alimentos', icon: 'fa-solid fa-utensils' },
+    { id: 'medioambiente', label: 'Medioambiente', icon: 'fa-solid fa-leaf' }
+  ];
   var uiFilters = {
     query: '',
     sectionId: 'all',
     status: 'all',
-    risk: 'all'
+    risk: 'all',
+    frameworkQuery: '',
+    frameworkCategory: 'seguridad'
   };
 
   var state = createInitialState();
@@ -57,14 +65,14 @@
     bindEvents();
     setupSignatureCanvas();
     syncProjectForm();
+    renderFrameworkTabs();
+    syncFilterControls();
     renderIsoOptions();
     renderIsoQuickSelector();
     renderIsoDetailCard(findIsoById(state.selectedIsoId));
-    syncFilterControls();
     renderSignaturePreview();
     cacheLogoDataUrl();
 
-    if (dom.startAudit) dom.startAudit.disabled = false;
     if (!readLocal(TUTORIAL_KEY)) openTutorial();
 
     saveState();
@@ -73,6 +81,8 @@
   function cacheDom() {
     dom.onboarding = document.getElementById('iso-onboarding');
     dom.isoOptions = document.getElementById('iso-options');
+    dom.frameworkSearch = document.getElementById('framework-search');
+    dom.frameworkTabs = document.getElementById('framework-tabs');
     dom.startAudit = document.getElementById('start-audit');
     dom.app = document.getElementById('app');
 
@@ -164,10 +174,11 @@
   }
 
   function applyDefaultIso() {
-    var preferred = findIsoById('iso9001');
+    var preferred = findIsoById('iso27001');
     if (!state.selectedIsoId || !findIsoById(state.selectedIsoId)) {
       state.selectedIsoId = preferred ? preferred.id : ISO_LIBRARY[0].id;
     }
+    uiFilters.frameworkCategory = mapIsoToFramework(state.selectedIsoId);
   }
 
   function bindEvents() {
@@ -212,6 +223,25 @@
     if (dom.isoQuickSelect) {
       dom.isoQuickSelect.addEventListener('change', function () {
         setSelectedIso(String(dom.isoQuickSelect.value || ''));
+      });
+    }
+
+    if (dom.frameworkSearch) {
+      dom.frameworkSearch.addEventListener('input', function () {
+        uiFilters.frameworkQuery = String(dom.frameworkSearch.value || '').trim().toLowerCase();
+        renderIsoOptions();
+      });
+    }
+
+    if (dom.frameworkTabs) {
+      dom.frameworkTabs.addEventListener('click', function (event) {
+        var target = event.target;
+        if (!target) return;
+        var button = target.closest('button[data-framework]');
+        if (!button) return;
+        uiFilters.frameworkCategory = String(button.getAttribute('data-framework') || 'seguridad');
+        renderFrameworkTabs();
+        renderIsoOptions();
       });
     }
 
@@ -406,6 +436,24 @@
   function syncFilterControls() {
     if (dom.statusFilter) dom.statusFilter.value = uiFilters.status || 'all';
     if (dom.riskFilter) dom.riskFilter.value = uiFilters.risk || 'all';
+    if (dom.frameworkSearch) dom.frameworkSearch.value = uiFilters.frameworkQuery || '';
+  }
+
+  function renderFrameworkTabs() {
+    if (!dom.frameworkTabs) return;
+
+    var html = '';
+    var i;
+    for (i = 0; i < FRAMEWORK_FILTERS.length; i += 1) {
+      var filter = FRAMEWORK_FILTERS[i];
+      var activeClass = filter.id === uiFilters.frameworkCategory ? ' active' : '';
+      html += ''
+        + '<button type="button" class="framework-tab' + activeClass + '" data-framework="' + esc(filter.id) + '">'
+        + '  <i class="' + esc(filter.icon) + '"></i>'
+        + '  ' + esc(filter.label)
+        + '</button>';
+    }
+    dom.frameworkTabs.innerHTML = html;
   }
 
   function drawSignatureDataUrlOnCanvas(dataUrl) {
@@ -421,11 +469,19 @@
   function renderIsoOptions() {
     if (!dom.isoOptions) return;
 
+    var visibleIsos = getVisibleIsoCards();
+    if (visibleIsos.length && !arrayIncludesIso(visibleIsos, state.selectedIsoId)) {
+      state.selectedIsoId = visibleIsos[0].id;
+      saveState();
+    }
+
+    if (dom.startAudit) dom.startAudit.disabled = visibleIsos.length === 0;
+
     var html = '';
     var i;
 
-    for (i = 0; i < ISO_LIBRARY.length; i += 1) {
-      var iso = ISO_LIBRARY[i];
+    for (i = 0; i < visibleIsos.length; i += 1) {
+      var iso = visibleIsos[i];
       var activeClass = iso.id === state.selectedIsoId ? ' active' : '';
       var icon = iso.icon || 'fa-solid fa-clipboard-check';
 
@@ -438,6 +494,10 @@
         + '</article>';
     }
 
+    if (!html) {
+      html = '<div class="empty-results"><i class="fa-solid fa-filter-circle-xmark"></i><br />No se encontraron marcos normativos con ese filtro.</div>';
+    }
+
     dom.isoOptions.innerHTML = html;
 
     var cards = dom.isoOptions.querySelectorAll('.iso-option');
@@ -446,10 +506,14 @@
         var isoId = String(this.getAttribute('data-iso') || '');
         if (!isoId) return;
         state.selectedIsoId = isoId;
+        uiFilters.frameworkCategory = mapIsoToFramework(isoId);
         saveState();
+        renderFrameworkTabs();
         renderIsoOptions();
       });
     }
+
+    focusActiveIsoCard();
   }
 
   function renderIsoQuickSelector() {
@@ -495,8 +559,10 @@
     if (!iso) return;
 
     state.selectedIsoId = iso.id;
+    uiFilters.frameworkCategory = mapIsoToFramework(iso.id);
     saveState();
 
+    renderFrameworkTabs();
     renderIsoOptions();
     renderIsoQuickSelector();
     renderIsoDetailCard(iso);
@@ -521,6 +587,8 @@
   }
 
   function showOnboarding() {
+    renderFrameworkTabs();
+    renderIsoOptions();
     if (dom.onboarding) dom.onboarding.classList.remove('hidden');
     if (dom.app) dom.app.classList.add('hidden');
   }
@@ -1290,6 +1358,50 @@
       if (ISO_LIBRARY[i].id === id) return ISO_LIBRARY[i];
     }
     return null;
+  }
+
+  function getVisibleIsoCards() {
+    var out = [];
+    var query = uiFilters.frameworkQuery || '';
+    var category = uiFilters.frameworkCategory || 'seguridad';
+    var i;
+
+    for (i = 0; i < ISO_LIBRARY.length; i += 1) {
+      var iso = ISO_LIBRARY[i];
+      var isoCategory = mapIsoToFramework(iso.id);
+      if (category && isoCategory !== category) continue;
+      if (query && !isoMatchesQuery(iso, query)) continue;
+      out.push(iso);
+    }
+
+    return out;
+  }
+
+  function isoMatchesQuery(iso, query) {
+    var bag = [iso.code, iso.version, iso.focus, iso.summary].join(' ').toLowerCase();
+    return bag.indexOf(query) !== -1;
+  }
+
+  function mapIsoToFramework(isoId) {
+    if (isoId === 'iso9001') return 'calidad';
+    if (isoId === 'iso22000') return 'alimentos';
+    if (isoId === 'iso14001' || isoId === 'iso50001') return 'medioambiente';
+    return 'seguridad';
+  }
+
+  function arrayIncludesIso(items, isoId) {
+    var i;
+    for (i = 0; i < items.length; i += 1) {
+      if (items[i].id === isoId) return true;
+    }
+    return false;
+  }
+
+  function focusActiveIsoCard() {
+    if (!dom.isoOptions || typeof dom.isoOptions.querySelector !== 'function') return;
+    var active = dom.isoOptions.querySelector('.iso-option.active');
+    if (!active || typeof active.scrollIntoView !== 'function') return;
+    active.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   }
 
   function getStatusClass(status) {
