@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
   <link rel="stylesheet" href="assets/css/styles.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 </head>
@@ -22,7 +23,8 @@
       <p class="subtitle">Elige primero el marco normativo y despues arrancamos la auditoria completa.</p>
       <div id="iso-options" class="iso-grid"></div>
       <div class="onboarding-actions">
-        <button id="start-audit" class="btn btn-primary" disabled>Iniciar auditoria</button>
+        <button id="open-tutorial-onboarding" class="btn btn-secondary"><i class="fa-solid fa-circle-info"></i> Mini tutorial</button>
+        <button id="start-audit" class="btn btn-primary" disabled><i class="fa-solid fa-play"></i> Iniciar auditoria</button>
       </div>
     </div>
   </section>
@@ -38,6 +40,7 @@
       </div>
       <div class="header-meta">
         <span id="active-iso" class="iso-chip">Sin norma seleccionada</span>
+        <button id="open-tutorial-app" class="btn btn-secondary"><i class="fa-solid fa-book-open"></i> Tutorial</button>
         <button id="change-iso" class="btn btn-secondary">Cambiar ISO</button>
       </div>
     </header>
@@ -66,8 +69,8 @@
         <div class="metrics" id="metrics"></div>
 
         <div class="panel-actions">
-          <button id="export-pdf" class="btn btn-primary">Exportar PDF</button>
-          <button id="clear-project" class="btn btn-danger">Limpiar proyecto</button>
+          <button id="export-pdf" class="btn btn-primary"><i class="fa-solid fa-file-pdf"></i> Exportar PDF</button>
+          <button id="clear-project" class="btn btn-danger"><i class="fa-solid fa-trash"></i> Limpiar proyecto</button>
         </div>
       </aside>
 
@@ -90,6 +93,23 @@
         <button id="capture-photo" class="btn btn-primary">Capturar</button>
         <button id="cancel-camera" class="btn btn-secondary">Cancelar</button>
       </div>
+    </div>
+  </section>
+
+  <section id="tutorial-modal" class="tutorial-modal hidden" aria-hidden="true">
+    <div class="tutorial-card">
+      <div class="tutorial-header">
+        <h3><i class="fa-solid fa-graduation-cap"></i> Mini tutorial de uso</h3>
+        <button id="close-tutorial" class="btn btn-secondary"><i class="fa-solid fa-xmark"></i> Cerrar</button>
+      </div>
+      <ol class="tutorial-steps">
+        <li><strong>Selecciona una ISO:</strong> elige la norma y presiona <em>Iniciar auditoria</em>.</li>
+        <li><strong>Completa la ficha:</strong> captura empresa, auditor, sitio, fecha y alcance.</li>
+        <li><strong>Revisa cada punto:</strong> para cada clausula marca conformidad, riesgo, hallazgo y accion.</li>
+        <li><strong>Adjunta evidencia por punto:</strong> en cada clausula sube archivos y deja trazabilidad.</li>
+        <li><strong>Monitorea avance:</strong> usa el panel de metricas para ver cumplimiento y pendientes.</li>
+        <li><strong>Exporta reporte:</strong> genera PDF con resultados, observaciones y evidencias por clausula.</li>
+      </ol>
     </div>
   </section>
 

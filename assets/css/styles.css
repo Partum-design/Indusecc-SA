@@ -144,6 +144,9 @@ h4 {
 .iso-option h4 {
   font-size: 1.02rem;
   margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .iso-option p {
@@ -152,9 +155,20 @@ h4 {
   font-size: 0.88rem;
 }
 
+.iso-option .iso-tag {
+  margin-top: 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #ffd99c;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
 .onboarding-actions {
   margin-top: 24px;
   display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
   justify-content: flex-end;
 }
 
@@ -347,6 +361,9 @@ h4 {
 
 .section-head h4 {
   font-size: 0.94rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .findings-list {
@@ -381,6 +398,23 @@ h4 {
   margin: 4px 0 0;
   color: #5f4f3a;
   font-size: 0.86rem;
+}
+
+.clause-definition {
+  margin: 8px 0 10px;
+  font-size: 0.82rem;
+  color: #523e2a;
+  border-left: 3px solid #d98e04;
+  padding-left: 10px;
+}
+
+.clause-guide {
+  margin: 0 0 10px;
+  padding-left: 18px;
+  color: #614b30;
+  font-size: 0.8rem;
+  display: grid;
+  gap: 4px;
 }
 
 .badge-status {
@@ -423,9 +457,31 @@ h4 {
 
 .evidence-tools {
   margin-top: 8px;
-  display: flex;
+  display: grid;
   gap: 8px;
-  flex-wrap: wrap;
+}
+
+.upload-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  background: #f8e7c9;
+  border: 1px dashed #c57a00;
+  color: #632430;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.upload-label input[type='file'] {
+  display: none;
+}
+
+.upload-label:hover {
+  filter: brightness(1.02);
 }
 
 .evidence-list {
@@ -439,21 +495,25 @@ h4 {
   border-radius: 9px;
   padding: 8px;
   background: #fbfdff;
-  display: grid;
-  gap: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
 }
 
-.evidence-item img {
-  width: 100%;
-  max-height: 180px;
-  object-fit: cover;
-  border-radius: 8px;
-  border: 1px solid #dcccae;
+.evidence-item .btn {
+  padding: 6px 8px;
+  font-size: 0.7rem;
+}
+
+.evidence-item .btn-danger {
+  background: #f7d7d2;
 }
 
 .evidence-meta {
   font-size: 0.78rem;
   color: #664d35;
+  line-height: 1.35;
 }
 
 .btn {
@@ -466,6 +526,10 @@ h4 {
   letter-spacing: 0.01em;
   cursor: pointer;
   transition: transform 0.18s ease, filter 0.2s ease;
+}
+
+.btn i {
+  margin-right: 6px;
 }
 
 .btn:hover {
@@ -526,6 +590,45 @@ h4 {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.tutorial-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 2, 6, 0.72);
+  display: grid;
+  place-items: center;
+  z-index: 1200;
+  padding: 16px;
+}
+
+.tutorial-card {
+  width: min(760px, 100%);
+  background: #fff8ec;
+  color: #33151d;
+  border: 1px solid #deb980;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 20px 40px rgba(31, 7, 13, 0.42);
+}
+
+.tutorial-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.tutorial-header h3 {
+  font-size: 1rem;
+}
+
+.tutorial-steps {
+  margin: 14px 0 4px;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+  color: #4a2c33;
 }
 
 .toast {
