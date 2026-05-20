@@ -23,6 +23,8 @@
   --radius-sm: 10px;
   --shadow-lg: 0 30px 70px rgba(34, 5, 14, 0.35);
   --shadow-md: 0 14px 34px rgba(34, 5, 14, 0.22);
+  --font-ui: 'Plus Jakarta Sans', 'IBM Plex Sans', sans-serif;
+  --font-display: 'Playfair Display', 'Sora', serif;
 }
 
 * {
@@ -36,7 +38,7 @@ body {
 }
 
 body {
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: var(--font-ui);
   color: #f8efe5;
   background: var(--md-bg);
   overflow-x: hidden;
@@ -125,6 +127,7 @@ h5 {
   margin-bottom: 8px;
   color: #fff4de;
   font-size: clamp(1.15rem, 5vw, 1.54rem);
+  font-family: var(--font-display);
 }
 
 .splash-copy {
@@ -179,11 +182,10 @@ h5 {
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(circle at 12% 16%, rgba(217, 142, 4, 0.23), transparent 24%),
-    radial-gradient(circle at 86% 12%, rgba(255, 221, 160, 0.18), transparent 26%),
-    radial-gradient(circle at 36% 76%, rgba(126, 29, 47, 0.44), transparent 34%),
-    linear-gradient(132deg, #22070d 0%, #53101d 56%, #7d1f34 100%);
-  animation: glowPulse 14s ease-in-out infinite;
+    radial-gradient(circle at 18% 84%, rgba(186, 116, 18, 0.2), transparent 32%),
+    radial-gradient(circle at 84% 12%, rgba(255, 214, 140, 0.12), transparent 24%),
+    linear-gradient(140deg, #26050d 0%, #4a0714 48%, #6a0f22 100%);
+  animation: glowPulse 16s ease-in-out infinite;
 }
 
 .bg-layer::before,
@@ -196,26 +198,22 @@ h5 {
 
 .bg-layer::before {
   background:
-    repeating-radial-gradient(circle at 50% 40%, rgba(255, 241, 212, 0.08) 0 1px, transparent 1px 30px),
-    repeating-linear-gradient(120deg, rgba(255, 210, 115, 0.08) 0 1px, transparent 1px 54px);
+    url('../img/os-network.svg') center/cover no-repeat,
+    linear-gradient(120deg, rgba(255, 223, 156, 0.02), rgba(255, 223, 156, 0.02));
   mix-blend-mode: screen;
-  opacity: 0.4;
-  animation: orbitGrid 20s linear infinite;
+  opacity: 0.5;
+  animation: networkDrift 28s ease-in-out infinite;
 }
 
 .bg-layer::after {
   background:
-    radial-gradient(circle at 60% 52%, rgba(218, 147, 33, 0.28), transparent 35%),
-    radial-gradient(circle at 26% 24%, rgba(255, 213, 148, 0.2), transparent 30%);
-  filter: blur(24px);
+    radial-gradient(circle at 42% 42%, rgba(186, 126, 34, 0.2), transparent 40%),
+    radial-gradient(circle at 74% 74%, rgba(135, 22, 42, 0.18), transparent 34%);
+  filter: blur(18px);
 }
 
 .liquid-orbs {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  overflow: hidden;
+  display: none;
 }
 
 .liquid-orbs span {
@@ -311,6 +309,18 @@ h5 {
   }
 }
 
+@keyframes networkDrift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.01);
+    opacity: 0.46;
+  }
+  50% {
+    transform: translate3d(-1.8%, 1.2%, 0) scale(1.04);
+    opacity: 0.62;
+  }
+}
+
 .eyebrow {
   margin: 0 0 0.3rem;
   font-size: 0.72rem;
@@ -398,6 +408,8 @@ h5 {
   margin-bottom: 8px;
   font-size: clamp(1.7rem, 7vw, 2.5rem);
   text-shadow: 0 0 18px rgba(255, 218, 148, 0.18);
+  font-family: var(--font-display);
+  font-weight: 700;
 }
 
 .subtitle {
@@ -1014,6 +1026,7 @@ h5 {
 .sidebar-brand h2 {
   color: #231a15;
   font-size: clamp(1.08rem, 2vw, 1.34rem);
+  font-family: var(--font-display);
 }
 
 .iso-chip {
