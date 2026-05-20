@@ -235,6 +235,20 @@
       <button id="nav-open-reports" type="button"><i class="fa-solid fa-file-lines"></i><span>Informes</span></button>
       <button id="nav-open-profile" type="button"><i class="fa-solid fa-user"></i><span>Perfil</span></button>
     </nav>
+
+    <div class="floating-audit-tools" aria-label="Acciones flotantes de auditoría">
+      <button id="floating-export" class="floating-action floating-export" type="button">
+        <i class="fa-solid fa-file-export"></i>
+        Exportar
+      </button>
+      <button id="floating-clear" class="floating-action floating-clear" type="button">
+        <i class="fa-solid fa-trash-can"></i>
+        Borrar todo
+      </button>
+      <div id="floating-progress-bubble" class="floating-progress-bubble" role="status" aria-live="polite">
+        <span id="floating-progress-value">0%</span>
+      </div>
+    </div>
   </main>
 
   <section id="camera-modal" class="camera-modal hidden" aria-hidden="true">

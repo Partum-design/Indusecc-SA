@@ -672,6 +672,56 @@ h5 {
   z-index: 70;
 }
 
+.floating-audit-tools {
+  position: fixed;
+  right: 16px;
+  bottom: calc(94px + env(safe-area-inset-bottom, 0px));
+  z-index: 95;
+  display: grid;
+  gap: 10px;
+  justify-items: end;
+}
+
+.floating-action {
+  border: 1px solid rgba(239, 199, 120, 0.45);
+  border-radius: 999px;
+  padding: 10px 14px;
+  min-width: 140px;
+  font: 700 0.8rem 'Sora', sans-serif;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  cursor: pointer;
+  color: #fff6e8;
+  backdrop-filter: blur(18px) saturate(130%);
+  box-shadow: 0 10px 18px rgba(24, 4, 10, 0.38);
+}
+
+.floating-export {
+  background: linear-gradient(120deg, rgba(217, 142, 4, 0.94), rgba(175, 103, 0, 0.9));
+}
+
+.floating-clear {
+  background: linear-gradient(120deg, rgba(126, 29, 47, 0.95), rgba(96, 19, 36, 0.92));
+}
+
+.floating-progress-bubble {
+  --floating-progress: 0;
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  color: #fff6e6;
+  font: 800 0.94rem 'Sora', sans-serif;
+  background:
+    radial-gradient(circle at center, rgba(95, 17, 32, 0.96) 0 58%, transparent 59% 100%),
+    conic-gradient(from -90deg, #ffcb78 0deg, #ffcb78 calc(var(--floating-progress) * 3.6deg), rgba(255, 224, 168, 0.2) calc(var(--floating-progress) * 3.6deg), rgba(255, 224, 168, 0.2) 360deg);
+  border: 1px solid rgba(248, 208, 131, 0.56);
+  box-shadow: 0 12px 22px rgba(23, 4, 9, 0.45);
+}
+
 .panel {
   border-radius: var(--radius-lg);
   border: 1px solid var(--md-outline);
@@ -1592,6 +1642,11 @@ h5 {
   .app {
     padding: 24px 22px 34px;
     gap: 20px;
+  }
+
+  .floating-audit-tools {
+    right: 24px;
+    bottom: 24px;
   }
 
   .audit-meta-grid {

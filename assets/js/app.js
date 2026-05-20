@@ -126,6 +126,10 @@
 
     dom.exportPdf = document.getElementById('export-pdf');
     dom.clearProject = document.getElementById('clear-project');
+    dom.floatingExport = document.getElementById('floating-export');
+    dom.floatingClear = document.getElementById('floating-clear');
+    dom.floatingProgressBubble = document.getElementById('floating-progress-bubble');
+    dom.floatingProgressValue = document.getElementById('floating-progress-value');
     dom.navGoFrameworks = document.getElementById('nav-go-frameworks');
     dom.navOpenReports = document.getElementById('nav-open-reports');
     dom.navOpenProfile = document.getElementById('nav-open-profile');
@@ -301,6 +305,27 @@
 
     if (dom.clearProject) {
       dom.clearProject.addEventListener('click', function () {
+        if (!window.confirm('Se limpiará toda la información de esta auditoría. ¿Continuar?')) return;
+        clearCurrentAudit();
+      });
+    }
+
+    if (dom.floatingExport) {
+      dom.floatingExport.addEventListener('click', function () {
+        if (dom.exportPdf) {
+          dom.exportPdf.click();
+          return;
+        }
+        exportReportPdf();
+      });
+    }
+
+    if (dom.floatingClear) {
+      dom.floatingClear.addEventListener('click', function () {
+        if (dom.clearProject) {
+          dom.clearProject.click();
+          return;
+        }
         if (!window.confirm('Se limpiará toda la información de esta auditoría. ¿Continuar?')) return;
         clearCurrentAudit();
       });
@@ -1075,6 +1100,8 @@
 
     if (dom.globalProgressFill) dom.globalProgressFill.style.width = summary.progress + '%';
     if (dom.globalProgressLabel) dom.globalProgressLabel.textContent = summary.progress + '% completado (' + summary.evaluated + '/' + summary.total + ' puntos)';
+    if (dom.floatingProgressValue) dom.floatingProgressValue.textContent = summary.progress + '%';
+    if (dom.floatingProgressBubble) dom.floatingProgressBubble.style.setProperty('--floating-progress', String(summary.progress));
   }
 
   function calculateMetrics(iso) {
