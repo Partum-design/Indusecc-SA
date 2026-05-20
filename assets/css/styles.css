@@ -605,6 +605,7 @@ h5 {
 }
 
 .mobile-bottom-nav {
+  display: none !important;
   position: fixed;
   left: 50%;
   bottom: max(14px, calc(8px + env(safe-area-inset-bottom, 0px)));
