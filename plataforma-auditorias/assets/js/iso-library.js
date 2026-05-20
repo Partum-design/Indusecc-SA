@@ -263,6 +263,215 @@ const ISO_LIBRARY = [
       }
     ]
   }
+  ,
+  {
+    id: 'iso14001',
+    code: 'ISO 14001',
+    version: '2026',
+    focus: 'Gestion ambiental',
+    summary: 'Sistema de gestion ambiental para reducir impactos, cumplir requisitos y mejorar desempeno.',
+    updatedNote: 'Estado de referencia al 20 de mayo de 2026.',
+    sections: [
+      {
+        id: '14001-4-6',
+        title: 'Contexto y Planificacion Ambiental',
+        clauses: [
+          {
+            id: '14001-4.1',
+            title: 'Contexto ambiental',
+            question: 'La organizacion determina condiciones ambientales internas y externas relevantes para el SGA?'
+          },
+          {
+            id: '14001-6.1.2',
+            title: 'Aspectos ambientales',
+            question: 'Se identifican aspectos e impactos ambientales significativos con criterio documentado?'
+          },
+          {
+            id: '14001-6.1.3',
+            title: 'Obligaciones de cumplimiento',
+            question: 'Se identifican requisitos legales y otros compromisos ambientales aplicables?'
+          }
+        ]
+      },
+      {
+        id: '14001-8-10',
+        title: 'Operacion, Evaluacion y Mejora',
+        clauses: [
+          {
+            id: '14001-8.1',
+            title: 'Control operacional',
+            question: 'Los controles operacionales ambientales estan implementados y operan como se planificaron?'
+          },
+          {
+            id: '14001-9.1',
+            title: 'Seguimiento y medicion',
+            question: 'Se miden indicadores ambientales y se analizan resultados de desempeno?'
+          },
+          {
+            id: '14001-10.2',
+            title: 'No conformidad y accion correctiva',
+            question: 'Las desviaciones ambientales se corrigen y se verifica efectividad de acciones?'
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'iso45001',
+    code: 'ISO 45001',
+    version: '2018',
+    focus: 'Seguridad y salud en el trabajo',
+    summary: 'Sistema de gestion SST para prevenir lesiones, deterioro de la salud y riesgos laborales.',
+    updatedNote: 'Estado de referencia al 20 de mayo de 2026.',
+    sections: [
+      {
+        id: '45001-5-6',
+        title: 'Liderazgo y Riesgos SST',
+        clauses: [
+          {
+            id: '45001-5.4',
+            title: 'Consulta y participacion',
+            question: 'El personal participa activamente en decisiones de SST y gestion de riesgos?'
+          },
+          {
+            id: '45001-6.1.2',
+            title: 'Identificacion de peligros',
+            question: 'Se identifican peligros por actividad, puesto y condicion de trabajo?'
+          },
+          {
+            id: '45001-6.1.3',
+            title: 'Requisitos legales SST',
+            question: 'Se actualizan y cumplen requisitos legales y reglamentarios en SST?'
+          }
+        ]
+      },
+      {
+        id: '45001-8-10',
+        title: 'Control Operacional y Mejora',
+        clauses: [
+          {
+            id: '45001-8.1',
+            title: 'Planificacion y control operacional',
+            question: 'Existen controles operativos para actividades de alto riesgo y contratistas?'
+          },
+          {
+            id: '45001-9.1',
+            title: 'Evaluacion del desempeno',
+            question: 'Se monitorean indicadores SST, incidentes y casi incidentes con analisis formal?'
+          },
+          {
+            id: '45001-10.2',
+            title: 'Incidentes y acciones correctivas',
+            question: 'Los incidentes se investigan con causa raiz y acciones correctivas verificadas?'
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'iso22000',
+    code: 'ISO 22000',
+    version: '2018 (revision 2027 en desarrollo)',
+    focus: 'Inocuidad alimentaria',
+    summary: 'Sistema de gestion para controlar peligros de inocuidad en toda la cadena alimentaria.',
+    updatedNote: 'Estado de referencia al 20 de mayo de 2026.',
+    sections: [
+      {
+        id: '22000-7-8',
+        title: 'PRP, HACCP y Control de Peligros',
+        clauses: [
+          {
+            id: '22000-7.2',
+            title: 'Programas prerrequisito',
+            question: 'Se implementan PRP adecuados para higiene, instalaciones y manipulacion segura?'
+          },
+          {
+            id: '22000-8.5',
+            title: 'Analisis de peligros',
+            question: 'El analisis de peligros define medidas de control y criterios de aceptacion?'
+          },
+          {
+            id: '22000-8.7',
+            title: 'Control del plan HACCP',
+            question: 'Se monitorean PCC/OPRP y se aplican correcciones cuando hay desviaciones?'
+          }
+        ]
+      },
+      {
+        id: '22000-9-10',
+        title: 'Verificacion y Mejora',
+        clauses: [
+          {
+            id: '22000-9.1',
+            title: 'Seguimiento, medicion y verificacion',
+            question: 'Se verifica eficacia del sistema de inocuidad con registros confiables?'
+          },
+          {
+            id: '22000-9.2',
+            title: 'Auditoria interna',
+            question: 'La auditoria interna cubre PRP, HACCP y trazabilidad de punta a punta?'
+          },
+          {
+            id: '22000-10.3',
+            title: 'Mejora continua',
+            question: 'Se ejecutan mejoras de inocuidad con base en hallazgos, retiros y reclamos?'
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'iso50001',
+    code: 'ISO 50001',
+    version: '2018',
+    focus: 'Gestion de la energia',
+    summary: 'Sistema de gestion de energia para mejorar desempeno energetico, eficiencia y consumo.',
+    updatedNote: 'Estado de referencia al 20 de mayo de 2026.',
+    sections: [
+      {
+        id: '50001-6-7',
+        title: 'Planificacion Energetica',
+        clauses: [
+          {
+            id: '50001-6.3',
+            title: 'Revision energetica',
+            question: 'Se realiza revision energetica para identificar usos significativos de energia?'
+          },
+          {
+            id: '50001-6.4',
+            title: 'Indicadores de desempeno energetico',
+            question: 'Se definen EnPI y linea base energetica con metodologia documentada?'
+          },
+          {
+            id: '50001-6.2',
+            title: 'Objetivos y metas',
+            question: 'Los objetivos energeticos son medibles y tienen plan de accion con recursos?'
+          }
+        ]
+      },
+      {
+        id: '50001-8-10',
+        title: 'Operacion, Seguimiento y Mejora',
+        clauses: [
+          {
+            id: '50001-8.1',
+            title: 'Control operacional',
+            question: 'Los procesos energicamente significativos operan con criterios de control definidos?'
+          },
+          {
+            id: '50001-9.1',
+            title: 'Seguimiento y analisis',
+            question: 'Se monitorea consumo, EnPI y desviaciones para tomar acciones oportunas?'
+          },
+          {
+            id: '50001-10.1',
+            title: 'Mejora continua',
+            question: 'Se demuestra mejora continua del desempeno energetico con evidencia cuantificada?'
+          }
+        ]
+      }
+    ]
+  }
 ];
 
 window.ISO_LIBRARY = ISO_LIBRARY;

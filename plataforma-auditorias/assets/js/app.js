@@ -50,6 +50,9 @@ function init() {
     showToast('No se pudo cargar el catalogo ISO. Recarga la pagina.');
     return;
   }
+  if (!state.selectedIsoId && ISO_LIBRARY[0] && ISO_LIBRARY[0].id) {
+    state.selectedIsoId = ISO_LIBRARY[0].id;
+  }
   loadState();
   renderIsoOptions();
   bindEvents();
@@ -108,6 +111,9 @@ function bindEvents() {
 }
 
 function renderIsoOptions() {
+  if (!state.selectedIsoId && ISO_LIBRARY[0] && ISO_LIBRARY[0].id) {
+    state.selectedIsoId = ISO_LIBRARY[0].id;
+  }
   dom.isoOptions.innerHTML = ISO_LIBRARY.map((iso) => {
     const activeClass = state.selectedIsoId === iso.id ? 'active' : '';
     return `
@@ -222,7 +228,7 @@ function renderClauseCard(clause) {
     <article class="finding-card" data-clause-id="${clause.id}">
       <div class="finding-head">
         <div>
-          <h5>${escapeHtml(clause.id)} · ${escapeHtml(clause.title)}</h5>
+          <h5>${escapeHtml(clause.id)} Â· ${escapeHtml(clause.title)}</h5>
           <p>${escapeHtml(clause.question)}</p>
         </div>
         <span class="badge-status ${statusClass}">${escapeHtml(badgeText)}</span>
@@ -272,7 +278,7 @@ function renderEvidenceList(clauseId, evidences) {
         ${imagePreview}
         <div class="evidence-meta">
           <strong>${escapeHtml(ev.name)}</strong><br />
-          Tipo: ${escapeHtml(ev.type || 'n/d')} · ${formatBytes(ev.size || 0)} · ${escapeHtml(ev.kind)}
+          Tipo: ${escapeHtml(ev.type || 'n/d')} Â· ${formatBytes(ev.size || 0)} Â· ${escapeHtml(ev.kind)}
         </div>
         <button class="btn btn-danger" data-action="remove-evidence" data-clause-id="${clauseId}" data-evidence-id="${ev.id}">Eliminar evidencia</button>
       </article>
@@ -752,7 +758,7 @@ async function exportPdf() {
     }
   }
 
-  const fileNameDate = (state.project.date || new Date().toISOString().slice(0, 10)).replaceAll('/', '-');
+  const fileNameDate = (state.project.date || new Date().toISOString().slice(0, 10)).replace(/\//g, '-');
   const fileName = `Auditoria_${iso.code.replace(/[^a-zA-Z0-9]/g, '')}_${fileNameDate}.pdf`;
   doc.save(fileName);
   showToast('PDF exportado correctamente.');
@@ -819,9 +825,9 @@ function estimateBase64Bytes(dataUrl) {
 
 function escapeHtml(value) {
   return String(value)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
