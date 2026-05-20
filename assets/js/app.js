@@ -1,13 +1,15 @@
 (function () {
   'use strict';
 
-  var STORAGE_KEY = 'sg_audit_state_v3';
+  var STORAGE_KEY = 'sg_audit_state_v4';
   var TUTORIAL_KEY = 'sg_audit_tutorial_seen_v1';
 
   var ISO_LIBRARY = [];
   var dom = {};
   var toastTimer = null;
   var logoDataUrl = '';
+  var signatureCtx = null;
+  var isDrawing = false;
   var uiFilters = {
     query: '',
     sectionId: 'all'
@@ -30,7 +32,12 @@
         auditedRep: ''
       },
       history: getEmptyHistoryRows(),
-      findings: {}
+      findings: {},
+      signature: {
+        drawnDataUrl: '',
+        uploadedDataUrl: '',
+        uploadedName: ''
+      }
     };
   }
 
@@ -44,21 +51,18 @@
     }
 
     loadState();
-
-    if (!state.selectedIsoId || !findIsoById(state.selectedIsoId)) {
-      state.selectedIsoId = ISO_LIBRARY[0].id;
-    }
-
+    applyDefaultIso();
     bindEvents();
+    setupSignatureCanvas();
     syncProjectForm();
     renderIsoOptions();
+    renderIsoQuickSelector();
+    renderIsoDetailCard(findIsoById(state.selectedIsoId));
+    renderSignaturePreview();
     cacheLogoDataUrl();
 
     if (dom.startAudit) dom.startAudit.disabled = false;
-
-    if (!readLocal(TUTORIAL_KEY)) {
-      openTutorial();
-    }
+    if (!readLocal(TUTORIAL_KEY)) openTutorial();
 
     saveState();
   }
@@ -81,6 +85,8 @@
     dom.metrics = document.getElementById('metrics');
     dom.clauseSearch = document.getElementById('clause-search');
     dom.sectionTabs = document.getElementById('section-tabs');
+    dom.isoQuickSelect = document.getElementById('iso-quick-select');
+    dom.isoDetailCard = document.getElementById('iso-detail-card');
 
     dom.projectName = document.getElementById('project-name');
     dom.auditorName = document.getElementById('auditor-name');
@@ -94,10 +100,15 @@
     dom.globalProgressFill = document.getElementById('global-progress-fill');
     dom.globalProgressLabel = document.getElementById('global-progress-label');
 
+    dom.signatureCanvas = document.getElementById('signature-canvas');
+    dom.clearSignature = document.getElementById('clear-signature');
+    dom.signatureFile = document.getElementById('signature-file');
+    dom.signaturePreview = document.getElementById('signature-preview');
+
     dom.exportPdf = document.getElementById('export-pdf');
     dom.clearProject = document.getElementById('clear-project');
     dom.toast = document.getElementById('toast');
-    dom.headerLogo = document.querySelector('.brand-logo');
+    dom.headerLogo = document.querySelector('.project-panel .brand-logo') || document.querySelector('.hero-logo');
   }
 
   function normalizeLibrary(list) {
@@ -112,7 +123,6 @@
       if (!iso.sections.length) continue;
       out.push(iso);
     }
-
     return out;
   }
 
@@ -128,7 +138,6 @@
       if (!section.clauses.length) continue;
       out.push(section);
     }
-
     return out;
   }
 
@@ -146,16 +155,20 @@
       }
       out.push(clause);
     }
-
     return out;
+  }
+
+  function applyDefaultIso() {
+    var preferred = findIsoById('iso9001');
+    if (!state.selectedIsoId || !findIsoById(state.selectedIsoId)) {
+      state.selectedIsoId = preferred ? preferred.id : ISO_LIBRARY[0].id;
+    }
   }
 
   function bindEvents() {
     if (dom.startAudit) {
       dom.startAudit.addEventListener('click', function () {
-        if (!state.selectedIsoId || !findIsoById(state.selectedIsoId)) {
-          state.selectedIsoId = ISO_LIBRARY[0].id;
-        }
+        applyDefaultIso();
         openAuditWorkspace();
       });
     }
@@ -191,6 +204,12 @@
     bindProjectField(dom.auditedRep, 'auditedRep');
     bindHistoryFields();
 
+    if (dom.isoQuickSelect) {
+      dom.isoQuickSelect.addEventListener('change', function () {
+        setSelectedIso(String(dom.isoQuickSelect.value || ''));
+      });
+    }
+
     if (dom.clauseSearch) {
       dom.clauseSearch.addEventListener('input', function () {
         uiFilters.query = String(dom.clauseSearch.value || '').trim().toLowerCase();
@@ -214,6 +233,19 @@
         if (!window.confirm('Se limpiará toda la información de esta auditoría. ¿Continuar?')) return;
         clearCurrentAudit();
       });
+    }
+
+    if (dom.clearSignature) {
+      dom.clearSignature.addEventListener('click', function () {
+        clearSignatureCanvas();
+        state.signature.drawnDataUrl = '';
+        saveState();
+        renderSignaturePreview();
+      });
+    }
+
+    if (dom.signatureFile) {
+      dom.signatureFile.addEventListener('change', onSignatureFileChange);
     }
   }
 
@@ -241,6 +273,88 @@
     }
   }
 
+  function setupSignatureCanvas() {
+    if (!dom.signatureCanvas) return;
+
+    signatureCtx = dom.signatureCanvas.getContext('2d');
+    if (!signatureCtx) return;
+
+    signatureCtx.lineWidth = 2.4;
+    signatureCtx.lineCap = 'round';
+    signatureCtx.lineJoin = 'round';
+    signatureCtx.strokeStyle = '#2a1a17';
+
+    dom.signatureCanvas.addEventListener('pointerdown', onSignaturePointerDown);
+    dom.signatureCanvas.addEventListener('pointermove', onSignaturePointerMove);
+    dom.signatureCanvas.addEventListener('pointerup', onSignaturePointerUp);
+    dom.signatureCanvas.addEventListener('pointerleave', onSignaturePointerUp);
+    dom.signatureCanvas.addEventListener('pointercancel', onSignaturePointerUp);
+  }
+
+  function onSignaturePointerDown(event) {
+    if (!signatureCtx || !dom.signatureCanvas) return;
+    event.preventDefault();
+    isDrawing = true;
+    var pos = getCanvasPointerPosition(event);
+    signatureCtx.beginPath();
+    signatureCtx.moveTo(pos.x, pos.y);
+    if (dom.signatureCanvas.setPointerCapture && event.pointerId != null) {
+      dom.signatureCanvas.setPointerCapture(event.pointerId);
+    }
+  }
+
+  function onSignaturePointerMove(event) {
+    if (!signatureCtx || !isDrawing) return;
+    event.preventDefault();
+    var pos = getCanvasPointerPosition(event);
+    signatureCtx.lineTo(pos.x, pos.y);
+    signatureCtx.stroke();
+  }
+
+  function onSignaturePointerUp(event) {
+    if (!signatureCtx || !isDrawing) return;
+    event.preventDefault();
+    isDrawing = false;
+    signatureCtx.closePath();
+    state.signature.drawnDataUrl = dom.signatureCanvas.toDataURL('image/png');
+    saveState();
+    renderSignaturePreview();
+  }
+
+  function getCanvasPointerPosition(event) {
+    var rect = dom.signatureCanvas.getBoundingClientRect();
+    var scaleX = dom.signatureCanvas.width / rect.width;
+    var scaleY = dom.signatureCanvas.height / rect.height;
+    return {
+      x: (event.clientX - rect.left) * scaleX,
+      y: (event.clientY - rect.top) * scaleY
+    };
+  }
+
+  function clearSignatureCanvas() {
+    if (!signatureCtx || !dom.signatureCanvas) return;
+    signatureCtx.clearRect(0, 0, dom.signatureCanvas.width, dom.signatureCanvas.height);
+  }
+
+  function onSignatureFileChange(event) {
+    var input = event.target;
+    var file = input && input.files && input.files[0] ? input.files[0] : null;
+    if (!file) return;
+
+    var reader = new FileReader();
+    reader.onload = function (loadEvent) {
+      state.signature.uploadedDataUrl = String(loadEvent.target && loadEvent.target.result ? loadEvent.target.result : '');
+      state.signature.uploadedName = file.name || 'firma';
+      saveState();
+      renderSignaturePreview();
+      showToast('Firma cargada correctamente.');
+    };
+    reader.onerror = function () {
+      showToast('No se pudo cargar el archivo de firma.');
+    };
+    reader.readAsDataURL(file);
+  }
+
   function syncProjectForm() {
     if (dom.projectName) dom.projectName.value = state.project.name || '';
     if (dom.auditorName) dom.auditorName.value = state.project.auditor || '';
@@ -256,12 +370,26 @@
         var row = Number(dom.historyInputs[i].getAttribute('data-history-row'));
         var field = dom.historyInputs[i].getAttribute('data-history-field');
         var value = '';
-        if (state.history[row] && field) {
-          value = state.history[row][field] || '';
-        }
+        if (state.history[row] && field) value = state.history[row][field] || '';
         dom.historyInputs[i].value = value;
       }
     }
+
+    if (state.signature.drawnDataUrl) {
+      drawSignatureDataUrlOnCanvas(state.signature.drawnDataUrl);
+    } else {
+      clearSignatureCanvas();
+    }
+  }
+
+  function drawSignatureDataUrlOnCanvas(dataUrl) {
+    if (!signatureCtx || !dom.signatureCanvas || !dataUrl) return;
+    var image = new Image();
+    image.onload = function () {
+      clearSignatureCanvas();
+      signatureCtx.drawImage(image, 0, 0, dom.signatureCanvas.width, dom.signatureCanvas.height);
+    };
+    image.src = dataUrl;
   }
 
   function renderIsoOptions() {
@@ -272,8 +400,7 @@
 
     for (i = 0; i < ISO_LIBRARY.length; i += 1) {
       var iso = ISO_LIBRARY[i];
-      var isActive = iso.id === state.selectedIsoId;
-      var activeClass = isActive ? ' active' : '';
+      var activeClass = iso.id === state.selectedIsoId ? ' active' : '';
       var icon = iso.icon || 'fa-solid fa-clipboard-check';
 
       html += ''
@@ -290,21 +417,80 @@
     var cards = dom.isoOptions.querySelectorAll('.iso-option');
     for (i = 0; i < cards.length; i += 1) {
       cards[i].addEventListener('click', function () {
-        state.selectedIsoId = this.getAttribute('data-iso');
+        var isoId = String(this.getAttribute('data-iso') || '');
+        if (!isoId) return;
+        state.selectedIsoId = isoId;
         saveState();
         renderIsoOptions();
       });
     }
   }
 
+  function renderIsoQuickSelector() {
+    if (!dom.isoQuickSelect) return;
+
+    var options = '';
+    var i;
+    for (i = 0; i < ISO_LIBRARY.length; i += 1) {
+      var iso = ISO_LIBRARY[i];
+      var selected = iso.id === state.selectedIsoId ? ' selected' : '';
+      options += '<option value="' + esc(iso.id) + '"' + selected + '>' + esc(iso.code + ' (' + (iso.version || 'N/D') + ')') + '</option>';
+    }
+    dom.isoQuickSelect.innerHTML = options;
+  }
+
+  function renderIsoDetailCard(iso) {
+    if (!dom.isoDetailCard) return;
+    if (!iso) {
+      dom.isoDetailCard.innerHTML = '<p>No se encontró información del estándar seleccionado.</p>';
+      return;
+    }
+
+    var totalClauses = countClauses(iso);
+    var sections = iso.sections ? iso.sections.length : 0;
+    var icon = iso.icon || 'fa-solid fa-shield-halved';
+
+    dom.isoDetailCard.innerHTML = ''
+      + '<h4><i class="' + esc(icon) + '"></i> ' + esc(iso.code) + ' <small>(' + esc(iso.version || 'N/D') + ')</small></h4>'
+      + '<p>' + esc(textEs(iso.summary || '')) + '</p>'
+      + '<p>' + esc(textEs(iso.focus || '')) + '</p>'
+      + '<div class="iso-detail-meta">'
+      + '  <span class="iso-detail-badge">' + esc(String(totalClauses)) + ' puntos auditables</span>'
+      + '  <span class="iso-detail-badge">' + esc(String(sections)) + ' secciones</span>'
+      + '</div>';
+
+    if (dom.activeIso) {
+      dom.activeIso.textContent = iso.code + ' ' + (iso.version || '');
+    }
+  }
+
+  function setSelectedIso(isoId) {
+    var iso = findIsoById(isoId);
+    if (!iso) return;
+
+    state.selectedIsoId = iso.id;
+    saveState();
+
+    renderIsoOptions();
+    renderIsoQuickSelector();
+    renderIsoDetailCard(iso);
+
+    if (!dom.app || dom.app.classList.contains('hidden')) return;
+
+    ensureFindingsSkeleton(iso);
+    ensureActiveSection(iso);
+    renderSectionTabs(iso);
+    renderChecklist(iso);
+    renderMetrics(iso);
+    if (dom.isoUpdatedNote) dom.isoUpdatedNote.textContent = textEs(iso.updatedNote || '');
+  }
+
   function countClauses(iso) {
     var total = 0;
     var s;
-
     for (s = 0; s < iso.sections.length; s += 1) {
       total += iso.sections[s].clauses.length;
     }
-
     return total;
   }
 
@@ -321,52 +507,45 @@
     }
 
     ensureFindingsSkeleton(iso);
-
     if (dom.onboarding) dom.onboarding.classList.add('hidden');
     if (dom.app) dom.app.classList.remove('hidden');
 
-    if (dom.activeIso) dom.activeIso.textContent = iso.code + ' ' + (iso.version || '');
     if (dom.isoUpdatedNote) dom.isoUpdatedNote.textContent = textEs(iso.updatedNote || '');
 
+    renderIsoQuickSelector();
+    renderIsoDetailCard(iso);
     ensureActiveSection(iso);
     syncProjectForm();
     renderSectionTabs(iso);
     renderChecklist(iso);
     renderMetrics(iso);
+    renderSignaturePreview();
     saveState();
   }
 
   function ensureActiveSection(iso) {
     if (uiFilters.sectionId === 'all') return;
 
-    var exists = false;
     var i;
     for (i = 0; i < iso.sections.length; i += 1) {
-      if (iso.sections[i].id === uiFilters.sectionId) {
-        exists = true;
-        break;
-      }
+      if (iso.sections[i].id === uiFilters.sectionId) return;
     }
-
-    if (!exists) uiFilters.sectionId = 'all';
+    uiFilters.sectionId = 'all';
   }
 
   function renderSectionTabs(iso) {
     if (!dom.sectionTabs) return;
 
-    var html = '';
-    html += '<button type="button" class="' + (uiFilters.sectionId === 'all' ? 'active' : '') + '" data-tab="all"><i class="fa-solid fa-table-cells"></i>Todas</button>';
-
+    var html = '<button type="button" class="' + (uiFilters.sectionId === 'all' ? 'active' : '') + '" data-tab="all"><i class="fa-solid fa-table-cells"></i>Todas</button>';
     var i;
     for (i = 0; i < iso.sections.length; i += 1) {
       var section = iso.sections[i];
-      var icon = section.icon || 'fa-solid fa-layer-group';
       var activeClass = uiFilters.sectionId === section.id ? 'active' : '';
+      var icon = section.icon || 'fa-solid fa-layer-group';
       html += '<button type="button" class="' + activeClass + '" data-tab="' + esc(section.id) + '"><i class="' + esc(icon) + '"></i>' + esc(textEs(section.title)) + '</button>';
     }
 
     dom.sectionTabs.innerHTML = html;
-
     var tabs = dom.sectionTabs.querySelectorAll('button[data-tab]');
     for (i = 0; i < tabs.length; i += 1) {
       tabs[i].addEventListener('click', function () {
@@ -418,6 +597,7 @@
     finding.risk = normalizeRiskValue(finding.risk);
     if (!finding.note) finding.note = '';
     if (!finding.action) finding.action = '';
+
     if (!finding.attachments || Object.prototype.toString.call(finding.attachments) !== '[object Array]') {
       finding.attachments = [];
       return;
@@ -462,9 +642,7 @@
       var filteredClauses = [];
       var c;
       for (c = 0; c < section.clauses.length; c += 1) {
-        if (clauseMatchesFilter(section.clauses[c])) {
-          filteredClauses.push(section.clauses[c]);
-        }
+        if (clauseMatchesFilter(section.clauses[c])) filteredClauses.push(section.clauses[c]);
       }
 
       if (!filteredClauses.length) continue;
@@ -482,31 +660,26 @@
 
   function clauseMatchesFilter(clause) {
     if (!uiFilters.query) return true;
-
     var textBag = [clause.id, clause.title, clause.definition, clause.question];
-    if (clause.evidence && clause.evidence.length) {
-      textBag = textBag.concat(clause.evidence);
-    }
-
+    if (clause.evidence && clause.evidence.length) textBag = textBag.concat(clause.evidence);
     return textBag.join(' ').toLowerCase().indexOf(uiFilters.query) !== -1;
   }
 
   function renderSection(section, clauses) {
-    var sectionIcon = section.icon || 'fa-solid fa-layer-group';
     var html = '';
+    var icon = section.icon || 'fa-solid fa-layer-group';
 
     html += '<section class="section-block">';
-    html += '<header class="section-head"><h4><i class="' + esc(sectionIcon) + '"></i> ' + esc(textEs(section.title)) + '</h4></header>';
+    html += '<header class="section-head"><h4><i class="' + esc(icon) + '"></i> ' + esc(textEs(section.title)) + '</h4></header>';
     html += '<div class="findings-list">';
 
-    var c;
-    for (c = 0; c < clauses.length; c += 1) {
-      html += renderClauseCard(clauses[c]);
+    var i;
+    for (i = 0; i < clauses.length; i += 1) {
+      html += renderClauseCard(clauses[i]);
     }
 
     html += '</div>';
     html += '</section>';
-
     return html;
   }
 
@@ -516,7 +689,6 @@
     var statusClass = getStatusClass(finding.status);
 
     var html = '';
-
     html += '<article class="finding-card" data-clause-id="' + esc(clause.id) + '">';
     html += '  <div class="finding-head">';
     html += '    <div>';
@@ -525,7 +697,7 @@
     html += '    </div>';
     html += '    <div class="finding-head-tags">';
     html += '      <span class="badge-status ' + esc(statusClass) + '">' + esc(finding.status || 'Sin evaluar') + '</span>';
-    html += '      ' + renderRiskPill(finding.risk);
+    html += renderRiskPill(finding.risk);
     html += '    </div>';
     html += '  </div>';
 
@@ -564,9 +736,7 @@
     html += '  <div class="evidence-list">';
     html += renderAttachments(finding.attachments, clause.id);
     html += '  </div>';
-
     html += '</article>';
-
     return html;
   }
 
@@ -577,11 +747,9 @@
 
     var html = '<ul class="clause-guide">';
     var i;
-
     for (i = 0; i < evidenceItems.length; i += 1) {
       html += '<li><strong>Evidencia sugerida:</strong> ' + esc(textEs(evidenceItems[i])) + '</li>';
     }
-
     html += '</ul>';
     return html;
   }
@@ -589,14 +757,11 @@
   function renderSelectOptions(options, selected) {
     var html = '';
     var i;
-
     for (i = 0; i < options.length; i += 1) {
       var value = options[i];
-      var label = value || 'Seleccionar';
       var selectedAttr = selected === value ? ' selected' : '';
-      html += '<option value="' + esc(value) + '"' + selectedAttr + '>' + esc(label) + '</option>';
+      html += '<option value="' + esc(value) + '"' + selectedAttr + '>' + esc(value || 'Seleccionar') + '</option>';
     }
-
     return html;
   }
 
@@ -607,7 +772,6 @@
 
     var html = '';
     var i;
-
     for (i = 0; i < attachments.length; i += 1) {
       var file = attachments[i];
       html += ''
@@ -619,7 +783,6 @@
         + '  <button class="btn btn-danger" data-action="remove-attachment" data-clause-id="' + esc(clauseId) + '" data-file-id="' + esc(file.id) + '"><i class="fa-solid fa-trash"></i> Quitar</button>'
         + '</article>';
     }
-
     return html;
   }
 
@@ -627,12 +790,9 @@
     var target = event.target;
     var field = target.getAttribute('data-field');
     var clauseId = target.getAttribute('data-clause-id');
-
     if (!field || !clauseId) return;
 
-    if (!state.findings[clauseId]) {
-      state.findings[clauseId] = newEmptyFinding();
-    }
+    if (!state.findings[clauseId]) state.findings[clauseId] = newEmptyFinding();
 
     if (field === 'attachment') {
       addAttachmentsToClause(clauseId, target.files || []);
@@ -645,7 +805,6 @@
     } else {
       state.findings[clauseId][field] = target.value;
     }
-
     saveState();
 
     if (field === 'status') {
@@ -662,12 +821,12 @@
     if (field === 'risk') {
       var riskCard = target.closest ? target.closest('.finding-card') : null;
       if (riskCard) {
-        var riskPill = riskCard.querySelector('.risk-pill');
-        if (riskPill) {
+        var pill = riskCard.querySelector('.risk-pill');
+        if (pill) {
           var normalized = normalizeRiskValue(target.value);
           var riskClass = getRiskClass(normalized);
-          riskPill.className = 'risk-pill' + (riskClass ? ' ' + riskClass : '');
-          riskPill.textContent = normalized || 'Sin riesgo';
+          pill.className = 'risk-pill' + (riskClass ? ' ' + riskClass : '');
+          pill.textContent = normalized || 'Sin riesgo';
         }
       }
     }
@@ -677,19 +836,16 @@
   }
 
   function onChecklistClick(event) {
-    var btn = event.target.closest ? event.target.closest('button[data-action="remove-attachment"]') : null;
-    if (!btn) return;
-
-    var clauseId = btn.getAttribute('data-clause-id');
-    var fileId = btn.getAttribute('data-file-id');
-    removeAttachment(clauseId, fileId);
+    var button = event.target.closest ? event.target.closest('button[data-action="remove-attachment"]') : null;
+    if (!button) return;
+    removeAttachment(button.getAttribute('data-clause-id'), button.getAttribute('data-file-id'));
   }
 
   function addAttachmentsToClause(clauseId, fileList) {
     var finding = state.findings[clauseId] || newEmptyFinding();
     var attachments = finding.attachments || [];
-
     var i;
+
     for (i = 0; i < fileList.length; i += 1) {
       var file = fileList[i];
       attachments.push({
@@ -703,7 +859,6 @@
 
     finding.attachments = attachments;
     state.findings[clauseId] = finding;
-
     saveState();
 
     var iso = findIsoById(state.selectedIsoId);
@@ -727,7 +882,6 @@
 
     finding.attachments = filtered;
     state.findings[clauseId] = finding;
-
     saveState();
 
     var iso = findIsoById(state.selectedIsoId);
@@ -741,7 +895,6 @@
     if (!dom.metrics) return;
 
     var summary = calculateMetrics(iso);
-
     dom.metrics.innerHTML = ''
       + metricCard(summary.progress + '%', 'avance')
       + metricCard(String(summary.ok), 'cumple')
@@ -750,45 +903,36 @@
       + metricCard(String(summary.evidenceTotal), 'archivos')
       + metricCard(String(summary.total), 'puntos ISO');
 
-    if (dom.globalProgressFill) {
-      dom.globalProgressFill.style.width = summary.progress + '%';
-    }
-    if (dom.globalProgressLabel) {
-      dom.globalProgressLabel.textContent = summary.progress + '% completado (' + summary.evaluated + '/' + summary.total + ' puntos)';
-    }
+    if (dom.globalProgressFill) dom.globalProgressFill.style.width = summary.progress + '%';
+    if (dom.globalProgressLabel) dom.globalProgressLabel.textContent = summary.progress + '% completado (' + summary.evaluated + '/' + summary.total + ' puntos)';
   }
 
   function calculateMetrics(iso) {
     var clauses = flattenClauses(iso);
-    var total = clauses.length;
-    var evaluated = 0;
-    var ok = 0;
-    var partial = 0;
-    var bad = 0;
-    var evidenceTotal = 0;
+    var summary = {
+      total: clauses.length,
+      evaluated: 0,
+      ok: 0,
+      partial: 0,
+      bad: 0,
+      evidenceTotal: 0,
+      progress: 0
+    };
 
     var i;
     for (i = 0; i < clauses.length; i += 1) {
       var finding = state.findings[clauses[i].id] || newEmptyFinding();
       var status = finding.status || '';
 
-      if (status) evaluated += 1;
-      if (status === 'Cumple') ok += 1;
-      if (status === 'Parcial') partial += 1;
-      if (status === 'No cumple') bad += 1;
-
-      evidenceTotal += (finding.attachments || []).length;
+      if (status) summary.evaluated += 1;
+      if (status === 'Cumple') summary.ok += 1;
+      if (status === 'Parcial') summary.partial += 1;
+      if (status === 'No cumple') summary.bad += 1;
+      summary.evidenceTotal += (finding.attachments || []).length;
     }
 
-    return {
-      total: total,
-      evaluated: evaluated,
-      ok: ok,
-      partial: partial,
-      bad: bad,
-      progress: total > 0 ? Math.round((evaluated / total) * 100) : 0,
-      evidenceTotal: evidenceTotal
-    };
+    summary.progress = summary.total > 0 ? Math.round((summary.evaluated / summary.total) * 100) : 0;
+    return summary;
   }
 
   function metricCard(value, label) {
@@ -799,15 +943,31 @@
     var out = [];
     var s;
     var c;
-
     for (s = 0; s < iso.sections.length; s += 1) {
-      var section = iso.sections[s];
-      for (c = 0; c < section.clauses.length; c += 1) {
-        out.push(section.clauses[c]);
+      for (c = 0; c < iso.sections[s].clauses.length; c += 1) {
+        out.push(iso.sections[s].clauses[c]);
       }
     }
-
     return out;
+  }
+
+  function renderSignaturePreview() {
+    if (!dom.signaturePreview) return;
+
+    var dataUrl = getEffectiveSignatureDataUrl();
+    if (!dataUrl) {
+      dom.signaturePreview.textContent = 'Sin firma cargada.';
+      return;
+    }
+
+    var label = state.signature.uploadedDataUrl ? ('Archivo: ' + (state.signature.uploadedName || 'firma')) : 'Firma trazada en lienzo';
+    dom.signaturePreview.innerHTML = '<div><img src="' + esc(dataUrl) + '" alt="Firma del auditor" /><p>' + esc(label) + '</p></div>';
+  }
+
+  function getEffectiveSignatureDataUrl() {
+    if (state.signature.uploadedDataUrl) return state.signature.uploadedDataUrl;
+    if (state.signature.drawnDataUrl) return state.signature.drawnDataUrl;
+    return '';
   }
 
   function exportReportPdf() {
@@ -842,14 +1002,15 @@
       y = writeLine(doc, 'Progreso global', summary.progress + '% (' + summary.evaluated + '/' + summary.total + ' puntos)', y, margin);
       y = writeParagraph(doc, 'Alcance', state.project.scope || 'N/D', y + 4, margin, width);
 
-      y = ensureSpace(doc, y, 90);
+      y = ensureSpace(doc, y, 94);
       y = writeHistoryTable(doc, y, margin, width);
+      y = writeSignatureBlock(doc, y, margin, width);
 
       var sections = iso.sections;
       var s;
       var c;
       for (s = 0; s < sections.length; s += 1) {
-        y = ensureSpace(doc, y, 48);
+        y = ensureSpace(doc, y, 50);
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
@@ -861,8 +1022,7 @@
           var finding = state.findings[clause.id] || newEmptyFinding();
           var attachmentNames = attachmentsToText(finding.attachments);
 
-          y = ensureSpace(doc, y, 118);
-
+          y = ensureSpace(doc, y, 122);
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(10);
           doc.text(clause.id + ' - ' + textEs(clause.title), margin + 4, y);
@@ -870,7 +1030,6 @@
 
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(9);
-
           y = writeWrapped(doc, 'Definición: ' + textEs(clause.definition), margin + 8, y, width - 20, 11);
           y = writeWrapped(doc, 'Revisión: ' + textEs(clause.question), margin + 8, y, width - 20, 11);
           y = writeWrapped(doc, 'Estado: ' + (finding.status || 'Sin evaluar') + ' | Riesgo: ' + (normalizeRiskValue(finding.risk) || 'N/D'), margin + 8, y, width - 20, 11);
@@ -889,7 +1048,7 @@
     }
   }
 
-  function drawTitle(doc, iso, y) {
+  function drawTitle(doc, iso) {
     doc.setFillColor(91, 17, 31);
     doc.rect(0, 0, 595, 94, 'F');
 
@@ -957,21 +1116,58 @@
       doc.text(String(date), x + colA + 4, y + 12);
       doc.text(String(author), x + colA + colB + 4, y + 12);
       doc.text(String(description), x + colA + colB + colC + 4, y + 12, { maxWidth: colD - 8 });
-
       y += rowHeight;
     }
 
     return y + 12;
   }
 
+  function writeSignatureBlock(doc, y, margin, width) {
+    y = ensureSpace(doc, y, 120);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text('Firma del auditor:', margin, y);
+    y += 8;
+
+    var signatureDataUrl = getEffectiveSignatureDataUrl();
+    if (!signatureDataUrl) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.text('N/D', margin + 94, y);
+      return y + 12;
+    }
+
+    try {
+      var properties = doc.getImageProperties(signatureDataUrl);
+      var maxW = width * 0.42;
+      var maxH = 72;
+      var ratio = properties.width / properties.height;
+      var drawW = maxW;
+      var drawH = drawW / ratio;
+      if (drawH > maxH) {
+        drawH = maxH;
+        drawW = drawH * ratio;
+      }
+
+      doc.setDrawColor(220, 199, 157);
+      doc.rect(margin + 94, y - 10, maxW + 12, maxH + 12);
+      doc.addImage(signatureDataUrl, properties.fileType || 'PNG', margin + 100, y - 4, drawW, drawH);
+      return y + maxH + 16;
+    } catch (err) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.text('No se pudo renderizar la firma.', margin + 94, y);
+      return y + 12;
+    }
+  }
+
   function writeLine(doc, label, value, y, margin) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     doc.text(label + ':', margin, y);
-
     doc.setFont('helvetica', 'normal');
     doc.text(String(value), margin + 132, y);
-
     return y + 14;
   }
 
@@ -979,11 +1175,9 @@
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     doc.text(label + ':', margin, y);
-
     doc.setFont('helvetica', 'normal');
     var lines = doc.splitTextToSize(String(value), width - 132);
     doc.text(lines, margin + 132, y);
-
     return y + (lines.length * 11) + 8;
   }
 
@@ -1003,13 +1197,11 @@
 
   function attachmentsToText(attachments) {
     if (!attachments || !attachments.length) return 'Sin archivos';
-
     var parts = [];
     var i;
     for (i = 0; i < attachments.length; i += 1) {
       parts.push(attachments[i].name);
     }
-
     return parts.join('; ');
   }
 
@@ -1025,6 +1217,15 @@
     };
     state.history = getEmptyHistoryRows();
     state.findings = {};
+    state.signature = {
+      drawnDataUrl: '',
+      uploadedDataUrl: '',
+      uploadedName: ''
+    };
+
+    clearSignatureCanvas();
+    renderSignaturePreview();
+    if (dom.signatureFile) dom.signatureFile.value = '';
 
     var iso = findIsoById(state.selectedIsoId);
     if (iso) {
@@ -1077,16 +1278,13 @@
 
   function formatBytes(bytes) {
     if (!bytes) return '0 KB';
-
     var units = ['B', 'KB', 'MB', 'GB'];
     var size = bytes;
     var unit = 0;
-
     while (size >= 1024 && unit < units.length - 1) {
       size = size / 1024;
       unit += 1;
     }
-
     return size.toFixed(unit === 0 ? 0 : 1) + ' ' + units[unit];
   }
 
@@ -1095,10 +1293,7 @@
   }
 
   function formatDateName(date) {
-    var y = date.getFullYear();
-    var m = date.getMonth() + 1;
-    var d = date.getDate();
-    return y + '-' + pad2(m) + '-' + pad2(d);
+    return date.getFullYear() + '-' + pad2(date.getMonth() + 1) + '-' + pad2(date.getDate());
   }
 
   function pad2(n) {
@@ -1148,12 +1343,16 @@
           state.history[i].author = source.author || '';
           state.history[i].description = source.description || '';
         }
-      } else {
-        state.history = getEmptyHistoryRows();
       }
 
       if (parsed.findings && typeof parsed.findings === 'object') {
         state.findings = parsed.findings;
+      }
+
+      if (parsed.signature && typeof parsed.signature === 'object') {
+        state.signature.drawnDataUrl = parsed.signature.drawnDataUrl || '';
+        state.signature.uploadedDataUrl = parsed.signature.uploadedDataUrl || '';
+        state.signature.uploadedName = parsed.signature.uploadedName || '';
       }
     } catch (err) {
       state = createInitialState();
@@ -1186,14 +1385,9 @@
 
   function showToast(message) {
     if (!dom.toast) return;
-
     dom.toast.textContent = message;
     dom.toast.classList.add('show');
-
-    if (toastTimer) {
-      window.clearTimeout(toastTimer);
-    }
-
+    if (toastTimer) window.clearTimeout(toastTimer);
     toastTimer = window.setTimeout(function () {
       dom.toast.classList.remove('show');
     }, 2200);
@@ -1294,8 +1488,8 @@
       ['Despues', 'Después'],
       ['despues', 'después'],
       ['Que', 'Qué'],
-      ['duenos', 'dueños'],
       ['Duenos', 'Dueños'],
+      ['duenos', 'dueños'],
       ['Critico', 'Crítico'],
       ['critico', 'crítico']
     ];
