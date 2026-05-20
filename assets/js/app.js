@@ -4,34 +4,42 @@
   var STORAGE_KEY = 'sg_audit_state_v3';
   var TUTORIAL_KEY = 'sg_audit_tutorial_seen_v1';
 
-  var state = {
-    selectedIsoId: null,
-    project: {
-      name: '',
-      auditor: '',
-      site: '',
-      date: '',
-      scope: ''
-    },
-    findings: {}
-  };
-
   var ISO_LIBRARY = [];
   var dom = {};
   var toastTimer = null;
+  var logoDataUrl = '';
   var uiFilters = {
     query: '',
     sectionId: 'all'
   };
 
+  var state = createInitialState();
+
   document.addEventListener('DOMContentLoaded', init);
+
+  function createInitialState() {
+    return {
+      selectedIsoId: null,
+      project: {
+        name: '',
+        auditor: '',
+        site: '',
+        date: '',
+        scope: '',
+        docVersion: '',
+        auditedRep: ''
+      },
+      history: getEmptyHistoryRows(),
+      findings: {}
+    };
+  }
 
   function init() {
     cacheDom();
     ISO_LIBRARY = normalizeLibrary(window.ISO_LIBRARY);
 
     if (!ISO_LIBRARY.length) {
-      showToast('No se pudo cargar el catalogo ISO. Recarga la pagina.');
+      showToast('No se pudo cargar el catálogo ISO. Recarga la página.');
       return;
     }
 
@@ -44,10 +52,9 @@
     bindEvents();
     syncProjectForm();
     renderIsoOptions();
+    cacheLogoDataUrl();
 
-    if (dom.startAudit) {
-      dom.startAudit.disabled = false;
-    }
+    if (dom.startAudit) dom.startAudit.disabled = false;
 
     if (!readLocal(TUTORIAL_KEY)) {
       openTutorial();
@@ -80,10 +87,17 @@
     dom.auditSite = document.getElementById('audit-site');
     dom.auditDate = document.getElementById('audit-date');
     dom.auditScope = document.getElementById('audit-scope');
+    dom.docVersion = document.getElementById('doc-version');
+    dom.auditedRep = document.getElementById('audited-rep');
+    dom.historyInputs = document.querySelectorAll('[data-history-row][data-history-field]');
+
+    dom.globalProgressFill = document.getElementById('global-progress-fill');
+    dom.globalProgressLabel = document.getElementById('global-progress-label');
 
     dom.exportPdf = document.getElementById('export-pdf');
     dom.clearProject = document.getElementById('clear-project');
     dom.toast = document.getElementById('toast');
+    dom.headerLogo = document.querySelector('.brand-logo');
   }
 
   function normalizeLibrary(list) {
@@ -147,9 +161,7 @@
     }
 
     if (dom.changeIso) {
-      dom.changeIso.addEventListener('click', function () {
-        showOnboarding();
-      });
+      dom.changeIso.addEventListener('click', showOnboarding);
     }
 
     if (dom.openTutorialOnboarding) {
@@ -166,9 +178,7 @@
 
     if (dom.tutorialModal) {
       dom.tutorialModal.addEventListener('click', function (event) {
-        if (event.target === dom.tutorialModal) {
-          closeTutorial();
-        }
+        if (event.target === dom.tutorialModal) closeTutorial();
       });
     }
 
@@ -177,6 +187,9 @@
     bindProjectField(dom.auditSite, 'site');
     bindProjectField(dom.auditDate, 'date');
     bindProjectField(dom.auditScope, 'scope');
+    bindProjectField(dom.docVersion, 'docVersion');
+    bindProjectField(dom.auditedRep, 'auditedRep');
+    bindHistoryFields();
 
     if (dom.clauseSearch) {
       dom.clauseSearch.addEventListener('input', function () {
@@ -198,7 +211,7 @@
 
     if (dom.clearProject) {
       dom.clearProject.addEventListener('click', function () {
-        if (!window.confirm('Se limpiara toda la informacion de esta auditoria. Continuar?')) return;
+        if (!window.confirm('Se limpiará toda la información de esta auditoría. ¿Continuar?')) return;
         clearCurrentAudit();
       });
     }
@@ -212,12 +225,43 @@
     });
   }
 
+  function bindHistoryFields() {
+    if (!dom.historyInputs || !dom.historyInputs.length) return;
+
+    var i;
+    for (i = 0; i < dom.historyInputs.length; i += 1) {
+      dom.historyInputs[i].addEventListener('input', function () {
+        var row = Number(this.getAttribute('data-history-row'));
+        var field = this.getAttribute('data-history-field');
+        if (row < 0 || row > 2 || !field) return;
+        if (!state.history[row]) state.history[row] = { version: '', date: '', author: '', description: '' };
+        state.history[row][field] = this.value;
+        saveState();
+      });
+    }
+  }
+
   function syncProjectForm() {
     if (dom.projectName) dom.projectName.value = state.project.name || '';
     if (dom.auditorName) dom.auditorName.value = state.project.auditor || '';
     if (dom.auditSite) dom.auditSite.value = state.project.site || '';
     if (dom.auditDate) dom.auditDate.value = state.project.date || '';
     if (dom.auditScope) dom.auditScope.value = state.project.scope || '';
+    if (dom.docVersion) dom.docVersion.value = state.project.docVersion || '';
+    if (dom.auditedRep) dom.auditedRep.value = state.project.auditedRep || '';
+
+    if (dom.historyInputs && dom.historyInputs.length) {
+      var i;
+      for (i = 0; i < dom.historyInputs.length; i += 1) {
+        var row = Number(dom.historyInputs[i].getAttribute('data-history-row'));
+        var field = dom.historyInputs[i].getAttribute('data-history-field');
+        var value = '';
+        if (state.history[row] && field) {
+          value = state.history[row][field] || '';
+        }
+        dom.historyInputs[i].value = value;
+      }
+    }
   }
 
   function renderIsoOptions() {
@@ -235,8 +279,8 @@
       html += ''
         + '<article class="iso-option' + activeClass + '" data-iso="' + esc(iso.id) + '">'
         + '  <h4><i class="' + esc(icon) + '"></i> ' + esc(iso.code) + ' <small>(' + esc(iso.version || '') + ')</small></h4>'
-        + '  <p>' + esc(iso.focus || '') + '</p>'
-        + '  <p>' + esc(iso.summary || '') + '</p>'
+        + '  <p>' + esc(textEs(iso.focus || '')) + '</p>'
+        + '  <p>' + esc(textEs(iso.summary || '')) + '</p>'
         + '  <p class="iso-tag">' + esc(String(countClauses(iso))) + ' puntos auditables</p>'
         + '</article>';
     }
@@ -272,7 +316,7 @@
   function openAuditWorkspace() {
     var iso = findIsoById(state.selectedIsoId);
     if (!iso) {
-      showToast('No se encontro la ISO seleccionada.');
+      showToast('No se encontró la ISO seleccionada.');
       return;
     }
 
@@ -281,13 +325,8 @@
     if (dom.onboarding) dom.onboarding.classList.add('hidden');
     if (dom.app) dom.app.classList.remove('hidden');
 
-    if (dom.activeIso) {
-      dom.activeIso.textContent = iso.code + ' ' + (iso.version || '');
-    }
-
-    if (dom.isoUpdatedNote) {
-      dom.isoUpdatedNote.textContent = iso.updatedNote || '';
-    }
+    if (dom.activeIso) dom.activeIso.textContent = iso.code + ' ' + (iso.version || '');
+    if (dom.isoUpdatedNote) dom.isoUpdatedNote.textContent = textEs(iso.updatedNote || '');
 
     ensureActiveSection(iso);
     syncProjectForm();
@@ -309,23 +348,21 @@
       }
     }
 
-    if (!exists) {
-      uiFilters.sectionId = 'all';
-    }
+    if (!exists) uiFilters.sectionId = 'all';
   }
 
   function renderSectionTabs(iso) {
     if (!dom.sectionTabs) return;
 
     var html = '';
-    html += '<button type=\"button\" class=\"' + (uiFilters.sectionId === 'all' ? 'active' : '') + '\" data-tab=\"all\"><i class=\"fa-solid fa-table-cells\"></i>Todas</button>';
+    html += '<button type="button" class="' + (uiFilters.sectionId === 'all' ? 'active' : '') + '" data-tab="all"><i class="fa-solid fa-table-cells"></i>Todas</button>';
 
     var i;
     for (i = 0; i < iso.sections.length; i += 1) {
       var section = iso.sections[i];
       var icon = section.icon || 'fa-solid fa-layer-group';
       var activeClass = uiFilters.sectionId === section.id ? 'active' : '';
-      html += '<button type=\"button\" class=\"' + activeClass + '\" data-tab=\"' + esc(section.id) + '\"><i class=\"' + esc(icon) + '\"></i>' + esc(section.title) + '</button>';
+      html += '<button type="button" class="' + activeClass + '" data-tab="' + esc(section.id) + '"><i class="' + esc(icon) + '"></i>' + esc(textEs(section.title)) + '</button>';
     }
 
     dom.sectionTabs.innerHTML = html;
@@ -361,9 +398,7 @@
 
     var keys = Object.keys(state.findings);
     for (s = 0; s < keys.length; s += 1) {
-      if (!valid[keys[s]]) {
-        delete state.findings[keys[s]];
-      }
+      if (!valid[keys[s]]) delete state.findings[keys[s]];
     }
   }
 
@@ -380,6 +415,7 @@
   function hydrateFinding(finding) {
     if (!finding.status) finding.status = '';
     if (!finding.risk) finding.risk = '';
+    finding.risk = normalizeRiskValue(finding.risk);
     if (!finding.note) finding.note = '';
     if (!finding.action) finding.action = '';
     if (!finding.attachments || Object.prototype.toString.call(finding.attachments) !== '[object Array]') {
@@ -416,14 +452,12 @@
     if (!dom.checklistRoot) return;
 
     var html = '';
-    var s;
     var visibleSections = 0;
+    var s;
 
     for (s = 0; s < iso.sections.length; s += 1) {
       var section = iso.sections[s];
-      if (uiFilters.sectionId !== 'all' && uiFilters.sectionId !== section.id) {
-        continue;
-      }
+      if (uiFilters.sectionId !== 'all' && uiFilters.sectionId !== section.id) continue;
 
       var filteredClauses = [];
       var c;
@@ -440,7 +474,7 @@
     }
 
     if (!visibleSections) {
-      html = '<div class=\"empty-results\"><i class=\"fa-solid fa-filter-circle-xmark\"></i><br />No hay resultados para este filtro. Ajusta busqueda o tab.</div>';
+      html = '<div class="empty-results"><i class="fa-solid fa-filter-circle-xmark"></i><br />No hay resultados para este filtro. Ajusta búsqueda o pestaña.</div>';
     }
 
     dom.checklistRoot.innerHTML = html;
@@ -449,13 +483,7 @@
   function clauseMatchesFilter(clause) {
     if (!uiFilters.query) return true;
 
-    var textBag = [
-      clause.id,
-      clause.title,
-      clause.definition,
-      clause.question
-    ];
-
+    var textBag = [clause.id, clause.title, clause.definition, clause.question];
     if (clause.evidence && clause.evidence.length) {
       textBag = textBag.concat(clause.evidence);
     }
@@ -464,14 +492,14 @@
   }
 
   function renderSection(section, clauses) {
-    var html = '';
-    var c;
     var sectionIcon = section.icon || 'fa-solid fa-layer-group';
+    var html = '';
 
     html += '<section class="section-block">';
-    html += '<header class="section-head"><h4><i class="' + esc(sectionIcon) + '"></i> ' + esc(section.title) + '</h4></header>';
+    html += '<header class="section-head"><h4><i class="' + esc(sectionIcon) + '"></i> ' + esc(textEs(section.title)) + '</h4></header>';
     html += '<div class="findings-list">';
 
+    var c;
     for (c = 0; c < clauses.length; c += 1) {
       html += renderClauseCard(clauses[c]);
     }
@@ -484,6 +512,7 @@
 
   function renderClauseCard(clause) {
     var finding = state.findings[clause.id] || newEmptyFinding();
+    finding.risk = normalizeRiskValue(finding.risk);
     var statusClass = getStatusClass(finding.status);
 
     var html = '';
@@ -491,13 +520,16 @@
     html += '<article class="finding-card" data-clause-id="' + esc(clause.id) + '">';
     html += '  <div class="finding-head">';
     html += '    <div>';
-    html += '      <h5>' + esc(clause.id) + ' - ' + esc(clause.title) + '</h5>';
-    html += '      <p>' + esc(clause.question) + '</p>';
+    html += '      <h5>' + esc(clause.id) + ' - ' + esc(textEs(clause.title)) + '</h5>';
+    html += '      <p>' + esc(textEs(clause.question)) + '</p>';
     html += '    </div>';
-    html += '    <span class="badge-status ' + esc(statusClass) + '">' + esc(finding.status || 'Sin evaluar') + '</span>';
+    html += '    <div class="finding-head-tags">';
+    html += '      <span class="badge-status ' + esc(statusClass) + '">' + esc(finding.status || 'Sin evaluar') + '</span>';
+    html += '      ' + renderRiskPill(finding.risk);
+    html += '    </div>';
     html += '  </div>';
 
-    html += '  <p class="clause-definition"><strong>Definicion del punto:</strong> ' + esc(clause.definition) + '</p>';
+    html += '  <p class="clause-definition"><strong>Definición del punto:</strong> ' + esc(textEs(clause.definition)) + '</p>';
     html += renderEvidenceGuide(clause.evidence);
 
     html += '  <div class="finding-grid">';
@@ -509,16 +541,16 @@
 
     html += '    <label>Riesgo';
     html += '      <select data-field="risk" data-clause-id="' + esc(clause.id) + '">';
-    html += renderSelectOptions(['', 'Bajo', 'Medio', 'Alto', 'Critico'], finding.risk);
+    html += renderSelectOptions(['', 'Bajo', 'Medio', 'Alto', 'Crítico'], finding.risk);
     html += '      </select>';
     html += '    </label>';
 
-    html += '    <label class="wide">Hallazgo/observacion';
-    html += '      <textarea rows="2" data-field="note" data-clause-id="' + esc(clause.id) + '" placeholder="Que se encontro en este punto?">' + esc(finding.note || '') + '</textarea>';
+    html += '    <label class="wide">Hallazgo/observación';
+    html += '      <textarea rows="2" data-field="note" data-clause-id="' + esc(clause.id) + '" placeholder="¿Qué se encontró en este punto?">' + esc(finding.note || '') + '</textarea>';
     html += '    </label>';
 
-    html += '    <label class="wide">Accion o plan de mejora';
-    html += '      <textarea rows="2" data-field="action" data-clause-id="' + esc(clause.id) + '" placeholder="Que accion correctiva/recomendacion se propone?">' + esc(finding.action || '') + '</textarea>';
+    html += '    <label class="wide">Acción o plan de mejora';
+    html += '      <textarea rows="2" data-field="action" data-clause-id="' + esc(clause.id) + '" placeholder="¿Qué acción correctiva/recomendación se propone?">' + esc(finding.action || '') + '</textarea>';
     html += '    </label>';
     html += '  </div>';
 
@@ -547,7 +579,7 @@
     var i;
 
     for (i = 0; i < evidenceItems.length; i += 1) {
-      html += '<li><strong>Evidencia sugerida:</strong> ' + esc(evidenceItems[i]) + '</li>';
+      html += '<li><strong>Evidencia sugerida:</strong> ' + esc(textEs(evidenceItems[i])) + '</li>';
     }
 
     html += '</ul>';
@@ -608,7 +640,12 @@
       return;
     }
 
-    state.findings[clauseId][field] = target.value;
+    if (field === 'risk') {
+      state.findings[clauseId][field] = normalizeRiskValue(target.value);
+    } else {
+      state.findings[clauseId][field] = target.value;
+    }
+
     saveState();
 
     if (field === 'status') {
@@ -618,6 +655,19 @@
         if (badge) {
           badge.className = 'badge-status ' + getStatusClass(target.value);
           badge.textContent = target.value || 'Sin evaluar';
+        }
+      }
+    }
+
+    if (field === 'risk') {
+      var riskCard = target.closest ? target.closest('.finding-card') : null;
+      if (riskCard) {
+        var riskPill = riskCard.querySelector('.risk-pill');
+        if (riskPill) {
+          var normalized = normalizeRiskValue(target.value);
+          var riskClass = getRiskClass(normalized);
+          riskPill.className = 'risk-pill' + (riskClass ? ' ' + riskClass : '');
+          riskPill.textContent = normalized || 'Sin riesgo';
         }
       }
     }
@@ -690,6 +740,25 @@
   function renderMetrics(iso) {
     if (!dom.metrics) return;
 
+    var summary = calculateMetrics(iso);
+
+    dom.metrics.innerHTML = ''
+      + metricCard(summary.progress + '%', 'avance')
+      + metricCard(String(summary.ok), 'cumple')
+      + metricCard(String(summary.partial), 'parcial')
+      + metricCard(String(summary.bad), 'no cumple')
+      + metricCard(String(summary.evidenceTotal), 'archivos')
+      + metricCard(String(summary.total), 'puntos ISO');
+
+    if (dom.globalProgressFill) {
+      dom.globalProgressFill.style.width = summary.progress + '%';
+    }
+    if (dom.globalProgressLabel) {
+      dom.globalProgressLabel.textContent = summary.progress + '% completado (' + summary.evaluated + '/' + summary.total + ' puntos)';
+    }
+  }
+
+  function calculateMetrics(iso) {
     var clauses = flattenClauses(iso);
     var total = clauses.length;
     var evaluated = 0;
@@ -711,15 +780,15 @@
       evidenceTotal += (finding.attachments || []).length;
     }
 
-    var progress = total > 0 ? Math.round((evaluated / total) * 100) : 0;
-
-    dom.metrics.innerHTML = ''
-      + metricCard(progress + '%', 'avance')
-      + metricCard(String(ok), 'cumple')
-      + metricCard(String(partial), 'parcial')
-      + metricCard(String(bad), 'no cumple')
-      + metricCard(String(evidenceTotal), 'archivos')
-      + metricCard(String(total), 'puntos ISO');
+    return {
+      total: total,
+      evaluated: evaluated,
+      ok: ok,
+      partial: partial,
+      bad: bad,
+      progress: total > 0 ? Math.round((evaluated / total) * 100) : 0,
+      evidenceTotal: evidenceTotal
+    };
   }
 
   function metricCard(value, label) {
@@ -756,29 +825,35 @@
     try {
       var jsPDF = window.jspdf.jsPDF;
       var doc = new jsPDF({ unit: 'pt', format: 'a4' });
-      var y = 42;
       var margin = 36;
       var width = 523;
+      var y = 42;
+      var summary = calculateMetrics(iso);
 
       drawTitle(doc, iso, y);
       y = 118;
 
-      y = writeLine(doc, 'Proyecto', state.project.name || 'N/D', y, margin);
+      y = writeLine(doc, 'Proyecto / Empresa', state.project.name || 'N/D', y, margin);
       y = writeLine(doc, 'Auditor', state.project.auditor || 'N/D', y, margin);
+      y = writeLine(doc, 'Representante auditado', state.project.auditedRep || 'N/D', y, margin);
       y = writeLine(doc, 'Sitio', state.project.site || 'N/D', y, margin);
-      y = writeLine(doc, 'Fecha', state.project.date || 'N/D', y, margin);
+      y = writeLine(doc, 'Fecha de auditoría', state.project.date || 'N/D', y, margin);
+      y = writeLine(doc, 'Versión del documento', state.project.docVersion || 'N/D', y, margin);
+      y = writeLine(doc, 'Progreso global', summary.progress + '% (' + summary.evaluated + '/' + summary.total + ' puntos)', y, margin);
       y = writeParagraph(doc, 'Alcance', state.project.scope || 'N/D', y + 4, margin, width);
+
+      y = ensureSpace(doc, y, 90);
+      y = writeHistoryTable(doc, y, margin, width);
 
       var sections = iso.sections;
       var s;
       var c;
-
       for (s = 0; s < sections.length; s += 1) {
         y = ensureSpace(doc, y, 48);
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
-        doc.text(sections[s].title, margin, y);
+        doc.text(textEs(sections[s].title), margin, y);
         y += 16;
 
         for (c = 0; c < sections[s].clauses.length; c += 1) {
@@ -786,23 +861,22 @@
           var finding = state.findings[clause.id] || newEmptyFinding();
           var attachmentNames = attachmentsToText(finding.attachments);
 
-          y = ensureSpace(doc, y, 110);
+          y = ensureSpace(doc, y, 118);
 
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(10);
-          doc.text(clause.id + ' - ' + clause.title, margin + 4, y);
+          doc.text(clause.id + ' - ' + textEs(clause.title), margin + 4, y);
           y += 12;
 
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(9);
 
-          y = writeWrapped(doc, 'Definicion: ' + clause.definition, margin + 8, y, width - 20, 11);
-          y = writeWrapped(doc, 'Revision: ' + clause.question, margin + 8, y, width - 20, 11);
-          y = writeWrapped(doc, 'Estado: ' + (finding.status || 'Sin evaluar') + ' | Riesgo: ' + (finding.risk || 'N/D'), margin + 8, y, width - 20, 11);
+          y = writeWrapped(doc, 'Definición: ' + textEs(clause.definition), margin + 8, y, width - 20, 11);
+          y = writeWrapped(doc, 'Revisión: ' + textEs(clause.question), margin + 8, y, width - 20, 11);
+          y = writeWrapped(doc, 'Estado: ' + (finding.status || 'Sin evaluar') + ' | Riesgo: ' + (normalizeRiskValue(finding.risk) || 'N/D'), margin + 8, y, width - 20, 11);
           y = writeWrapped(doc, 'Hallazgo: ' + (finding.note || 'N/D'), margin + 8, y, width - 20, 11);
-          y = writeWrapped(doc, 'Accion: ' + (finding.action || 'N/D'), margin + 8, y, width - 20, 11);
+          y = writeWrapped(doc, 'Acción: ' + (finding.action || 'N/D'), margin + 8, y, width - 20, 11);
           y = writeWrapped(doc, 'Archivos: ' + attachmentNames, margin + 8, y, width - 20, 11);
-
           y += 8;
         }
       }
@@ -822,11 +896,72 @@
     doc.setTextColor(250, 241, 219);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(16);
-    doc.text('Plataforma de Gestion de Auditorias - INDUSECC', 36, 38);
 
+    var textStart = 36;
+    if (logoDataUrl) {
+      try {
+        doc.addImage(logoDataUrl, 'PNG', 36, 16, 62, 62);
+        textStart = 108;
+      } catch (err) {
+        textStart = 36;
+      }
+    }
+
+    doc.text('Plataforma de Gestión de Auditorías - INDUSECC', textStart, 38);
     doc.setFontSize(12);
-    doc.text(iso.code + ' ' + (iso.version || ''), 36, 62);
+    doc.text(iso.code + ' ' + (iso.version || ''), textStart, 62);
     doc.setTextColor(33, 33, 33);
+  }
+
+  function writeHistoryTable(doc, y, margin, width) {
+    var rowHeight = 18;
+    var colA = 68;
+    var colB = 82;
+    var colC = 96;
+    var colD = width - colA - colB - colC;
+    var x = margin;
+    var i;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text('Control de versiones', margin, y);
+    y += 10;
+
+    doc.setFillColor(245, 236, 220);
+    doc.rect(x, y, width, rowHeight, 'F');
+    doc.setDrawColor(220, 199, 157);
+    doc.rect(x, y, width, rowHeight);
+
+    doc.setFontSize(8);
+    doc.text('Versión', x + 4, y + 12);
+    doc.text('Fecha', x + colA + 4, y + 12);
+    doc.text('Autor', x + colA + colB + 4, y + 12);
+    doc.text('Descripción de cambios', x + colA + colB + colC + 4, y + 12);
+    y += rowHeight;
+
+    for (i = 0; i < 3; i += 1) {
+      var row = state.history[i] || {};
+      var version = row.version || '';
+      var date = row.date || '';
+      var author = row.author || '';
+      var description = row.description || '';
+
+      doc.rect(x, y, width, rowHeight);
+      doc.line(x + colA, y, x + colA, y + rowHeight);
+      doc.line(x + colA + colB, y, x + colA + colB, y + rowHeight);
+      doc.line(x + colA + colB + colC, y, x + colA + colB + colC, y + rowHeight);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.text(String(version), x + 4, y + 12);
+      doc.text(String(date), x + colA + 4, y + 12);
+      doc.text(String(author), x + colA + colB + 4, y + 12);
+      doc.text(String(description), x + colA + colB + colC + 4, y + 12, { maxWidth: colD - 8 });
+
+      y += rowHeight;
+    }
+
+    return y + 12;
   }
 
   function writeLine(doc, label, value, y, margin) {
@@ -835,7 +970,7 @@
     doc.text(label + ':', margin, y);
 
     doc.setFont('helvetica', 'normal');
-    doc.text(String(value), margin + 76, y);
+    doc.text(String(value), margin + 132, y);
 
     return y + 14;
   }
@@ -846,8 +981,8 @@
     doc.text(label + ':', margin, y);
 
     doc.setFont('helvetica', 'normal');
-    var lines = doc.splitTextToSize(String(value), width - 76);
-    doc.text(lines, margin + 76, y);
+    var lines = doc.splitTextToSize(String(value), width - 132);
+    doc.text(lines, margin + 132, y);
 
     return y + (lines.length * 11) + 8;
   }
@@ -884,8 +1019,11 @@
       auditor: '',
       site: '',
       date: '',
-      scope: ''
+      scope: '',
+      docVersion: '',
+      auditedRep: ''
     };
+    state.history = getEmptyHistoryRows();
     state.findings = {};
 
     var iso = findIsoById(state.selectedIsoId);
@@ -914,6 +1052,27 @@
     if (status === 'Parcial') return 'warn';
     if (status === 'No cumple') return 'bad';
     return 'na';
+  }
+
+  function getRiskClass(risk) {
+    var value = String(risk || '').toLowerCase();
+    if (value === 'bajo') return 'bajo';
+    if (value === 'medio') return 'medio';
+    if (value === 'alto') return 'alto';
+    if (value === 'crítico' || value === 'critico') return 'critico';
+    return '';
+  }
+
+  function renderRiskPill(risk) {
+    var normalized = normalizeRiskValue(risk);
+    var klass = getRiskClass(normalized);
+    return '<span class="risk-pill' + (klass ? ' ' + klass : '') + '">' + esc(normalized || 'Sin riesgo') + '</span>';
+  }
+
+  function normalizeRiskValue(value) {
+    if (!value) return '';
+    if (value === 'Critico') return 'Crítico';
+    return value;
   }
 
   function formatBytes(bytes) {
@@ -975,13 +1134,29 @@
         state.project.site = parsed.project.site || '';
         state.project.date = parsed.project.date || '';
         state.project.scope = parsed.project.scope || '';
+        state.project.docVersion = parsed.project.docVersion || '';
+        state.project.auditedRep = parsed.project.auditedRep || '';
+      }
+
+      if (parsed.history && Object.prototype.toString.call(parsed.history) === '[object Array]') {
+        state.history = getEmptyHistoryRows();
+        var i;
+        for (i = 0; i < state.history.length; i += 1) {
+          var source = parsed.history[i] || {};
+          state.history[i].version = source.version || '';
+          state.history[i].date = source.date || '';
+          state.history[i].author = source.author || '';
+          state.history[i].description = source.description || '';
+        }
+      } else {
+        state.history = getEmptyHistoryRows();
       }
 
       if (parsed.findings && typeof parsed.findings === 'object') {
         state.findings = parsed.findings;
       }
     } catch (err) {
-      state.findings = {};
+      state = createInitialState();
     }
   }
 
@@ -1021,7 +1196,7 @@
 
     toastTimer = window.setTimeout(function () {
       dom.toast.classList.remove('show');
-    }, 2000);
+    }, 2200);
   }
 
   function esc(value) {
@@ -1031,5 +1206,104 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
+  }
+
+  function getEmptyHistoryRows() {
+    return [
+      { version: '', date: '', author: '', description: '' },
+      { version: '', date: '', author: '', description: '' },
+      { version: '', date: '', author: '', description: '' }
+    ];
+  }
+
+  function cacheLogoDataUrl() {
+    if (!dom.headerLogo) return;
+
+    var img = dom.headerLogo;
+    var assignDataUrl = function () {
+      logoDataUrl = imageToDataUrl(img);
+    };
+
+    if (img.complete && img.naturalWidth > 0) {
+      assignDataUrl();
+      return;
+    }
+
+    img.addEventListener('load', assignDataUrl, { once: true });
+  }
+
+  function imageToDataUrl(image) {
+    if (!image || !image.naturalWidth || !image.naturalHeight) return '';
+
+    try {
+      var canvas = document.createElement('canvas');
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      var ctx = canvas.getContext('2d');
+      if (!ctx) return '';
+      ctx.drawImage(image, 0, 0);
+      return canvas.toDataURL('image/png');
+    } catch (err) {
+      return '';
+    }
+  }
+
+  function textEs(value) {
+    var text = String(value == null ? '' : value);
+    var pairs = [
+      ['Gestion', 'Gestión'],
+      ['gestion', 'gestión'],
+      ['Auditoria', 'Auditoría'],
+      ['auditoria', 'auditoría'],
+      ['Auditorias', 'Auditorías'],
+      ['auditorias', 'auditorías'],
+      ['Informacion', 'Información'],
+      ['informacion', 'información'],
+      ['Organizacion', 'Organización'],
+      ['organizacion', 'organización'],
+      ['Direccion', 'Dirección'],
+      ['direccion', 'dirección'],
+      ['Analisis', 'Análisis'],
+      ['analisis', 'análisis'],
+      ['Revision', 'Revisión'],
+      ['revision', 'revisión'],
+      ['Accion', 'Acción'],
+      ['accion', 'acción'],
+      ['Politica', 'Política'],
+      ['politica', 'política'],
+      ['Comunicacion', 'Comunicación'],
+      ['comunicacion', 'comunicación'],
+      ['Medicion', 'Medición'],
+      ['medicion', 'medición'],
+      ['Satisfaccion', 'Satisfacción'],
+      ['satisfaccion', 'satisfacción'],
+      ['Diseno', 'Diseño'],
+      ['diseno', 'diseño'],
+      ['Produccion', 'Producción'],
+      ['produccion', 'producción'],
+      ['Provision', 'Provisión'],
+      ['provision', 'provisión'],
+      ['Desempeno', 'Desempeño'],
+      ['desempeno', 'desempeño'],
+      ['Retencion', 'Retención'],
+      ['retencion', 'retención'],
+      ['Catalogo', 'Catálogo'],
+      ['catalogo', 'catálogo'],
+      ['Pagina', 'Página'],
+      ['pagina', 'página'],
+      ['Despues', 'Después'],
+      ['despues', 'después'],
+      ['Que', 'Qué'],
+      ['duenos', 'dueños'],
+      ['Duenos', 'Dueños'],
+      ['Critico', 'Crítico'],
+      ['critico', 'crítico']
+    ];
+
+    var i;
+    for (i = 0; i < pairs.length; i += 1) {
+      text = text.replace(new RegExp('\\b' + pairs[i][0] + '\\b', 'g'), pairs[i][1]);
+    }
+    return text;
   }
 })();

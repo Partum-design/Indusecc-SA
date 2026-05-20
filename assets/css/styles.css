@@ -254,6 +254,98 @@ h4 {
   padding: 20px;
 }
 
+.audit-meta-panel {
+  margin-bottom: 14px;
+  padding: 14px;
+}
+
+.audit-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.audit-meta-grid label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  color: #5f1b27;
+  font-weight: 800;
+}
+
+.audit-meta-grid input {
+  width: 100%;
+  border: 1px solid #d8c29b;
+  background: #fffefb;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+}
+
+.global-progress-wrap {
+  margin-top: 12px;
+}
+
+.global-progress-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: #5f1e2a;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.global-progress-track {
+  height: 10px;
+  border-radius: 999px;
+  background: #f8ead3;
+  border: 1px solid #e3cea6;
+  overflow: hidden;
+}
+
+.global-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(110deg, #d98e04, #c57a00);
+  transition: width 0.35s ease;
+}
+
+.version-table-wrap {
+  margin-top: 14px;
+  overflow-x: auto;
+}
+
+.version-table {
+  width: 100%;
+  min-width: 740px;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+}
+
+.version-table th {
+  text-align: left;
+  font-size: 0.73rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6a3842;
+  padding: 4px 8px;
+}
+
+.version-table td {
+  padding: 0 8px;
+}
+
+.version-table input {
+  width: 100%;
+  border: 1px solid #dbc8aa;
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: #fff;
+  font: inherit;
+}
+
 .app-header {
   display: flex;
   align-items: center;
@@ -539,9 +631,15 @@ h4 {
 .finding-head {
   display: flex;
   justify-content: space-between;
-  align-items: start;
+  align-items: flex-start;
   gap: 10px;
   margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.finding-head > div {
+  flex: 1 1 280px;
+  min-width: 0;
 }
 
 .finding-head h5 {
@@ -553,6 +651,17 @@ h4 {
   margin: 4px 0 0;
   color: #5f4f3a;
   font-size: 0.86rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.4;
+}
+
+.finding-head-tags {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .clause-definition {
@@ -600,14 +709,73 @@ h4 {
   color: #4f5f70;
 }
 
+.risk-preview {
+  display: flex;
+  align-items: center;
+}
+
+.risk-pill {
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  border: 1px solid #dac39b;
+  color: #5a4630;
+  background: #f5ecdc;
+}
+
+.risk-pill.bajo {
+  background: rgba(31, 157, 106, 0.16);
+  color: #0d6b46;
+  border-color: rgba(31, 157, 106, 0.35);
+}
+
+.risk-pill.medio {
+  background: rgba(210, 141, 23, 0.16);
+  color: #8e610f;
+  border-color: rgba(210, 141, 23, 0.35);
+}
+
+.risk-pill.alto {
+  background: rgba(214, 69, 69, 0.16);
+  color: #9b2d2d;
+  border-color: rgba(214, 69, 69, 0.35);
+}
+
+.risk-pill.critico {
+  background: rgba(134, 31, 37, 0.18);
+  color: #6f131a;
+  border-color: rgba(134, 31, 37, 0.4);
+}
+
 .finding-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(140px, 1fr));
   gap: 8px;
 }
 
+.finding-grid label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #5b2230;
+  font-weight: 700;
+  line-height: 1.35;
+  min-width: 0;
+}
+
 .finding-grid .wide {
   grid-column: 1 / -1;
+}
+
+.finding-card select,
+.finding-card textarea {
+  min-width: 0;
+}
+
+.finding-card textarea {
+  resize: vertical;
+  min-height: 76px;
 }
 
 .evidence-tools {
@@ -810,6 +978,10 @@ h4 {
 }
 
 @media (max-width: 980px) {
+  .audit-meta-grid {
+    grid-template-columns: repeat(2, minmax(150px, 1fr));
+  }
+
   .workspace {
     grid-template-columns: 1fr;
   }
@@ -821,6 +993,15 @@ h4 {
 }
 
 @media (max-width: 640px) {
+  .audit-meta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .global-progress-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
   .onboarding-card {
     padding: 20px;
     border-radius: 18px;
@@ -851,6 +1032,10 @@ h4 {
 
   .finding-grid {
     grid-template-columns: 1fr;
+  }
+
+  .finding-head {
+    flex-direction: column;
   }
 
   .metrics {
