@@ -11,6 +11,7 @@
   var signatureCtx = null;
   var isDrawing = false;
   var FRAMEWORK_FILTERS = [
+    { id: 'all', label: 'Todas', icon: 'fa-solid fa-table-cells' },
     { id: 'calidad', label: 'Calidad', icon: 'fa-solid fa-award' },
     { id: 'seguridad', label: 'Seguridad', icon: 'fa-solid fa-shield-halved' },
     { id: 'alimentos', label: 'Alimentos', icon: 'fa-solid fa-utensils' },
@@ -22,7 +23,7 @@
     status: 'all',
     risk: 'all',
     frameworkQuery: '',
-    frameworkCategory: 'seguridad'
+    frameworkCategory: 'all'
   };
 
   var state = createInitialState();
@@ -184,7 +185,6 @@
     if (!state.selectedIsoId || !findIsoById(state.selectedIsoId)) {
       state.selectedIsoId = preferred ? preferred.id : ISO_LIBRARY[0].id;
     }
-    uiFilters.frameworkCategory = mapIsoToFramework(state.selectedIsoId);
   }
 
   function bindEvents() {
@@ -259,7 +259,7 @@
         if (!target) return;
         var button = target.closest('button[data-framework]');
         if (!button) return;
-        uiFilters.frameworkCategory = String(button.getAttribute('data-framework') || 'seguridad');
+        uiFilters.frameworkCategory = String(button.getAttribute('data-framework') || 'all');
         renderFrameworkTabs();
         renderIsoOptions();
       });
@@ -526,9 +526,7 @@
         var isoId = String(this.getAttribute('data-iso') || '');
         if (!isoId) return;
         state.selectedIsoId = isoId;
-        uiFilters.frameworkCategory = mapIsoToFramework(isoId);
         saveState();
-        renderFrameworkTabs();
         renderIsoOptions();
       });
     }
@@ -579,10 +577,8 @@
     if (!iso) return;
 
     state.selectedIsoId = iso.id;
-    uiFilters.frameworkCategory = mapIsoToFramework(iso.id);
     saveState();
 
-    renderFrameworkTabs();
     renderIsoOptions();
     renderIsoQuickSelector();
     renderIsoDetailCard(iso);
@@ -1425,13 +1421,13 @@
   function getVisibleIsoCards() {
     var out = [];
     var query = uiFilters.frameworkQuery || '';
-    var category = uiFilters.frameworkCategory || 'seguridad';
+    var category = uiFilters.frameworkCategory || 'all';
     var i;
 
     for (i = 0; i < ISO_LIBRARY.length; i += 1) {
       var iso = ISO_LIBRARY[i];
       var isoCategory = mapIsoToFramework(iso.id);
-      if (!query && category && isoCategory !== category) continue;
+      if (category !== 'all' && isoCategory !== category) continue;
       if (query && !isoMatchesQuery(iso, query)) continue;
       out.push(iso);
     }
