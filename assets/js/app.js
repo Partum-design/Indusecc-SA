@@ -248,7 +248,7 @@
 
     if (dom.frameworkSearch) {
       dom.frameworkSearch.addEventListener('input', function () {
-        uiFilters.frameworkQuery = String(dom.frameworkSearch.value || '').trim().toLowerCase();
+        uiFilters.frameworkQuery = normalizeSearchText(dom.frameworkSearch.value || '');
         renderIsoOptions();
       });
     }
@@ -267,7 +267,7 @@
 
     if (dom.clauseSearch) {
       dom.clauseSearch.addEventListener('input', function () {
-        uiFilters.query = String(dom.clauseSearch.value || '').trim().toLowerCase();
+        uiFilters.query = normalizeSearchText(dom.clauseSearch.value || '');
         var activeIso = findIsoById(state.selectedIsoId);
         if (activeIso) renderChecklist(activeIso);
       });
@@ -828,7 +828,7 @@
     if (!uiFilters.query) return true;
     var textBag = [clause.id, clause.title, clause.definition, clause.question];
     if (clause.evidence && clause.evidence.length) textBag = textBag.concat(clause.evidence);
-    return textBag.join(' ').toLowerCase().indexOf(uiFilters.query) !== -1;
+    return normalizeSearchText(textBag.join(' ')).indexOf(uiFilters.query) !== -1;
   }
 
   function riskToFilterKey(value) {
@@ -1431,7 +1431,7 @@
     for (i = 0; i < ISO_LIBRARY.length; i += 1) {
       var iso = ISO_LIBRARY[i];
       var isoCategory = mapIsoToFramework(iso.id);
-      if (category && isoCategory !== category) continue;
+      if (!query && category && isoCategory !== category) continue;
       if (query && !isoMatchesQuery(iso, query)) continue;
       out.push(iso);
     }
@@ -1440,8 +1440,17 @@
   }
 
   function isoMatchesQuery(iso, query) {
-    var bag = [iso.code, iso.version, iso.focus, iso.summary].join(' ').toLowerCase();
+    var bag = normalizeSearchText([iso.code, iso.version, iso.focus, iso.summary].join(' '));
     return bag.indexOf(query) !== -1;
+  }
+
+  function normalizeSearchText(value) {
+    return String(value == null ? '' : value)
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   function mapIsoToFramework(isoId) {

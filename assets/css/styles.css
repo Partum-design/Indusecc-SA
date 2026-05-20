@@ -443,6 +443,21 @@ h5 {
   overflow-x: auto;
   padding-bottom: 8px;
   margin-bottom: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(247, 204, 124, 0.48) transparent;
+}
+
+.framework-tabs::-webkit-scrollbar {
+  height: 7px;
+}
+
+.framework-tabs::-webkit-scrollbar-thumb {
+  background: rgba(247, 204, 124, 0.45);
+  border-radius: 999px;
+}
+
+.framework-tabs::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .framework-tab {
@@ -474,6 +489,22 @@ h5 {
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   padding: 2px 4px 12px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(247, 204, 124, 0.52) rgba(71, 13, 26, 0.2);
+}
+
+.iso-grid::-webkit-scrollbar {
+  height: 8px;
+}
+
+.iso-grid::-webkit-scrollbar-thumb {
+  background: rgba(247, 204, 124, 0.52);
+  border-radius: 999px;
+}
+
+.iso-grid::-webkit-scrollbar-track {
+  background: rgba(71, 13, 26, 0.2);
+  border-radius: 999px;
 }
 
 .iso-option {
@@ -1525,6 +1556,38 @@ h5 {
 }
 
 @media (min-width: 1080px) {
+  .onboarding {
+    place-items: center;
+    padding: 26px 24px calc(160px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .onboarding-card {
+    width: min(1240px, 94vw);
+  }
+
+  .iso-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(238px, 1fr));
+    gap: 14px;
+    overflow: visible;
+    scroll-snap-type: none;
+    padding: 2px 0 0;
+  }
+
+  .iso-option {
+    flex: 1 1 auto;
+    min-height: 192px;
+  }
+
+  .fab-start {
+    right: max(26px, calc((100vw - min(1240px, 94vw)) / 2 + 24px));
+    bottom: max(24px, calc(12px + env(safe-area-inset-bottom, 0px)));
+  }
+
+  .mobile-bottom-nav {
+    width: min(760px, calc(100% - 80px));
+  }
+
   .app {
     padding: 24px 22px calc(128px + env(safe-area-inset-bottom, 0px));
     gap: 20px;
