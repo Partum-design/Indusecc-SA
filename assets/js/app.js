@@ -12,7 +12,9 @@
   var isDrawing = false;
   var uiFilters = {
     query: '',
-    sectionId: 'all'
+    sectionId: 'all',
+    status: 'all',
+    risk: 'all'
   };
 
   var state = createInitialState();
@@ -58,6 +60,7 @@
     renderIsoOptions();
     renderIsoQuickSelector();
     renderIsoDetailCard(findIsoById(state.selectedIsoId));
+    syncFilterControls();
     renderSignaturePreview();
     cacheLogoDataUrl();
 
@@ -84,6 +87,8 @@
     dom.isoUpdatedNote = document.getElementById('iso-updated-note');
     dom.metrics = document.getElementById('metrics');
     dom.clauseSearch = document.getElementById('clause-search');
+    dom.statusFilter = document.getElementById('status-filter');
+    dom.riskFilter = document.getElementById('risk-filter');
     dom.sectionTabs = document.getElementById('section-tabs');
     dom.isoQuickSelect = document.getElementById('iso-quick-select');
     dom.isoDetailCard = document.getElementById('iso-detail-card');
@@ -213,6 +218,22 @@
     if (dom.clauseSearch) {
       dom.clauseSearch.addEventListener('input', function () {
         uiFilters.query = String(dom.clauseSearch.value || '').trim().toLowerCase();
+        var activeIso = findIsoById(state.selectedIsoId);
+        if (activeIso) renderChecklist(activeIso);
+      });
+    }
+
+    if (dom.statusFilter) {
+      dom.statusFilter.addEventListener('change', function () {
+        uiFilters.status = String(dom.statusFilter.value || 'all');
+        var activeIso = findIsoById(state.selectedIsoId);
+        if (activeIso) renderChecklist(activeIso);
+      });
+    }
+
+    if (dom.riskFilter) {
+      dom.riskFilter.addEventListener('change', function () {
+        uiFilters.risk = String(dom.riskFilter.value || 'all');
         var activeIso = findIsoById(state.selectedIsoId);
         if (activeIso) renderChecklist(activeIso);
       });
@@ -380,6 +401,11 @@
     } else {
       clearSignatureCanvas();
     }
+  }
+
+  function syncFilterControls() {
+    if (dom.statusFilter) dom.statusFilter.value = uiFilters.status || 'all';
+    if (dom.riskFilter) dom.riskFilter.value = uiFilters.risk || 'all';
   }
 
   function drawSignatureDataUrlOnCanvas(dataUrl) {
@@ -659,10 +685,28 @@
   }
 
   function clauseMatchesFilter(clause) {
+    var finding = state.findings[clause.id] || newEmptyFinding();
+
+    if (uiFilters.status === 'evaluadas' && !finding.status) return false;
+    if (uiFilters.status === 'sin_evaluar' && finding.status) return false;
+
+    if (uiFilters.risk !== 'all') {
+      var riskKey = riskToFilterKey(finding.risk);
+      if (riskKey !== uiFilters.risk) return false;
+    }
+
     if (!uiFilters.query) return true;
     var textBag = [clause.id, clause.title, clause.definition, clause.question];
     if (clause.evidence && clause.evidence.length) textBag = textBag.concat(clause.evidence);
     return textBag.join(' ').toLowerCase().indexOf(uiFilters.query) !== -1;
+  }
+
+  function riskToFilterKey(value) {
+    var risk = normalizeRiskValue(value);
+    if (!risk) return '';
+    var key = String(risk).toLowerCase();
+    if (key === 'crítico') return 'critico';
+    return key;
   }
 
   function renderSection(section, clauses) {

@@ -146,6 +146,26 @@
             <i class="fa-solid fa-magnifying-glass"></i>
             <input id="clause-search" type="text" placeholder="Buscar punto, cl&aacute;usula o palabra clave..." />
           </label>
+          <div class="quick-filters" aria-label="Filtros de checklist">
+            <label class="quick-filter-field" for="status-filter">
+              Estado
+              <select id="status-filter">
+                <option value="all">Todas</option>
+                <option value="evaluadas">Evaluadas</option>
+                <option value="sin_evaluar">Sin evaluar</option>
+              </select>
+            </label>
+            <label class="quick-filter-field" for="risk-filter">
+              Nivel de riesgo
+              <select id="risk-filter">
+                <option value="all">Todos</option>
+                <option value="bajo">Bajo</option>
+                <option value="medio">Medio</option>
+                <option value="alto">Alto</option>
+                <option value="critico">Cr&iacute;tico</option>
+              </select>
+            </label>
+          </div>
           <div id="section-tabs" class="section-tabs"></div>
         </div>
 
