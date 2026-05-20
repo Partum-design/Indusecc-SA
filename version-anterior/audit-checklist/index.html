@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoría ISO 9001:2015 — INDUSECC</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+
+<body>
+
+    <div id="app-root">
+        <!-- ========== HEADER ========== -->
+        <header class="app-header">
+            <div class="brand">
+                <img src="logo_indusecc.png" alt="INDUSECC" id="header-logo">
+                <div>
+                    <h1>AUDITORÍA ISO 9001:2015</h1>
+                    <p>AUDITORÍAPP</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary" id="btn-export" onclick="exportPDF()">
+                    <i class="fa-solid fa-file-pdf btn-icon"></i> Exportar a PDF
+                </button>
+                <button class="btn btn-danger" onclick="clearData()">
+                    <i class="fa-solid fa-trash-can btn-icon"></i> Limpiar todo
+                </button>
+            </div>
+        </header>
+
+        <!-- ========== META BAR ========== -->
+        <div class="meta-bar">
+            <div class="meta-field">
+                <label>Nombre del Proyecto / Empresa</label>
+                <input type="text" id="project-name" placeholder="Ej. Haften S.A. de C.V.">
+            </div>
+            <div class="meta-field">
+                <label>Nombre del Auditor</label>
+                <input type="text" id="auditor-name" placeholder="Ej. Juan Pérez">
+            </div>
+            <div class="meta-field">
+                <label>Fecha de Auditoría</label>
+                <input type="text" id="audit-date" placeholder="DD/MM/AAAA">
+            </div>
+            <div class="meta-field">
+                <label>Versión del Documento</label>
+                <input type="text" id="doc-version" placeholder="1.0">
+            </div>
+        </div>
+
+        <!-- ========== GLOBAL PROGRESS ========== -->
+        <div class="global-progress">
+            <div class="progress-label">
+                <span>Progreso Global de la Auditoría</span>
+                <span id="global-pct">0%</span>
+            </div>
+            <div class="progress-bar-wrap">
+                <div class="progress-bar-fill" id="global-fill"></div>
+            </div>
+        </div>
+
+        <!-- ========== VERSION TABLE ========== -->
+        <div style="padding: 20px 32px;">
+            <table class="version-table">
+                <thead>
+                    <tr>
+                        <th>Versión</th>
+                        <th>Fecha</th>
+                        <th>Autor</th>
+                        <th>Descripción de Cambios</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input data-vid="v1_ver" placeholder="1.0"></td>
+                        <td><input data-vid="v1_fecha" placeholder="DD/MM/AAAA"></td>
+                        <td><input data-vid="v1_autor" placeholder="Nombre"></td>
+                        <td><input data-vid="v1_desc" placeholder="Descripción..."></td>
+                    </tr>
+                    <tr>
+                        <td><input data-vid="v2_ver" placeholder=""></td>
+                        <td><input data-vid="v2_fecha" placeholder=""></td>
+                        <td><input data-vid="v2_autor" placeholder=""></td>
+                        <td><input data-vid="v2_desc" placeholder=""></td>
+                    </tr>
+                    <tr>
+                        <td><input data-vid="v3_ver" placeholder=""></td>
+                        <td><input data-vid="v3_fecha" placeholder=""></td>
+                        <td><input data-vid="v3_autor" placeholder=""></td>
+                        <td><input data-vid="v3_desc" placeholder=""></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ========== TABS ========== -->
+        <div class="tabs-container">
+            <button class="tab-btn active" data-panel="panel-ctx-lid">
+                <i class="fa-solid fa-building"></i> Contexto y Liderazgo <span class="tab-badge">Caps. 4-5</span>
+            </button>
+            <button class="tab-btn" data-panel="panel-plan-apoyo">
+                <i class="fa-solid fa-map"></i> Planificación y Apoyo <span class="tab-badge">Caps. 6-7</span>
+            </button>
+            <button class="tab-btn" data-panel="panel-ope">
+                <i class="fa-solid fa-gears"></i> Operación <span class="tab-badge">Cap. 8</span>
+            </button>
+            <button class="tab-btn" data-panel="panel-eval-mej">
+                <i class="fa-solid fa-chart-line"></i> Evaluación y Mejora <span class="tab-badge">Caps. 9-10</span>
+            </button>
+        </div>
+
+        <!-- ========== PANELS ========== -->
+        <div id="panel-ctx-lid" class="tab-panel active"></div>
+        <div id="panel-plan-apoyo" class="tab-panel"></div>
+        <div id="panel-ope" class="tab-panel"></div>
+        <div id="panel-eval-mej" class="tab-panel"></div>
+
+        <!-- ========== AUDITOR CONCLUSIONS AND SIGNATURES ========== -->
+        <div class="audit-conclusions"
+            style="padding: 20px 32px; background: var(--bg-card); border-top: 1px solid var(--border);">
+            <h2 style="font-size: 1.1rem; color: var(--accent-1); margin-bottom: 15px; text-transform: uppercase;">
+                <i class="fa-solid fa-file-signature"></i> Conclusiones de la Auditoría
+            </h2>
+            <textarea id="audit-conclusions" rows="5"
+                style="width:100%; padding:14px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-input); color:var(--text-primary); margin-bottom: 20px; font-family: inherit; font-size: .9rem;"
+                placeholder="Escriba aquí el resumen ejecutivo, hallazgos críticos (No Conformidades Mayores), y comentarios finales de la auditoría..."></textarea>
+
+            <div class="signatures-container">
+                <div class="signature-box">
+                    <p class="signature-title">Auditor Líder</p>
+                    <div class="signature-pad-wrapper">
+                        <canvas id="sig-canvas-auditor"></canvas>
+                        <div class="signature-actions">
+                            <button class="btn btn-outline btn-sm" onclick="clearSignature('auditor')"><i
+                                    class="fa-solid fa-eraser"></i> Limpiar</button>
+                            <label class="btn btn-outline btn-sm" title="Subir firma">
+                                <i class="fa-solid fa-upload"></i> Subir
+                                <input type="file" id="sig-file-auditor" accept="image/*" style="display:none;"
+                                    onchange="loadSignature(this, 'auditor')">
+                            </label>
+                        </div>
+                    </div>
+                    <p class="signature-meta">Nombre, Firma y Fecha</p>
+                </div>
+                <div class="signature-box">
+                    <p class="signature-title">Representante Auditado</p>
+                    <div class="signature-pad-wrapper">
+                        <canvas id="sig-canvas-rep"></canvas>
+                        <div class="signature-actions">
+                            <button class="btn btn-outline btn-sm" onclick="clearSignature('rep')"><i
+                                    class="fa-solid fa-eraser"></i> Limpiar</button>
+                            <label class="btn btn-outline btn-sm" title="Subir firma">
+                                <i class="fa-solid fa-upload"></i> Subir
+                                <input type="file" id="sig-file-rep" accept="image/*" style="display:none;"
+                                    onchange="loadSignature(this, 'rep')">
+                            </label>
+                        </div>
+                    </div>
+                    <p class="signature-meta">Nombre, Firma y Fecha</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== AI ASSISTANT ========== -->
+        <button id="ai-chat-btn" class="ai-chat-btn" title="N.O.R.A. - Asistente ISO 9001">
+            <i class="fa-solid fa-robot"></i>
+        </button>
+        <div id="ai-chat-window" class="ai-chat-window hidden">
+            <div class="ai-chat-header">
+                <h3><i class="fa-solid fa-brain"></i> N.O.R.A. (Asistente ISO)</h3>
+                <button id="ai-chat-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="ai-chat-messages" class="ai-chat-messages">
+                <div class="message ai-msg">¡Hola! Soy <strong>N.O.R.A.</strong> (Núcleo de Operaciones y Revisión
+                    Automatizada), tu asistente experto en la norma ISO 9001:2015. ¿En qué te puedo ayudar?</div>
+            </div>
+            <div class="ai-chat-input-area">
+                <input type="text" id="ai-chat-input" placeholder="Pregúntale a NORA lo que necesites..." />
+                <button id="ai-chat-send"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </div>
+
+        <!-- ========== FOOTER ========== -->
+        <footer class="app-footer">
+            © 2026 INDUSECC — Todos los derechos reservados. Documento de uso interno para auditoría.
+        </footer>
+    </div>
+
+    <!-- Toast notification -->
+    <div id="toast" class="toast"></div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
