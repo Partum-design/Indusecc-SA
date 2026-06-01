@@ -24,45 +24,6 @@
     <span></span>
   </div>
 
-  <section id="auth-gate" class="auth-gate" aria-hidden="false">
-    <div class="auth-gate-backdrop" aria-hidden="true"></div>
-    <div class="auth-gate-card">
-      <div class="auth-visual" aria-hidden="true">
-        <img src="LOGO%201080%20X%201080.jpg" alt="" class="auth-visual-logo" />
-        <div class="auth-mascot">
-          <span class="auth-mascot-head"></span>
-          <span class="auth-mascot-face"></span>
-          <span class="auth-mascot-eye auth-mascot-eye-left"></span>
-          <span class="auth-mascot-eye auth-mascot-eye-right"></span>
-          <span class="auth-mascot-mouth"></span>
-          <span class="auth-mascot-arm auth-mascot-arm-left"></span>
-          <span class="auth-mascot-arm auth-mascot-arm-right"></span>
-          <span class="auth-mascot-shadow"></span>
-        </div>
-      </div>
-      <form id="auth-form" class="auth-form" novalidate>
-        <p class="eyebrow">Acceso privado</p>
-        <h1>Introducir contraseña</h1>
-        <p class="auth-copy">Ingresa la clave para entrar a la plataforma con fondo 3D y el panel de auditoría.</p>
-        <label class="auth-field" for="auth-password">
-          <span>Contraseña</span>
-          <div class="auth-input-shell">
-            <input id="auth-password" type="password" autocomplete="current-password" placeholder="Escribe la contraseña" />
-            <button id="auth-password-toggle" class="auth-password-toggle" type="button" aria-pressed="false" aria-label="Mostrar contraseña">
-              <i class="fa-solid fa-eye"></i>
-            </button>
-          </div>
-        </label>
-        <button id="auth-submit" class="auth-submit" type="submit">
-          <i class="fa-solid fa-right-to-bracket"></i>
-          Entrar
-        </button>
-        <p id="auth-feedback" class="auth-feedback" aria-live="polite"></p>
-        <p class="auth-tip">Tip: la contraseña queda guardada en este navegador después de entrar.</p>
-      </form>
-    </div>
-  </section>
-
   <section id="app-splash" class="app-splash" aria-hidden="false">
     <div class="splash-glow" aria-hidden="true"></div>
     <div class="splash-card">
@@ -78,20 +39,44 @@
 
   <section id="iso-onboarding" class="onboarding hidden" aria-hidden="true">
     <div class="onboarding-card">
-      <div class="hero-brand">
-        <img src="LOGO%201080%20X%201080.jpg" alt="Logo INDUSECC" class="hero-logo" />
+      <div class="onboarding-hero">
+        <div class="onboarding-hero-copy">
+          <div class="hero-brand">
+            <img src="LOGO%201080%20X%201080.jpg" alt="Logo INDUSECC" class="hero-logo" />
+          </div>
+          <p class="eyebrow">INDUSECC</p>
+          <h1>Plataforma de Gesti&oacute;n de Auditor&iacute;as</h1>
+          <p class="subtitle">Elige primero el marco normativo y despu&eacute;s arrancamos la auditor&iacute;a completa.</p>
+        </div>
+        <div class="onboarding-stage" aria-hidden="true">
+          <span class="stage-chip">3D audit flow</span>
+          <div class="stage-orbit stage-orbit-outer"></div>
+          <div class="stage-orbit stage-orbit-inner"></div>
+          <div class="stage-core"></div>
+          <div class="stage-glow"></div>
+        </div>
       </div>
-      <p class="eyebrow">INDUSECC</p>
-      <h1>Plataforma de Gesti&oacute;n de Auditor&iacute;as</h1>
-      <p class="subtitle">Elige primero el marco normativo y despu&eacute;s arrancamos la auditor&iacute;a completa.</p>
-      <label class="onboarding-search" for="framework-search">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <input id="framework-search" type="search" placeholder="Buscar marco normativo..." />
-      </label>
-      <div id="framework-tabs" class="framework-tabs" aria-label="Filtro de marcos normativos"></div>
-      <div id="iso-options" class="iso-grid"></div>
+
+      <div class="onboarding-layout">
+        <div class="onboarding-selection">
+          <label class="onboarding-search" for="framework-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input id="framework-search" type="search" placeholder="Buscar marco normativo..." />
+          </label>
+          <div id="framework-tabs" class="framework-tabs" aria-label="Filtro de marcos normativos"></div>
+          <div id="iso-options" class="iso-grid"></div>
+        </div>
+
+        <aside class="onboarding-preview">
+          <p class="preview-kicker">Norma Seleccionada</p>
+          <article id="onboarding-iso-detail" class="iso-detail-card iso-detail-card-onboarding"></article>
+          <p class="preview-note">Selecciona la norma que vas a trabajar y luego pulsa <strong>Iniciar auditor&iacute;a</strong> para entrar al panel completo.</p>
+        </aside>
+      </div>
+
       <div class="onboarding-actions">
         <button id="open-tutorial-onboarding" class="btn btn-secondary"><i class="fa-solid fa-circle-info"></i> Mini tutorial</button>
+        <span class="onboarding-hint">Selecciona una ISO para activar la auditor&iacute;a.</span>
       </div>
     </div>
     <button id="start-audit" class="fab-start" type="button" disabled>

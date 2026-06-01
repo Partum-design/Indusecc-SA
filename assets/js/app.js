@@ -4,7 +4,6 @@
   var STORAGE_KEY = 'sg_audit_state_v4';
   var TUTORIAL_KEY = 'sg_audit_tutorial_seen_v1';
   var AUTH_KEY = 'sg_audit_unlocked_v1';
-  var ACCESS_PASSWORD = 'INDUSECC360';
 
   var ISO_LIBRARY = [];
   var dom = {};
@@ -76,9 +75,9 @@
     }
 
     cacheDom();
-    setupAuthGate();
     initThreeBackground();
     ISO_LIBRARY = normalizeLibrary(window.ISO_LIBRARY);
+    setupOnboardingMotion();
 
     if (!ISO_LIBRARY.length) {
       showToast('No se pudo cargar el catálogo ISO. Recarga la página.');
@@ -106,13 +105,9 @@
     dom.threeScene = document.getElementById('three-scene');
     dom.splash = document.getElementById('app-splash');
     dom.splashProgressFill = document.getElementById('splash-progress-fill');
-    dom.authGate = document.getElementById('auth-gate');
-    dom.authForm = document.getElementById('auth-form');
-    dom.authPassword = document.getElementById('auth-password');
-    dom.authPasswordToggle = document.getElementById('auth-password-toggle');
-    dom.authSubmit = document.getElementById('auth-submit');
-    dom.authFeedback = document.getElementById('auth-feedback');
     dom.onboarding = document.getElementById('iso-onboarding');
+    dom.onboardingCard = document.querySelector('.onboarding-card');
+    dom.onboardingIsoDetail = document.getElementById('onboarding-iso-detail');
     dom.isoOptions = document.getElementById('iso-options');
     dom.frameworkSearch = document.getElementById('framework-search');
     dom.frameworkTabs = document.getElementById('framework-tabs');
@@ -231,153 +226,11 @@
     }
   }
 
-  function setupAuthGate() {
-    if (dom.onboarding) {
-      dom.onboarding.classList.add('hidden');
-      dom.onboarding.setAttribute('aria-hidden', 'true');
-    }
-
-    if (dom.app) {
-      dom.app.classList.add('hidden');
-      dom.app.setAttribute('aria-hidden', 'true');
-    }
-
-    if (dom.authGate) {
-      dom.authGate.classList.remove('hide');
-      dom.authGate.setAttribute('aria-hidden', 'false');
-    }
-
-    if (dom.authPassword) {
-      dom.authPassword.value = '';
-    }
-
-    if (dom.authFeedback) {
-      dom.authFeedback.textContent = '';
-    }
-
-    updateAuthMascotState();
-  }
-
   function isUnlocked() {
     return readLocal(AUTH_KEY) === '1';
   }
 
-  function onAuthSubmit(event) {
-    if (event) event.preventDefault();
-    if (!dom.authPassword) return;
-
-    var value = String(dom.authPassword.value || '').trim();
-    if (!value) {
-      showAuthFeedback('Escribe la contraseña para continuar.', true);
-      shakeAuthGate();
-      return;
-    }
-
-    if (value !== ACCESS_PASSWORD) {
-      showAuthFeedback('Contraseña incorrecta. Intenta otra vez.', true);
-      shakeAuthGate();
-      dom.authPassword.select();
-      return;
-    }
-
-    writeLocal(AUTH_KEY, '1');
-    showAuthFeedback('Acceso concedido. Entrando...', false);
-    hideAuthGate();
-    window.setTimeout(function () {
-      showOnboarding();
-      if (!readLocal(TUTORIAL_KEY)) {
-        openTutorial();
-      }
-    }, 320);
-  }
-
-  function hideAuthGate() {
-    if (!dom.authGate) return;
-    dom.authGate.classList.add('hide');
-    dom.authGate.setAttribute('aria-hidden', 'true');
-  }
-
-  function showAuthGate() {
-    if (!dom.authGate) return;
-    dom.authGate.classList.remove('hide');
-    dom.authGate.setAttribute('aria-hidden', 'false');
-    if (dom.authPassword) {
-      window.requestAnimationFrame(function () {
-        dom.authPassword.focus();
-      });
-    }
-  }
-
-  function showAuthFeedback(message, isError) {
-    if (!dom.authFeedback) return;
-    dom.authFeedback.textContent = message || '';
-    dom.authFeedback.style.color = isError ? '#ffb8a0' : '#ffd48f';
-  }
-
-  function shakeAuthGate() {
-    if (!dom.authGate) return;
-    dom.authGate.classList.remove('shake');
-    window.requestAnimationFrame(function () {
-      dom.authGate.classList.add('shake');
-      window.setTimeout(function () {
-        if (dom.authGate) dom.authGate.classList.remove('shake');
-      }, 520);
-    });
-  }
-
-  function toggleAuthPasswordVisibility() {
-    if (!dom.authPassword || !dom.authPasswordToggle) return;
-
-    var nextVisible = dom.authPassword.type === 'password';
-    dom.authPassword.type = nextVisible ? 'text' : 'password';
-    dom.authPasswordToggle.classList.toggle('is-visible', nextVisible);
-    dom.authPasswordToggle.setAttribute('aria-pressed', nextVisible ? 'true' : 'false');
-    dom.authPasswordToggle.setAttribute('aria-label', nextVisible ? 'Ocultar contraseña' : 'Mostrar contraseña');
-    updateAuthMascotState();
-    dom.authPassword.focus();
-  }
-
-  function updateAuthMascotState() {
-    if (!dom.authForm || !dom.authPassword || !dom.authPasswordToggle) return;
-
-    var focused = document.activeElement === dom.authPassword;
-    var visible = dom.authPassword.type === 'text';
-    var hasValue = Boolean(String(dom.authPassword.value || '').length);
-
-    dom.authForm.classList.toggle('is-focused', focused || hasValue);
-    dom.authForm.classList.toggle('is-password-focused', focused && !visible);
-    dom.authForm.classList.toggle('is-password-visible', visible);
-
-    if (dom.authPasswordToggle) {
-      dom.authPasswordToggle.classList.toggle('is-visible', visible);
-      var icon = dom.authPasswordToggle.querySelector('i');
-      if (icon) {
-        icon.className = visible ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
-      }
-    }
-  }
-
   function bindEvents() {
-    if (dom.authForm) {
-      dom.authForm.addEventListener('submit', onAuthSubmit);
-    }
-
-    if (dom.authPassword) {
-      dom.authPassword.addEventListener('focus', updateAuthMascotState);
-      dom.authPassword.addEventListener('blur', updateAuthMascotState);
-      dom.authPassword.addEventListener('input', updateAuthMascotState);
-      dom.authPassword.addEventListener('keydown', function (event) {
-        if (event.key === 'Enter' && dom.authForm) {
-          event.preventDefault();
-          onAuthSubmit(event);
-        }
-      });
-    }
-
-    if (dom.authPasswordToggle) {
-      dom.authPasswordToggle.addEventListener('click', toggleAuthPasswordVisibility);
-    }
-
     if (dom.startAudit) {
       dom.startAudit.addEventListener('click', function () {
         applyDefaultIso();
@@ -779,7 +632,7 @@
       var pressed = iso.id === state.selectedIsoId ? 'true' : 'false';
 
       html += ''
-        + '<button type="button" class="iso-option' + activeClass + '" data-iso="' + esc(iso.id) + '" aria-pressed="' + pressed + '">'
+        + '<button type="button" class="iso-option' + activeClass + '" data-iso="' + esc(iso.id) + '" aria-pressed="' + pressed + '" style="--iso-order:' + i + '">'
         + '  <h4><i class="' + esc(icon) + '"></i> ' + esc(iso.code) + ' <small>(' + esc(iso.version || '') + ')</small></h4>'
         + '  <p>' + esc(textEs(iso.focus || '')) + '</p>'
         + '  <p>' + esc(textEs(iso.summary || '')) + '</p>'
@@ -827,18 +680,16 @@
     dom.isoQuickSelect.innerHTML = options;
   }
 
-  function renderIsoDetailCard(iso) {
-    if (!dom.isoDetailCard) return;
+  function buildIsoDetailMarkup(iso) {
     if (!iso) {
-      dom.isoDetailCard.innerHTML = '<p>No se encontró información del estándar seleccionado.</p>';
-      return;
+      return '<p>No se encontró información del estándar seleccionado.</p>';
     }
 
     var totalClauses = countClauses(iso);
     var sections = iso.sections ? iso.sections.length : 0;
     var icon = iso.icon || 'fa-solid fa-shield-halved';
 
-    dom.isoDetailCard.innerHTML = ''
+    return ''
       + '<h4><i class="' + esc(icon) + '"></i> ' + esc(iso.code) + ' <small>(' + esc(iso.version || 'N/D') + ')</small></h4>'
       + '<p>' + esc(textEs(iso.summary || '')) + '</p>'
       + '<p>' + esc(textEs(iso.focus || '')) + '</p>'
@@ -846,6 +697,20 @@
       + '  <span class="iso-detail-badge">' + esc(String(totalClauses)) + ' puntos auditables</span>'
       + '  <span class="iso-detail-badge">' + esc(String(sections)) + ' secciones</span>'
       + '</div>';
+  }
+
+  function renderIsoDetailCard(iso) {
+    var markup = buildIsoDetailMarkup(iso);
+
+    if (dom.isoDetailCard) {
+      dom.isoDetailCard.innerHTML = markup;
+    }
+
+    if (dom.onboardingIsoDetail) {
+      dom.onboardingIsoDetail.innerHTML = markup;
+    }
+
+    if (!iso) return;
 
     if (dom.activeIso) {
       dom.activeIso.textContent = iso.code + ' ' + (iso.version || '');
@@ -883,11 +748,6 @@
   }
 
   function showOnboarding() {
-    if (!isUnlocked()) {
-      showAuthGate();
-      return;
-    }
-
     closeMobileOffcanvas();
     renderFrameworkTabs();
     renderIsoOptions();
@@ -895,11 +755,6 @@
   }
 
   function openAuditWorkspace() {
-    if (!isUnlocked()) {
-      showAuthGate();
-      return;
-    }
-
     closeMobileOffcanvas();
     var iso = findIsoById(state.selectedIsoId);
     if (!iso) {
@@ -936,6 +791,45 @@
       showElement.classList.add('is-active');
     });
     showElement.setAttribute('aria-hidden', 'false');
+  }
+
+  function setupOnboardingMotion() {
+    if (!dom.onboardingCard) return;
+
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      resetOnboardingMotion();
+      return;
+    }
+
+    dom.onboardingCard.addEventListener('pointermove', onOnboardingPointerMove);
+    dom.onboardingCard.addEventListener('pointerleave', resetOnboardingMotion);
+    dom.onboardingCard.addEventListener('pointerdown', onOnboardingPointerMove);
+    resetOnboardingMotion();
+  }
+
+  function onOnboardingPointerMove(event) {
+    if (!dom.onboardingCard || !event) return;
+
+    var rect = dom.onboardingCard.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
+    var relativeX = (event.clientX - rect.left) / rect.width;
+    var relativeY = (event.clientY - rect.top) / rect.height;
+    var tiltY = (relativeX - 0.5) * 12;
+    var tiltX = (0.5 - relativeY) * 10;
+
+    dom.onboardingCard.style.setProperty('--tilt-x', tiltX.toFixed(2) + 'deg');
+    dom.onboardingCard.style.setProperty('--tilt-y', tiltY.toFixed(2) + 'deg');
+    dom.onboardingCard.style.setProperty('--glow-x', (relativeX * 100).toFixed(2) + '%');
+    dom.onboardingCard.style.setProperty('--glow-y', (relativeY * 100).toFixed(2) + '%');
+  }
+
+  function resetOnboardingMotion() {
+    if (!dom.onboardingCard) return;
+    dom.onboardingCard.style.setProperty('--tilt-x', '0deg');
+    dom.onboardingCard.style.setProperty('--tilt-y', '0deg');
+    dom.onboardingCard.style.setProperty('--glow-x', '50%');
+    dom.onboardingCard.style.setProperty('--glow-y', '12%');
   }
 
   function openMobileOffcanvas() {
@@ -996,18 +890,9 @@
   }
 
   function handlePostSplashState() {
-    if (isUnlocked()) {
-      hideAuthGate();
-      showOnboarding();
-      if (!readLocal(TUTORIAL_KEY)) {
-        window.setTimeout(openTutorial, 420);
-      }
-      return;
-    }
-
-    showAuthGate();
-    if (dom.authPassword) {
-      dom.authPassword.focus();
+    showOnboarding();
+    if (!readLocal(TUTORIAL_KEY)) {
+      window.setTimeout(openTutorial, 420);
     }
   }
 
@@ -1059,6 +944,7 @@
       baseGroup.add(knot);
 
       var ringGeometry = new THREE.TorusGeometry(1.95, 0.06, 18, 180);
+      var haloGeometry = new THREE.TorusGeometry(2.7, 0.04, 16, 220);
       var ringMaterial = new THREE.MeshStandardMaterial({
         color: 0xffffff,
         metalness: 0.35,
@@ -1072,6 +958,18 @@
       ring.rotation.x = Math.PI * 0.35;
       baseGroup.add(ring);
       threeState.ring = ring;
+
+      var haloMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffd9a6,
+        transparent: true,
+        opacity: 0.22
+      });
+      var haloRing = new THREE.Mesh(haloGeometry, haloMaterial);
+      haloRing.rotation.x = Math.PI * 0.18;
+      haloRing.rotation.y = Math.PI * 0.08;
+      haloRing.position.z = -0.2;
+      baseGroup.add(haloRing);
+      threeState.haloRing = haloRing;
 
       var shellGeometry = new THREE.OctahedronGeometry(2.42, 0);
       var shellMaterial = new THREE.MeshBasicMaterial({
@@ -1164,20 +1062,25 @@
         threeState.group.rotation.set(0.18, 0.65, 0.02);
       }
     } else {
-      threeState.camera.position.x = Math.cos(orbit) * 5.1;
+      threeState.camera.position.x = Math.cos(orbit) * 5.1 + threeState.pointerX * 0.24;
       threeState.camera.position.z = Math.sin(orbit) * 5.1;
-      threeState.camera.position.y = 0.35 + Math.sin(time * 0.8) * 0.16;
+      threeState.camera.position.y = 0.35 + Math.sin(time * 0.8) * 0.16 + threeState.pointerY * 0.16;
       threeState.camera.lookAt(0, 0, 0);
 
       if (threeState.group) {
-        threeState.group.rotation.x = 0.22 + Math.sin(time * 0.6) * 0.12;
-        threeState.group.rotation.y = time * 0.42;
-        threeState.group.rotation.z = Math.sin(time * 0.45) * 0.08;
+        threeState.group.rotation.x = 0.22 + Math.sin(time * 0.6) * 0.12 + threeState.pointerY * 0.18;
+        threeState.group.rotation.y = time * 0.42 + threeState.pointerX * 0.3;
+        threeState.group.rotation.z = Math.sin(time * 0.45) * 0.08 + threeState.pointerX * 0.04;
       }
 
       if (threeState.ring) {
         threeState.ring.rotation.x = Math.PI * 0.35 + time * 0.26;
-        threeState.ring.rotation.y = time * 0.31;
+        threeState.ring.rotation.y = time * 0.31 - threeState.pointerX * 0.16;
+      }
+
+      if (threeState.haloRing) {
+        threeState.haloRing.rotation.z = -time * 0.22;
+        threeState.haloRing.rotation.y = Math.PI * 0.08 + threeState.pointerY * 0.22;
       }
 
       if (threeState.particles) {

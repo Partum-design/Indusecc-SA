@@ -1,31 +1,16 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acceso Corporativo | INDUSECC</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Yeti Login Form Animation | @coding.stella</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css">
-    <link rel="stylesheet" href="./login.css">
+    <link rel="stylesheet" href="./style.css">
 </head>
 
 <body>
 
-    <form id="login-form" class="login-shell" novalidate>
-        <div class="brand-bar">
-            <div class="brand-logo-frame">
-                <img src="LOGO%201080%20X%201080.jpg" alt="Logo INDUSECC" class="brand-logo">
-            </div>
-            <div class="brand-copy">
-                <p class="brand-kicker">INDUSECC</p>
-                <h1>Acceso al sistema de gestión</h1>
-                <p class="brand-subtitle">Inicia sesión y después te llevamos a una pantalla nueva para elegir la ISO.</p>
-            </div>
-        </div>
-
+    <form>
         <div class="svgContainer">
             <div>
                 <svg class="mySVG" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -193,29 +178,26 @@
         </div>
 
         <div class="inputGroup inputGroup1">
-            <label for="loginEmail" id="loginEmailLabel">Usuario o correo</label>
-            <input type="text" id="loginEmail" maxlength="254" autocomplete="username" />
-            <p class="helper helper1">usuario@indusecc.com</p>
+            <label for="loginEmail" id="loginEmailLabel">Email</label>
+            <input type="email" id="loginEmail" maxlength="254" />
+            <p class="helper helper1">email@domain.com</p>
         </div>
         <div class="inputGroup inputGroup2">
-            <label for="loginPassword" id="loginPasswordLabel">Contraseña</label>
-            <input type="password" id="loginPassword" autocomplete="current-password" />
-            <label id="showPasswordToggle" for="showPasswordCheck">Mostrar
+            <label for="loginPassword" id="loginPasswordLabel">Password</label>
+            <input type="password" id="loginPassword" />
+            <label id="showPasswordToggle" for="showPasswordCheck">Show
                 <input id="showPasswordCheck" type="checkbox" />
                 <div class="indicator"></div>
             </label>
         </div>
         <div class="inputGroup inputGroup3">
-            <button id="login" type="submit">Entrar y elegir ISO</button>
+            <button id="login">Log in</button>
         </div>
-
-        <p id="login-feedback" class="login-feedback" aria-live="polite"></p>
-        <p class="login-note">Acceso privado. El logo conserva fondo plano INDUSECC y la sesión se guarda en este navegador.</p>
     </form>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://assets.codepen.io/16327/MorphSVGPlugin3.min.js"></script>
-    <script src="./login.js"></script>
+    <script src="./script.js"></script>
 
 </body>
 
