@@ -70,6 +70,11 @@
   }
 
   function init() {
+    if (!isUnlocked()) {
+      window.location.replace('login.html');
+      return;
+    }
+
     cacheDom();
     setupAuthGate();
     initThreeBackground();
@@ -771,14 +776,15 @@
       var iso = visibleIsos[i];
       var activeClass = iso.id === state.selectedIsoId ? ' active' : '';
       var icon = iso.icon || 'fa-solid fa-clipboard-check';
+      var pressed = iso.id === state.selectedIsoId ? 'true' : 'false';
 
       html += ''
-        + '<article class="iso-option' + activeClass + '" data-iso="' + esc(iso.id) + '">'
+        + '<button type="button" class="iso-option' + activeClass + '" data-iso="' + esc(iso.id) + '" aria-pressed="' + pressed + '">'
         + '  <h4><i class="' + esc(icon) + '"></i> ' + esc(iso.code) + ' <small>(' + esc(iso.version || '') + ')</small></h4>'
         + '  <p>' + esc(textEs(iso.focus || '')) + '</p>'
         + '  <p>' + esc(textEs(iso.summary || '')) + '</p>'
         + '  <p class="iso-tag">' + esc(String(countClauses(iso))) + ' puntos auditables</p>'
-        + '</article>';
+        + '</button>';
     }
 
     if (!html) {
@@ -792,9 +798,16 @@
       cards[i].addEventListener('click', function () {
         var isoId = String(this.getAttribute('data-iso') || '');
         if (!isoId) return;
-        state.selectedIsoId = isoId;
-        saveState();
-        renderIsoOptions();
+        setSelectedIso(isoId);
+      });
+
+      cards[i].addEventListener('keydown', function (event) {
+        if (!event) return;
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        var isoId = String(this.getAttribute('data-iso') || '');
+        if (!isoId) return;
+        setSelectedIso(isoId);
       });
     }
 

@@ -1,0 +1,404 @@
+:root {
+  --ind-vino: #730e0e;
+  --ind-vino-deep: #4c0b14;
+  --ind-vino-darker: #2f0710;
+  --ind-gold: #d98e04;
+  --ind-gold-soft: #f2c46a;
+  --ind-cream: #fff4de;
+  --ind-cream-soft: rgba(255, 244, 222, 0.78);
+  --ind-border: rgba(242, 196, 106, 0.34);
+  --ind-shadow: 0 32px 80px rgba(18, 2, 6, 0.58);
+}
+
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+}
+
+body {
+  position: relative;
+  margin: 0;
+  background:
+    radial-gradient(circle at 18% 16%, rgba(242, 196, 106, 0.16), transparent 24%),
+    radial-gradient(circle at 82% 18%, rgba(255, 255, 255, 0.08), transparent 18%),
+    linear-gradient(145deg, var(--ind-vino-darker), var(--ind-vino-deep) 42%, var(--ind-vino) 100%);
+  color: var(--ind-cream);
+  font-size: 16px;
+  font-family: "Sora", "Segoe UI", sans-serif;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+body::before {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 22%, rgba(0, 0, 0, 0.08)),
+    radial-gradient(circle at 50% 50%, transparent 44%, rgba(18, 2, 6, 0.22) 100%);
+}
+
+body::after {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+  background-size: 18px 18px;
+  mix-blend-mode: soft-light;
+}
+
+form {
+  position: relative;
+  display: block;
+  width: min(100%, 480px);
+  margin: 28px auto;
+  padding: 2rem 2rem 1.6rem;
+  border: solid 1px var(--ind-border);
+  border-radius: 28px;
+  background: linear-gradient(160deg, rgba(104, 15, 24, 0.88), rgba(51, 8, 16, 0.96));
+  box-sizing: border-box;
+  box-shadow: var(--ind-shadow), inset 0 1px 0 rgba(255, 244, 222, 0.08);
+  backdrop-filter: blur(22px) saturate(130%);
+}
+
+.login-shell {
+  animation: shellEntrance 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.brand-bar {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+  text-align: center;
+}
+
+.brand-logo-frame {
+  width: 138px;
+  height: 138px;
+  display: grid;
+  place-items: center;
+  background: #730e0e;
+  border-radius: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 244, 222, 0.08);
+}
+
+.brand-logo {
+  width: 78%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+
+.brand-kicker {
+  margin: 0 0 0.2rem;
+  color: #ffd89f;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.brand-copy h1 {
+  margin: 0;
+  color: var(--ind-cream);
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: clamp(1.9rem, 4.8vw, 2.8rem);
+  line-height: 0.98;
+}
+
+.brand-subtitle {
+  margin: 0.65rem 0 0;
+  color: var(--ind-cream-soft);
+  font-size: 0.96rem;
+  line-height: 1.45;
+}
+
+form .svgContainer {
+  position: relative;
+  width: 204px;
+  height: 204px;
+  margin: 0 auto 1.1rem;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: drop-shadow(0 16px 28px rgba(18, 2, 6, 0.34));
+}
+
+form .svgContainer div {
+  position: relative;
+  width: 100%;
+  height: 0;
+  overflow: hidden;
+  border-radius: 50%;
+  padding-bottom: 100%;
+}
+
+form .svgContainer .mySVG {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+form .svgContainer:after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 10;
+  width: inherit;
+  height: inherit;
+  box-sizing: border-box;
+  border: solid 2.5px var(--ind-gold-soft);
+  border-radius: 50%;
+}
+
+form .inputGroup {
+  margin: 0 0 1.55rem;
+  padding: 0;
+  position: relative;
+}
+
+form .inputGroup:last-of-type {
+  margin-bottom: 0;
+}
+
+form label {
+  margin: 0 0 12px;
+  display: block;
+  font-size: 0.96rem;
+  color: #f9ddb0;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-family: inherit;
+}
+
+form input[type=email],
+form input[type=text],
+form input[type=number],
+form input[type=url],
+form input[type=search],
+form input[type=password] {
+  display: block;
+  margin: 0;
+  padding: 0.95em 1em 0.25em;
+  background-color: rgba(255, 244, 222, 0.08);
+  border: solid 2px rgba(242, 196, 106, 0.42);
+  border-radius: 16px;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 62px;
+  font-size: 1.04rem;
+  color: var(--ind-cream);
+  font-weight: 600;
+  font-family: inherit;
+  transition: box-shadow 0.2s linear, border-color 0.25s ease-out, transform 0.25s ease-out;
+}
+
+form input[type=email]:focus,
+form input[type=text]:focus,
+form input[type=number]:focus,
+form input[type=url]:focus,
+form input[type=search]:focus,
+form input[type=password]:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(217, 142, 4, 0.16);
+  border: solid 2px var(--ind-gold-soft);
+  transform: translateY(-1px);
+}
+
+form button {
+  display: block;
+  margin: 0;
+  padding: 0.95em 1em 1em;
+  background: linear-gradient(120deg, var(--ind-gold), #b96f00);
+  border: none;
+  border-radius: 18px;
+  box-sizing: border-box;
+  box-shadow: 0 16px 28px rgba(15, 3, 7, 0.34);
+  width: 100%;
+  min-height: 62px;
+  font-size: 1.02rem;
+  color: #fff8ec;
+  font-weight: 700;
+  font-family: inherit;
+  transition: transform 0.2s ease-out, filter 0.2s ease-out;
+}
+
+form button:hover,
+form button:active {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+}
+
+form .inputGroup1 .helper {
+  position: absolute;
+  z-index: 1;
+  font-family: inherit;
+}
+
+form .inputGroup1 .helper1 {
+  top: 0;
+  left: 0;
+  transform: translate(1em, 2.1em) scale(1);
+  transform-origin: 0 0;
+  color: rgba(255, 244, 222, 0.56);
+  font-size: 1rem;
+  font-weight: 500;
+  opacity: 0.72;
+  pointer-events: none;
+  transition: transform 0.2s ease-out, opacity 0.2s linear;
+}
+
+form .inputGroup1.focusWithText .helper {
+  transform: translate(1.1em, 1.4em) scale(0.62);
+  opacity: 1;
+}
+
+form .inputGroup2 input[type=password] {
+  padding: 0.7em 1em 0.55em;
+}
+
+form .inputGroup2 input[type=text] {
+  padding: 0.45em 1em 0.4em;
+}
+
+form .inputGroup2 #showPasswordToggle {
+  display: block;
+  padding: 0 0 0 1.45em;
+  position: absolute;
+  top: 0.1em;
+  right: 0;
+  font-size: 0.88rem;
+  color: #ffe3ba;
+}
+
+form .inputGroup2 #showPasswordToggle input {
+  position: absolute;
+  z-index: -1;
+  opacity: 0;
+}
+
+form .inputGroup2 #showPasswordToggle .indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 0.95em;
+  width: 0.95em;
+  background-color: rgba(255, 244, 222, 0.12);
+  border: solid 2px var(--ind-gold-soft);
+  border-radius: 4px;
+}
+
+form .inputGroup2 #showPasswordToggle .indicator:after {
+  content: "";
+  position: absolute;
+  left: 0.24em;
+  top: 0.02em;
+  width: 0.2em;
+  height: 0.5em;
+  border: solid var(--ind-gold-soft);
+  border-width: 0 3px 3px 0;
+  transform: rotate(45deg);
+  visibility: hidden;
+}
+
+form .inputGroup2 #showPasswordToggle input:checked ~ .indicator:after {
+  visibility: visible;
+}
+
+form .inputGroup2 #showPasswordToggle input:focus ~ .indicator,
+form .inputGroup2 #showPasswordToggle input:hover ~ .indicator {
+  border-color: var(--ind-gold);
+}
+
+form .inputGroup2 #showPasswordToggle input:disabled ~ .indicator {
+  opacity: 0.5;
+}
+
+form .inputGroup2 #showPasswordToggle input:disabled ~ .indicator:after {
+  visibility: hidden;
+}
+
+.login-feedback {
+  min-height: 1.15em;
+  margin: 1rem 0 0;
+  color: #ffd18d;
+  font-size: 0.92rem;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.login-note {
+  margin: 0.45rem 0 0;
+  color: rgba(255, 244, 222, 0.68);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.login-shell.shake {
+  animation: formShake 0.42s ease;
+}
+
+@keyframes shellEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes formShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-10px);
+  }
+  40% {
+    transform: translateX(8px);
+  }
+  60% {
+    transform: translateX(-6px);
+  }
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+@media (max-width: 640px) {
+  form {
+    width: calc(100% - 24px);
+    margin: 12px auto;
+    padding: 1.35rem 1rem 1.2rem;
+    border-radius: 22px;
+  }
+
+  .brand-logo-frame {
+    width: 112px;
+    height: 112px;
+  }
+
+  .brand-copy h1 {
+    font-size: 1.9rem;
+  }
+
+  form .svgContainer {
+    width: 176px;
+    height: 176px;
+  }
+}
