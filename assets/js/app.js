@@ -4,6 +4,7 @@
   var STORAGE_KEY = 'sg_audit_state_v4';
   var TUTORIAL_KEY = 'sg_audit_tutorial_seen_v1';
   var AUTH_KEY = 'sg_audit_unlocked_v1';
+  var ROUTES = getRoutes();
 
   var ISO_LIBRARY = [];
   var dom = {};
@@ -70,14 +71,12 @@
 
   function init() {
     if (!isUnlocked()) {
-      window.location.replace('login.html');
+      window.location.replace(ROUTES.login);
       return;
     }
 
     cacheDom();
-    initThreeBackground();
     ISO_LIBRARY = normalizeLibrary(window.ISO_LIBRARY);
-    setupOnboardingMotion();
 
     if (!ISO_LIBRARY.length) {
       showToast('No se pudo cargar el catálogo ISO. Recarga la página.');
@@ -102,11 +101,9 @@
   }
 
   function cacheDom() {
-    dom.threeScene = document.getElementById('three-scene');
     dom.splash = document.getElementById('app-splash');
     dom.splashProgressFill = document.getElementById('splash-progress-fill');
     dom.onboarding = document.getElementById('iso-onboarding');
-    dom.onboardingCard = document.querySelector('.onboarding-card');
     dom.onboardingIsoDetail = document.getElementById('onboarding-iso-detail');
     dom.isoOptions = document.getElementById('iso-options');
     dom.frameworkSearch = document.getElementById('framework-search');
@@ -630,10 +627,16 @@
       var activeClass = iso.id === state.selectedIsoId ? ' active' : '';
       var icon = iso.icon || 'fa-solid fa-clipboard-check';
       var pressed = iso.id === state.selectedIsoId ? 'true' : 'false';
+      var selectedBadge = iso.id === state.selectedIsoId
+        ? '<span class="iso-selected-badge"><i class="fa-solid fa-circle-check"></i> Seleccionada</span>'
+        : '';
 
       html += ''
         + '<button type="button" class="iso-option' + activeClass + '" data-iso="' + esc(iso.id) + '" aria-pressed="' + pressed + '" style="--iso-order:' + i + '">'
-        + '  <h4><i class="' + esc(icon) + '"></i> ' + esc(iso.code) + ' <small>(' + esc(iso.version || '') + ')</small></h4>'
+        + '  <div class="iso-option-head">'
+        + '    <h4><i class="' + esc(icon) + '"></i> ' + esc(iso.code) + ' <small>(' + esc(iso.version || '') + ')</small></h4>'
+        +      selectedBadge
+        + '  </div>'
         + '  <p>' + esc(textEs(iso.focus || '')) + '</p>'
         + '  <p>' + esc(textEs(iso.summary || '')) + '</p>'
         + '  <p class="iso-tag">' + esc(String(countClauses(iso))) + ' puntos auditables</p>'
@@ -793,45 +796,6 @@
     showElement.setAttribute('aria-hidden', 'false');
   }
 
-  function setupOnboardingMotion() {
-    if (!dom.onboardingCard) return;
-
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      resetOnboardingMotion();
-      return;
-    }
-
-    dom.onboardingCard.addEventListener('pointermove', onOnboardingPointerMove);
-    dom.onboardingCard.addEventListener('pointerleave', resetOnboardingMotion);
-    dom.onboardingCard.addEventListener('pointerdown', onOnboardingPointerMove);
-    resetOnboardingMotion();
-  }
-
-  function onOnboardingPointerMove(event) {
-    if (!dom.onboardingCard || !event) return;
-
-    var rect = dom.onboardingCard.getBoundingClientRect();
-    if (!rect.width || !rect.height) return;
-
-    var relativeX = (event.clientX - rect.left) / rect.width;
-    var relativeY = (event.clientY - rect.top) / rect.height;
-    var tiltY = (relativeX - 0.5) * 12;
-    var tiltX = (0.5 - relativeY) * 10;
-
-    dom.onboardingCard.style.setProperty('--tilt-x', tiltX.toFixed(2) + 'deg');
-    dom.onboardingCard.style.setProperty('--tilt-y', tiltY.toFixed(2) + 'deg');
-    dom.onboardingCard.style.setProperty('--glow-x', (relativeX * 100).toFixed(2) + '%');
-    dom.onboardingCard.style.setProperty('--glow-y', (relativeY * 100).toFixed(2) + '%');
-  }
-
-  function resetOnboardingMotion() {
-    if (!dom.onboardingCard) return;
-    dom.onboardingCard.style.setProperty('--tilt-x', '0deg');
-    dom.onboardingCard.style.setProperty('--tilt-y', '0deg');
-    dom.onboardingCard.style.setProperty('--glow-x', '50%');
-    dom.onboardingCard.style.setProperty('--glow-y', '12%');
-  }
-
   function openMobileOffcanvas() {
     if (!dom.mobileOffcanvas) return;
     dom.mobileOffcanvas.classList.remove('hidden');
@@ -894,208 +858,6 @@
     if (!readLocal(TUTORIAL_KEY)) {
       window.setTimeout(openTutorial, 420);
     }
-  }
-
-  function initThreeBackground() {
-    if (!dom.threeScene || !window.THREE || threeState.ready) return;
-
-    var THREE = window.THREE;
-
-    try {
-      threeState.motionDisabled = Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-      threeState.scene = new THREE.Scene();
-      threeState.camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-      threeState.camera.position.set(0, 0.3, 5.4);
-
-      threeState.renderer = new THREE.WebGLRenderer({
-        alpha: true,
-        antialias: true,
-        powerPreference: 'high-performance'
-      });
-      threeState.renderer.setClearColor(0x000000, 0);
-      threeState.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
-      threeState.renderer.setSize(window.innerWidth, window.innerHeight, false);
-      dom.threeScene.appendChild(threeState.renderer.domElement);
-
-      var ambient = new THREE.AmbientLight(0xffdca5, 1.35);
-      threeState.scene.add(ambient);
-
-      var warmLight = new THREE.PointLight(0xd98e04, 2.6, 40);
-      warmLight.position.set(3.2, 2.3, 4.4);
-      threeState.scene.add(warmLight);
-
-      var redLight = new THREE.PointLight(0x7e1d2f, 2.1, 42);
-      redLight.position.set(-3.6, -1.2, 4.2);
-      threeState.scene.add(redLight);
-
-      var baseGroup = new THREE.Group();
-      threeState.scene.add(baseGroup);
-      threeState.group = baseGroup;
-
-      var knotGeometry = new THREE.TorusKnotGeometry(1.05, 0.28, 176, 28);
-      var knotMaterial = new THREE.MeshStandardMaterial({
-        color: 0xf2c46a,
-        metalness: 0.78,
-        roughness: 0.28,
-        emissive: 0x5d111f,
-        emissiveIntensity: 0.75
-      });
-      var knot = new THREE.Mesh(knotGeometry, knotMaterial);
-      baseGroup.add(knot);
-
-      var ringGeometry = new THREE.TorusGeometry(1.95, 0.06, 18, 180);
-      var haloGeometry = new THREE.TorusGeometry(2.7, 0.04, 16, 220);
-      var ringMaterial = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        metalness: 0.35,
-        roughness: 0.14,
-        emissive: 0xd98e04,
-        emissiveIntensity: 0.85,
-        transparent: true,
-        opacity: 0.88
-      });
-      var ring = new THREE.Mesh(ringGeometry, ringMaterial);
-      ring.rotation.x = Math.PI * 0.35;
-      baseGroup.add(ring);
-      threeState.ring = ring;
-
-      var haloMaterial = new THREE.MeshBasicMaterial({
-        color: 0xffd9a6,
-        transparent: true,
-        opacity: 0.22
-      });
-      var haloRing = new THREE.Mesh(haloGeometry, haloMaterial);
-      haloRing.rotation.x = Math.PI * 0.18;
-      haloRing.rotation.y = Math.PI * 0.08;
-      haloRing.position.z = -0.2;
-      baseGroup.add(haloRing);
-      threeState.haloRing = haloRing;
-
-      var shellGeometry = new THREE.OctahedronGeometry(2.42, 0);
-      var shellMaterial = new THREE.MeshBasicMaterial({
-        color: 0xffdca5,
-        wireframe: true,
-        transparent: true,
-        opacity: 0.18
-      });
-      var shell = new THREE.Mesh(shellGeometry, shellMaterial);
-      baseGroup.add(shell);
-
-      var particleCount = 700;
-      var positions = new Float32Array(particleCount * 3);
-      var colors = new Float32Array(particleCount * 3);
-      var i;
-      for (i = 0; i < particleCount; i += 1) {
-        var radius = 2.6 + Math.random() * 1.5;
-        var theta = Math.random() * Math.PI * 2;
-        var phi = Math.acos(2 * Math.random() - 1);
-        var sinPhi = Math.sin(phi);
-        positions[i * 3] = Math.cos(theta) * sinPhi * radius;
-        positions[i * 3 + 1] = Math.sin(theta) * sinPhi * radius;
-        positions[i * 3 + 2] = Math.cos(phi) * radius;
-
-        colors[i * 3] = 1;
-        colors[i * 3 + 1] = 0.78 + Math.random() * 0.16;
-        colors[i * 3 + 2] = 0.48 + Math.random() * 0.16;
-      }
-
-      var particlesGeometry = new THREE.BufferGeometry();
-      particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-      var particlesMaterial = new THREE.PointsMaterial({
-        size: 0.045,
-        sizeAttenuation: true,
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.95,
-        depthWrite: false
-      });
-      var particles = new THREE.Points(particlesGeometry, particlesMaterial);
-      baseGroup.add(particles);
-      threeState.particles = particles;
-
-      var cursorLight = new THREE.PointLight(0xffefcf, 1.8, 18);
-      cursorLight.position.set(0, 0, 6);
-      threeState.scene.add(cursorLight);
-      threeState.cursorLight = cursorLight;
-
-      window.addEventListener('resize', resizeThreeScene);
-      window.addEventListener('pointermove', onThreePointerMove, { passive: true });
-
-      resizeThreeScene();
-      threeState.ready = true;
-      threeState.rafId = window.requestAnimationFrame(animateThreeScene);
-    } catch (err) {
-      threeState.ready = false;
-    }
-  }
-
-  function resizeThreeScene() {
-    if (!threeState.renderer || !threeState.camera) return;
-
-    var width = window.innerWidth || 1;
-    var height = window.innerHeight || 1;
-    threeState.camera.aspect = width / height;
-    threeState.camera.updateProjectionMatrix();
-    threeState.renderer.setSize(width, height, false);
-  }
-
-  function onThreePointerMove(event) {
-    if (!event) return;
-    var width = window.innerWidth || 1;
-    var height = window.innerHeight || 1;
-    threeState.pointerX = ((event.clientX || 0) / width) * 2 - 1;
-    threeState.pointerY = -(((event.clientY || 0) / height) * 2 - 1);
-  }
-
-  function animateThreeScene(now) {
-    if (!threeState.renderer || !threeState.scene || !threeState.camera) return;
-
-    var time = (typeof now === 'number' ? now : window.performance.now()) * 0.001;
-    var orbit = time * 0.18;
-
-    if (threeState.motionDisabled) {
-      threeState.camera.position.set(0, 0.35, 5.2);
-      threeState.camera.lookAt(0, 0, 0);
-      if (threeState.group) {
-        threeState.group.rotation.set(0.18, 0.65, 0.02);
-      }
-    } else {
-      threeState.camera.position.x = Math.cos(orbit) * 5.1 + threeState.pointerX * 0.24;
-      threeState.camera.position.z = Math.sin(orbit) * 5.1;
-      threeState.camera.position.y = 0.35 + Math.sin(time * 0.8) * 0.16 + threeState.pointerY * 0.16;
-      threeState.camera.lookAt(0, 0, 0);
-
-      if (threeState.group) {
-        threeState.group.rotation.x = 0.22 + Math.sin(time * 0.6) * 0.12 + threeState.pointerY * 0.18;
-        threeState.group.rotation.y = time * 0.42 + threeState.pointerX * 0.3;
-        threeState.group.rotation.z = Math.sin(time * 0.45) * 0.08 + threeState.pointerX * 0.04;
-      }
-
-      if (threeState.ring) {
-        threeState.ring.rotation.x = Math.PI * 0.35 + time * 0.26;
-        threeState.ring.rotation.y = time * 0.31 - threeState.pointerX * 0.16;
-      }
-
-      if (threeState.haloRing) {
-        threeState.haloRing.rotation.z = -time * 0.22;
-        threeState.haloRing.rotation.y = Math.PI * 0.08 + threeState.pointerY * 0.22;
-      }
-
-      if (threeState.particles) {
-        threeState.particles.rotation.y = -time * 0.12;
-        threeState.particles.rotation.x = Math.sin(time * 0.22) * 0.04;
-      }
-    }
-
-    if (threeState.cursorLight) {
-      threeState.cursorLight.position.x += (threeState.pointerX * 4 - threeState.cursorLight.position.x) * 0.05;
-      threeState.cursorLight.position.y += (threeState.pointerY * 2.5 - threeState.cursorLight.position.y) * 0.05;
-    }
-
-    threeState.renderer.render(threeState.scene, threeState.camera);
-    threeState.rafId = window.requestAnimationFrame(animateThreeScene);
   }
 
   function ensureActiveSection(iso) {
@@ -1891,9 +1653,18 @@
 
   function focusActiveIsoCard() {
     if (!dom.isoOptions || typeof dom.isoOptions.querySelector !== 'function') return;
+    if ((window.innerWidth || 0) >= 1080) return;
     var active = dom.isoOptions.querySelector('.iso-option.active');
     if (!active || typeof active.scrollIntoView !== 'function') return;
     active.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
+
+  function getRoutes() {
+    var isLocalFile = window.location.protocol === 'file:';
+    return {
+      login: isLocalFile ? 'login.html' : '/',
+      app: isLocalFile ? 'index.html' : '/plataforma'
+    };
   }
 
   function getStatusClass(status) {

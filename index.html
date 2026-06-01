@@ -11,19 +11,9 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
   <link rel="stylesheet" href="assets/css/styles.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.min.js" defer></script>
 </head>
 
 <body>
-  <div id="three-scene" class="three-scene" aria-hidden="true"></div>
-  <div class="bg-layer"></div>
-  <div class="liquid-orbs" aria-hidden="true">
-    <span></span>
-    <span></span>
-    <span></span>
-    <span></span>
-  </div>
-
   <section id="app-splash" class="app-splash" aria-hidden="false">
     <div class="splash-glow" aria-hidden="true"></div>
     <div class="splash-card">
@@ -48,13 +38,6 @@
           <h1>Plataforma de Gesti&oacute;n de Auditor&iacute;as</h1>
           <p class="subtitle">Elige primero el marco normativo y despu&eacute;s arrancamos la auditor&iacute;a completa.</p>
         </div>
-        <div class="onboarding-stage" aria-hidden="true">
-          <span class="stage-chip">3D audit flow</span>
-          <div class="stage-orbit stage-orbit-outer"></div>
-          <div class="stage-orbit stage-orbit-inner"></div>
-          <div class="stage-core"></div>
-          <div class="stage-glow"></div>
-        </div>
       </div>
 
       <div class="onboarding-layout">
@@ -71,6 +54,12 @@
           <p class="preview-kicker">Norma Seleccionada</p>
           <article id="onboarding-iso-detail" class="iso-detail-card iso-detail-card-onboarding"></article>
           <p class="preview-note">Selecciona la norma que vas a trabajar y luego pulsa <strong>Iniciar auditor&iacute;a</strong> para entrar al panel completo.</p>
+          <div class="onboarding-preview-actions">
+            <button id="start-audit" class="fab-start" type="button" disabled>
+              <i class="fa-solid fa-play"></i>
+              Iniciar auditor&iacute;a
+            </button>
+          </div>
         </aside>
       </div>
 
@@ -79,10 +68,6 @@
         <span class="onboarding-hint">Selecciona una ISO para activar la auditor&iacute;a.</span>
       </div>
     </div>
-    <button id="start-audit" class="fab-start" type="button" disabled>
-      <i class="fa-solid fa-play"></i>
-      Iniciar auditor&iacute;a
-    </button>
     <nav class="mobile-bottom-nav" aria-label="Navegaci&oacute;n principal">
       <button type="button" class="active" aria-current="page"><i class="fa-solid fa-grid-2"></i><span>Marcos Normativos</span></button>
       <button type="button"><i class="fa-solid fa-clipboard-check"></i><span>Mi Auditor&iacute;a</span></button>

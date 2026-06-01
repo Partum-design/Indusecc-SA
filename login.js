@@ -2,7 +2,10 @@
 gsap.registerPlugin(MorphSVGPlugin);
 
 var AUTH_KEY = "sg_audit_unlocked_v1";
+var ACCESS_EMAIL = "acceso@indusecc.com";
+var ACCESS_USER = "indusecc";
 var ACCESS_PASSWORD = "INDUSECC360";
+var ROUTES = getRoutes();
 
 var emailLabel = document.querySelector('#loginEmailLabel'),
     email = document.querySelector('#loginEmail'),
@@ -427,7 +430,7 @@ function onLoginSubmit(event) {
     if (event) event.preventDefault();
     if (!email || !password) return;
 
-    var userValue = String(email.value || "").trim();
+    var userValue = String(email.value || "").trim().toLowerCase();
     var passwordValue = String(password.value || "").trim();
 
     if (!userValue) {
@@ -444,6 +447,13 @@ function onLoginSubmit(event) {
         return;
     }
 
+    if (userValue !== ACCESS_EMAIL && userValue !== ACCESS_USER) {
+        showFeedback("El correo o usuario no coincide con el acceso configurado.", true);
+        shakeLogin();
+        email.select();
+        return;
+    }
+
     if (passwordValue !== ACCESS_PASSWORD) {
         showFeedback("La contraseña no coincide. Intenta otra vez.", true);
         shakeLogin();
@@ -455,13 +465,13 @@ function onLoginSubmit(event) {
     showFeedback("Acceso concedido. Redirigiendo a selección de ISO...", false);
     if (loginButton) loginButton.disabled = true;
     window.setTimeout(function () {
-        window.location.href = "index.html";
+        window.location.href = ROUTES.app;
     }, 320);
 }
 
 function initLoginForm() {
     if (readLocal(AUTH_KEY) === "1") {
-        window.location.replace("index.html");
+        window.location.replace(ROUTES.app);
         return;
     }
 
@@ -520,6 +530,14 @@ function initLoginForm() {
     }
 
     showFeedback("", false);
+}
+
+function getRoutes() {
+    var isLocalFile = window.location.protocol === "file:";
+    return {
+        login: isLocalFile ? "login.html" : "/",
+        app: isLocalFile ? "index.html" : "/plataforma"
+    };
 }
 
 initLoginForm();
