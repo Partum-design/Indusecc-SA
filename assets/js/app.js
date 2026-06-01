@@ -236,7 +236,7 @@
   }
 
   function isUnlocked() {
-    return readLocal(AUTH_KEY) === '1';
+    return readAuthState() === '1';
   }
 
   function bindEvents() {
@@ -2201,10 +2201,9 @@
   }
 
   function getRoutes() {
-    var isLocalFile = window.location.protocol === 'file:';
     return {
-      login: isLocalFile ? 'login.html' : '/',
-      app: isLocalFile ? 'index.html' : '/plataforma'
+      login: 'login.html',
+      app: 'index.html'
     };
   }
 
@@ -2345,6 +2344,40 @@
       window.localStorage.setItem(key, value);
     } catch (err) {
       // ignore quota errors
+    }
+  }
+
+  function readAuthState() {
+    try {
+      if (window.sessionStorage.getItem(AUTH_KEY) === '1') {
+        return '1';
+      }
+    } catch (err) {
+      // ignore storage errors
+    }
+
+    try {
+      if (window.localStorage.getItem(AUTH_KEY) === '1') {
+        window.localStorage.removeItem(AUTH_KEY);
+      }
+    } catch (err2) {
+      // ignore storage errors
+    }
+
+    return null;
+  }
+
+  function writeAuthState(value) {
+    try {
+      window.sessionStorage.setItem(AUTH_KEY, value);
+    } catch (err) {
+      // ignore storage errors
+    }
+
+    try {
+      window.localStorage.removeItem(AUTH_KEY);
+    } catch (err2) {
+      // ignore storage errors
     }
   }
 

@@ -365,6 +365,40 @@ function writeLocal(key, value) {
     }
 }
 
+function readAuthState() {
+    try {
+        if (window.sessionStorage.getItem(AUTH_KEY) === "1") {
+            return "1";
+        }
+    } catch (err) {
+        // ignore storage failures
+    }
+
+    try {
+        if (window.localStorage.getItem(AUTH_KEY) === "1") {
+            window.localStorage.removeItem(AUTH_KEY);
+        }
+    } catch (err2) {
+        // ignore storage failures
+    }
+
+    return null;
+}
+
+function writeAuthState(value) {
+    try {
+        window.sessionStorage.setItem(AUTH_KEY, value);
+    } catch (err) {
+        // ignore storage failures
+    }
+
+    try {
+        window.localStorage.removeItem(AUTH_KEY);
+    } catch (err2) {
+        // ignore storage failures
+    }
+}
+
 function showFeedback(message, isError) {
     if (!loginFeedback) return;
     loginFeedback.textContent = message || "";
@@ -461,7 +495,7 @@ function onLoginSubmit(event) {
         return;
     }
 
-    writeLocal(AUTH_KEY, "1");
+    writeAuthState("1");
     showFeedback("Acceso concedido. Redirigiendo a selección de ISO...", false);
     if (loginButton) loginButton.disabled = true;
     window.setTimeout(function () {
@@ -470,7 +504,7 @@ function onLoginSubmit(event) {
 }
 
 function initLoginForm() {
-    if (readLocal(AUTH_KEY) === "1") {
+    if (readAuthState() === "1") {
         window.location.replace(ROUTES.app);
         return;
     }
@@ -533,10 +567,9 @@ function initLoginForm() {
 }
 
 function getRoutes() {
-    var isLocalFile = window.location.protocol === "file:";
     return {
-        login: isLocalFile ? "login.html" : "/",
-        app: isLocalFile ? "index.html" : "/plataforma"
+        login: "login.html",
+        app: "index.html"
     };
 }
 

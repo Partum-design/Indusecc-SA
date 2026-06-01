@@ -1987,10 +1987,31 @@ h5 {
 
 @media (max-width: 719px) {
   .nora-toggle {
-    right: 12px;
-    bottom: calc(102px + env(safe-area-inset-bottom, 0px));
+    left: 12px;
+    right: auto;
+    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    min-width: 112px;
     min-height: 52px;
     padding-right: 14px;
+    justify-content: center;
+    box-shadow: 0 14px 28px rgba(31, 5, 11, 0.28);
+  }
+
+  .floating-audit-tools {
+    right: 12px;
+    left: auto;
+    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    justify-items: end;
+    width: auto;
+  }
+
+  .floating-action {
+    width: auto;
+    min-width: 128px;
+  }
+
+  .floating-progress-bubble {
+    justify-self: end;
   }
 
   .nora-panel {
