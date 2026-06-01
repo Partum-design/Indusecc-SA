@@ -184,6 +184,7 @@
         <div class="sidebar-actions">
           <button id="open-tutorial-app" class="btn btn-secondary"><i class="fa-solid fa-book-open"></i> Tutorial</button>
           <button id="change-iso" class="btn btn-secondary"><i class="fa-solid fa-repeat"></i> Cambiar ISO</button>
+          <button id="open-nora-panel" class="btn btn-secondary"><i class="fa-solid fa-robot"></i> Abrir NORA</button>
         </div>
 
         <h3>Ficha Operativa</h3>
@@ -326,6 +327,39 @@
       </ol>
     </div>
   </section>
+
+  <button id="nora-toggle" class="nora-toggle" type="button" aria-haspopup="dialog" aria-expanded="false">
+    <span class="nora-toggle-mark">N</span>
+    <span>NORA</span>
+  </button>
+
+  <aside id="nora-panel" class="nora-panel hidden" aria-hidden="true" aria-label="Asistente NORA">
+    <div class="nora-panel-head">
+      <div>
+        <p class="eyebrow">Asistente IA</p>
+        <h3>NORA</h3>
+      </div>
+      <button id="close-nora-panel" class="btn btn-secondary" type="button"><i class="fa-solid fa-xmark"></i> Cerrar</button>
+    </div>
+
+    <p id="nora-mode" class="nora-mode">Modo base normativa INDUSECC</p>
+
+    <div class="nora-quick-prompts" aria-label="Sugerencias de NORA">
+      <button type="button" class="nora-prompt-chip" data-nora-prompt="¿A qué se refiere esta norma?">¿A qué se refiere esta norma?</button>
+      <button type="button" class="nora-prompt-chip" data-nora-prompt="¿Cómo lleno correctamente este checklist?">¿Cómo lleno este checklist?</button>
+      <button type="button" class="nora-prompt-chip" data-nora-prompt="¿Qué evidencia debería adjuntar en esta auditoría?">¿Qué evidencia debería adjuntar?</button>
+    </div>
+
+    <div id="nora-messages" class="nora-messages" aria-live="polite"></div>
+
+    <form id="nora-form" class="nora-form" novalidate>
+      <label class="nora-form-label" for="nora-input">Pregunta a NORA sobre la norma, un punto o cómo llenarlo</label>
+      <textarea id="nora-input" rows="3" placeholder="Ej. ¿Qué significa el punto 27001-6.1.2 y cómo lo lleno?"></textarea>
+      <div class="nora-form-actions">
+        <button id="nora-send" class="btn btn-primary" type="submit"><i class="fa-solid fa-paper-plane"></i> Preguntar</button>
+      </div>
+    </form>
+  </aside>
 
   <div id="toast" class="toast"></div>
 

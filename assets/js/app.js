@@ -61,6 +61,7 @@
       },
       history: getEmptyHistoryRows(),
       findings: {},
+      noraHistory: [],
       signature: {
         drawnDataUrl: '',
         uploadedDataUrl: '',
@@ -94,6 +95,8 @@
     renderIsoQuickSelector();
     renderIsoDetailCard(findIsoById(state.selectedIsoId));
     renderSignaturePreview();
+    ensureNoraConversation();
+    renderNoraPanel();
     cacheLogoDataUrl();
     startSplashSequence();
 
@@ -165,6 +168,15 @@
     dom.mobileMenuClear = document.getElementById('mobile-menu-clear');
     dom.mobileMenuTutorial = document.getElementById('mobile-menu-tutorial');
     dom.mobileMenuChangeIso = document.getElementById('mobile-menu-change-iso');
+    dom.openNoraPanel = document.getElementById('open-nora-panel');
+    dom.noraToggle = document.getElementById('nora-toggle');
+    dom.noraPanel = document.getElementById('nora-panel');
+    dom.closeNoraPanel = document.getElementById('close-nora-panel');
+    dom.noraMode = document.getElementById('nora-mode');
+    dom.noraMessages = document.getElementById('nora-messages');
+    dom.noraForm = document.getElementById('nora-form');
+    dom.noraInput = document.getElementById('nora-input');
+    dom.noraSend = document.getElementById('nora-send');
     dom.toast = document.getElementById('toast');
     dom.headerLogo = document.querySelector('.project-panel .brand-logo') || document.querySelector('.hero-logo');
   }
@@ -298,6 +310,34 @@
 
     if (dom.openTutorialApp) {
       dom.openTutorialApp.addEventListener('click', openTutorial);
+    }
+
+    if (dom.openNoraPanel) {
+      dom.openNoraPanel.addEventListener('click', openNoraPanel);
+    }
+
+    if (dom.noraToggle) {
+      dom.noraToggle.addEventListener('click', toggleNoraPanel);
+    }
+
+    if (dom.closeNoraPanel) {
+      dom.closeNoraPanel.addEventListener('click', closeNoraPanel);
+    }
+
+    if (dom.noraPanel) {
+      dom.noraPanel.addEventListener('click', function (event) {
+        var button = event.target.closest ? event.target.closest('button[data-nora-prompt]') : null;
+        if (!button) return;
+        sendNoraQuestion(String(button.getAttribute('data-nora-prompt') || ''), { mode: 'chat' });
+      });
+    }
+
+    if (dom.noraForm) {
+      dom.noraForm.addEventListener('submit', function (event) {
+        if (event) event.preventDefault();
+        if (!dom.noraInput) return;
+        sendNoraQuestion(String(dom.noraInput.value || ''), { mode: 'chat' });
+      });
     }
 
     if (dom.closeTutorial) {
@@ -738,6 +778,7 @@
     renderSectionTabs(iso);
     renderChecklist(iso);
     renderMetrics(iso);
+    renderNoraPanel();
     if (dom.isoUpdatedNote) dom.isoUpdatedNote.textContent = textEs(iso.updatedNote || '');
   }
 
@@ -752,6 +793,7 @@
 
   function showOnboarding() {
     closeMobileOffcanvas();
+    closeNoraPanel();
     renderFrameworkTabs();
     renderIsoOptions();
     setActiveScreen(dom.onboarding, dom.app);
@@ -1020,6 +1062,486 @@
     return key;
   }
 
+  function ensureNoraConversation() {
+    state.noraHistory = normalizeNoraHistory(state.noraHistory);
+    if (state.noraHistory.length) return;
+    state.noraHistory.push(createNoraMessage('assistant', buildNoraWelcomeMessage()));
+  }
+
+  function normalizeNoraHistory(history) {
+    if (Object.prototype.toString.call(history) !== '[object Array]') return [];
+
+    var normalized = [];
+    var i;
+    for (i = 0; i < history.length; i += 1) {
+      var item = history[i] || {};
+      if (!item.role || !item.text) continue;
+      normalized.push({
+        id: item.id || makeId(),
+        role: item.role === 'user' ? 'user' : 'assistant',
+        text: String(item.text || '').trim(),
+        createdAt: item.createdAt || new Date().toISOString()
+      });
+    }
+
+    if (normalized.length > 24) {
+      normalized = normalized.slice(normalized.length - 24);
+    }
+    return normalized;
+  }
+
+  function createNoraMessage(role, text) {
+    return {
+      id: makeId(),
+      role: role === 'user' ? 'user' : 'assistant',
+      text: String(text || '').trim(),
+      createdAt: new Date().toISOString()
+    };
+  }
+
+  function buildNoraWelcomeMessage() {
+    var iso = getActiveIso();
+    var intro = 'Soy NORA. Puedo explicarte la norma activa, decirte qué significa cada punto y orientarte sobre cómo llenar el checklist.';
+    if (!iso) return intro;
+    return intro + '\n\nAhora mismo estás trabajando con ' + iso.code + ' (' + (iso.version || 'N/D') + '): ' + textEs(iso.summary || iso.focus || 'marco normativo activo') + '.';
+  }
+
+  function getActiveIso() {
+    return findIsoById(state.selectedIsoId);
+  }
+
+  function renderNoraPanel() {
+    if (!dom.noraPanel || !dom.noraMessages) return;
+
+    ensureNoraConversation();
+
+    if (dom.noraMode) {
+      dom.noraMode.textContent = getNoraModeLabel();
+    }
+
+    dom.noraMessages.innerHTML = renderNoraMessagesHtml();
+    if (dom.noraPanel.classList.contains('hidden')) {
+      updateNoraToggleState(false);
+    }
+    window.requestAnimationFrame(scrollNoraMessagesToBottom);
+  }
+
+  function renderNoraMessagesHtml() {
+    var html = '';
+    var history = normalizeNoraHistory(state.noraHistory);
+    var i;
+
+    for (i = 0; i < history.length; i += 1) {
+      var item = history[i];
+      var roleClass = item.role === 'user' ? 'user' : 'assistant';
+      var roleLabel = item.role === 'user' ? 'Tú' : 'NORA';
+      html += ''
+        + '<article class="nora-message ' + roleClass + '">'
+        + '  <span class="nora-message-role">' + esc(roleLabel) + '</span>'
+        + '  <div class="nora-message-bubble">' + formatNoraText(item.text) + '</div>'
+        + '</article>';
+    }
+
+    if (dom.noraSend && dom.noraSend.disabled) {
+      html += ''
+        + '<article class="nora-message assistant is-typing">'
+        + '  <span class="nora-message-role">NORA</span>'
+        + '  <div class="nora-message-bubble">Analizando tu pregunta...</div>'
+        + '</article>';
+    }
+
+    return html;
+  }
+
+  function formatNoraText(text) {
+    return esc(String(text || '')).replace(/\n/g, '<br />');
+  }
+
+  function getNoraModeLabel() {
+    if (isNoraRemoteConfigured()) {
+      return 'NORA lista con adaptador externo y contexto interno de la auditoría.';
+    }
+    return 'NORA en modo base normativa INDUSECC. Responde con el contenido ISO cargado y guía de llenado.';
+  }
+
+  function isNoraRemoteConfigured() {
+    return Boolean(window.NORA_CONFIG && typeof window.NORA_CONFIG.request === 'function');
+  }
+
+  function updateNoraToggleState(isOpen) {
+    if (dom.noraToggle) {
+      dom.noraToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      dom.noraToggle.classList.toggle('is-open', isOpen);
+    }
+  }
+
+  function openNoraPanel() {
+    if (!dom.noraPanel) return;
+    renderNoraPanel();
+    dom.noraPanel.classList.remove('hidden');
+    dom.noraPanel.setAttribute('aria-hidden', 'false');
+    updateNoraToggleState(true);
+    if (dom.noraInput) {
+      window.requestAnimationFrame(function () {
+        dom.noraInput.focus();
+      });
+    }
+  }
+
+  function closeNoraPanel() {
+    if (!dom.noraPanel) return;
+    dom.noraPanel.classList.add('hidden');
+    dom.noraPanel.setAttribute('aria-hidden', 'true');
+    updateNoraToggleState(false);
+  }
+
+  function toggleNoraPanel() {
+    if (!dom.noraPanel) return;
+    if (dom.noraPanel.classList.contains('hidden')) {
+      openNoraPanel();
+      return;
+    }
+    closeNoraPanel();
+  }
+
+  function scrollNoraMessagesToBottom() {
+    if (!dom.noraMessages) return;
+    dom.noraMessages.scrollTop = dom.noraMessages.scrollHeight;
+  }
+
+  function appendNoraMessage(role, text) {
+    if (!String(text || '').trim()) return;
+    ensureNoraConversation();
+    state.noraHistory.push(createNoraMessage(role, text));
+    state.noraHistory = normalizeNoraHistory(state.noraHistory);
+    saveState();
+    renderNoraPanel();
+  }
+
+  function setNoraBusy(isBusy) {
+    if (dom.noraPanel) {
+      dom.noraPanel.classList.toggle('is-loading', Boolean(isBusy));
+    }
+    if (dom.noraSend) {
+      dom.noraSend.disabled = Boolean(isBusy);
+    }
+    if (dom.noraMessages) {
+      if (isBusy) {
+        dom.noraMessages.setAttribute('data-loading', 'true');
+      } else {
+        dom.noraMessages.removeAttribute('data-loading');
+      }
+    }
+    renderNoraPanel();
+  }
+
+  function sendNoraQuestion(question, options) {
+    var cleaned = String(question || '').trim();
+    if (!cleaned) {
+      showToast('Escribe una pregunta para NORA.');
+      if (dom.noraInput) dom.noraInput.focus();
+      return;
+    }
+
+    openNoraPanel();
+    if (dom.noraInput) dom.noraInput.value = '';
+
+    appendNoraMessage('user', cleaned);
+    setNoraBusy(true);
+
+    askNora(cleaned, options || { mode: 'chat' })
+      .then(function (answer) {
+        appendNoraMessage('assistant', answer);
+      })
+      .catch(function () {
+        appendNoraMessage('assistant', 'No pude responder con la integración externa, pero puedo seguir ayudándote con la base normativa cargada.');
+      })
+      .finally(function () {
+        setNoraBusy(false);
+      });
+  }
+
+  function requestClauseHelp(button, mode) {
+    var clauseId = String(button.getAttribute('data-clause-id') || '');
+    var clause = findClauseById(clauseId);
+    var card = button.closest ? button.closest('.finding-card') : null;
+    var target = card && card.querySelector ? card.querySelector('[data-nora-response]') : null;
+    if (!clause || !target) return;
+
+    target.classList.remove('hidden');
+    target.innerHTML = '<div class="nora-inline-state"><i class="fa-solid fa-spinner fa-spin"></i> NORA está analizando este punto...</div>';
+    button.disabled = true;
+
+    askNora(buildClausePrompt(clause, mode), {
+      mode: 'clause',
+      intent: mode,
+      clauseId: clause.id,
+      clause: clause
+    }).then(function (answer) {
+      target.innerHTML = '<div class="nora-inline-answer"><strong>NORA</strong><p>' + formatNoraText(answer) + '</p></div>';
+    }).catch(function () {
+      target.innerHTML = '<div class="nora-inline-answer"><strong>NORA</strong><p>No pude resolver este punto en este momento.</p></div>';
+    }).finally(function () {
+      button.disabled = false;
+    });
+  }
+
+  function buildClausePrompt(clause, mode) {
+    var iso = getActiveIso();
+    if (mode === 'fill') {
+      return 'Explícame cómo llenar el punto ' + clause.id + ' de ' + (iso ? iso.code : 'la norma activa') + '.';
+    }
+    return 'Explícame qué significa el punto ' + clause.id + ' de ' + (iso ? iso.code : 'la norma activa') + '.';
+  }
+
+  function askNora(question, options) {
+    var payload = buildNoraPayload(question, options || {});
+
+    if (isNoraRemoteConfigured()) {
+      return Promise.resolve(window.NORA_CONFIG.request(payload)).then(function (result) {
+        var remoteText = extractNoraText(result);
+        if (remoteText) return remoteText;
+        return buildLocalNoraAnswer(question, options, 'La respuesta remota llegó vacía, así que tomé la base interna.');
+      }).catch(function () {
+        return buildLocalNoraAnswer(question, options, 'La conexión remota no respondió; usé el conocimiento interno del sistema.');
+      });
+    }
+
+    return Promise.resolve(buildLocalNoraAnswer(question, options));
+  }
+
+  function buildNoraPayload(question, options) {
+    var clause = (options && options.clause) || findClauseById(options && options.clauseId);
+    var iso = getActiveIso();
+    var finding = clause ? (state.findings[clause.id] || newEmptyFinding()) : null;
+
+    return {
+      assistant: 'NORA',
+      question: question,
+      mode: options && options.mode ? options.mode : 'chat',
+      intent: options && options.intent ? options.intent : '',
+      activeIso: iso ? {
+        id: iso.id,
+        code: iso.code,
+        version: iso.version,
+        focus: iso.focus,
+        summary: iso.summary
+      } : null,
+      clause: clause ? {
+        id: clause.id,
+        title: clause.title,
+        definition: clause.definition,
+        question: clause.question,
+        evidence: clause.evidence || []
+      } : null,
+      finding: finding,
+      project: state.project
+    };
+  }
+
+  function extractNoraText(result) {
+    if (!result) return '';
+    if (typeof result === 'string') return result.trim();
+    if (typeof result.text === 'string') return result.text.trim();
+    if (typeof result.answer === 'string') return result.answer.trim();
+    if (typeof result.reply === 'string') return result.reply.trim();
+    if (typeof result.message === 'string') return result.message.trim();
+    if (result.content && typeof result.content === 'string') return result.content.trim();
+    return '';
+  }
+
+  function buildLocalNoraAnswer(question, options, note) {
+    var normalized = normalizeSearchText(question || '');
+    var iso = getActiveIso();
+    var clause = (options && options.clause) || findClauseById(options && options.clauseId) || findRelevantClause(question, iso);
+    var answer = '';
+
+    if (options && options.intent === 'fill' && clause) {
+      answer = buildClauseGuidance(clause, 'fill');
+    } else if (options && options.intent === 'explain' && clause) {
+      answer = buildClauseGuidance(clause, 'explain');
+    } else if (normalized.indexOf('como lleno') !== -1 || normalized.indexOf('como llenar') !== -1 || normalized.indexOf('llenarlo') !== -1 || normalized.indexOf('que pongo') !== -1) {
+      answer = clause ? buildClauseGuidance(clause, 'fill') : buildChecklistGuidance(iso);
+    } else if (normalized.indexOf('evidencia') !== -1) {
+      answer = clause ? buildClauseEvidenceAnswer(clause) : buildGeneralEvidenceAnswer(iso);
+    } else if (normalized.indexOf('a que se refiere') !== -1 || normalized.indexOf('de que trata') !== -1 || normalized.indexOf('que significa esta norma') !== -1 || normalized.indexOf('que es esta norma') !== -1) {
+      answer = buildNormOverview(iso);
+    } else if (clause) {
+      answer = buildClauseGuidance(clause, 'explain');
+    } else {
+      answer = buildGeneralNoraFallback(iso);
+    }
+
+    if (note) {
+      answer += '\n\nNota: ' + note;
+    }
+    return answer;
+  }
+
+  function buildNormOverview(iso) {
+    if (!iso) {
+      return 'Primero selecciona una norma y yo te explico su enfoque, lo que busca controlar y cómo conviene auditarla.';
+    }
+
+    return ''
+      + iso.code + ' (' + (iso.version || 'N/D') + ')\n'
+      + 'Enfoque: ' + textEs(iso.focus || 'Sistema de gestión activo') + '.\n'
+      + 'Resumen: ' + textEs(iso.summary || 'Marco normativo seleccionado') + '.\n\n'
+      + 'Cuando llenes el checklist, piensa en tres cosas:\n'
+      + '1. Qué exige el requisito.\n'
+      + '2. Qué evidencia objetiva demuestra cumplimiento.\n'
+      + '3. Qué hallazgo y acción debes documentar si hay brechas.';
+  }
+
+  function buildChecklistGuidance(iso) {
+    var prefix = iso ? 'Para llenar ' + iso.code + ' trabaja así:\n' : 'Para llenar el checklist trabaja así:\n';
+    return prefix
+      + '1. Lee la definición del punto y la pregunta de auditoría.\n'
+      + '2. En Conformidad marca Cumple, Parcial, No cumple o N/A según la evidencia real.\n'
+      + '3. En Riesgo registra el impacto que tendría la brecha.\n'
+      + '4. En Hallazgo/observación escribe hechos verificables, no opiniones.\n'
+      + '5. En Acción o plan de mejora documenta qué se debe corregir, de preferencia con responsable y plazo.\n'
+      + '6. Adjunta evidencia trazable: documentos, registros, fotos, actas o reportes.';
+  }
+
+  function buildClauseGuidance(clause, mode) {
+    var finding = state.findings[clause.id] || newEmptyFinding();
+    var evidence = (clause.evidence && clause.evidence.length)
+      ? '- ' + clause.evidence.map(function (item) { return textEs(item); }).join('\n- ')
+      : '- Evidencia objetiva del cumplimiento de este requisito.';
+
+    if (mode === 'fill') {
+      return ''
+        + clause.id + ' - ' + textEs(clause.title) + '\n'
+        + 'Qué pide este punto: ' + textEs(clause.definition) + '.\n'
+        + 'Qué debe validar el auditor: ' + textEs(clause.question) + '.\n\n'
+        + 'Cómo llenarlo:\n'
+        + '1. Conformidad: usa Cumple si la evidencia es suficiente y vigente; Parcial si existe pero está incompleta; No cumple si la práctica no existe o falla; N/A si no aplica y puedes justificarlo.\n'
+        + '2. Hallazgo/observación: describe lo observado con hechos, por ejemplo documento, registro, entrevista o condición detectada.\n'
+        + '3. Acción o plan de mejora: indica la corrección o mejora esperada y, si es posible, responsable y plazo.\n'
+        + '4. Evidencia sugerida:\n' + evidence + '\n\n'
+        + 'Lo que ya llevas en este punto:\n'
+        + '- Estado: ' + (finding.status || 'Sin registrar') + '\n'
+        + '- Riesgo: ' + (normalizeRiskValue(finding.risk) || 'Sin registrar') + '\n'
+        + '- Hallazgo: ' + (finding.note || 'Sin registrar') + '\n'
+        + '- Acción: ' + (finding.action || 'Sin registrar');
+    }
+
+    return ''
+      + clause.id + ' - ' + textEs(clause.title) + '\n'
+      + 'Qué significa: ' + textEs(clause.definition) + '.\n'
+      + 'Qué revisa el auditor: ' + textEs(clause.question) + '.\n'
+      + 'Evidencia útil para demostrarlo:\n' + evidence + '\n\n'
+      + 'Consejo de auditoría: busca evidencia vigente, trazable y coherente entre documentos, práctica real y entrevistas.';
+  }
+
+  function buildClauseEvidenceAnswer(clause) {
+    var evidence = clause.evidence && clause.evidence.length
+      ? clause.evidence.map(function (item) { return '- ' + textEs(item); }).join('\n')
+      : '- Evidencia documental o registros que prueben la ejecución real del punto.';
+    return ''
+      + clause.id + ' - ' + textEs(clause.title) + '\n'
+      + 'Para este punto conviene adjuntar evidencia como:\n'
+      + evidence + '\n\n'
+      + 'Además, intenta que la evidencia tenga fecha, responsable y relación directa con el requisito auditado.';
+  }
+
+  function buildGeneralEvidenceAnswer(iso) {
+    var target = iso ? iso.code : 'la norma activa';
+    return ''
+      + 'Para ' + target + ' prioriza evidencia objetiva y trazable.\n'
+      + 'Ejemplos útiles:\n'
+      + '- Políticas, procedimientos y matrices.\n'
+      + '- Registros operativos, bitácoras y reportes.\n'
+      + '- Actas, minutas y aprobaciones.\n'
+      + '- Indicadores, dashboards o resultados de seguimiento.\n'
+      + '- Entrevistas y observación en sitio, respaldadas con notas o fotografías.';
+  }
+
+  function buildGeneralNoraFallback(iso) {
+    var target = iso ? iso.code + ' (' + (iso.version || 'N/D') + ')' : 'la norma que selecciones';
+    return ''
+      + 'Puedo ayudarte con ' + target + '.\n'
+      + 'Pregúntame cosas como:\n'
+      + '- ¿A qué se refiere esta norma?\n'
+      + '- ¿Qué significa el punto 9001-8.4?\n'
+      + '- ¿Cómo lleno el punto 27001-6.1.2?\n'
+      + '- ¿Qué evidencia debería adjuntar?';
+  }
+
+  function findClauseById(clauseId) {
+    if (!clauseId) return null;
+    var i;
+    var s;
+    var c;
+    for (i = 0; i < ISO_LIBRARY.length; i += 1) {
+      for (s = 0; s < ISO_LIBRARY[i].sections.length; s += 1) {
+        for (c = 0; c < ISO_LIBRARY[i].sections[s].clauses.length; c += 1) {
+          var clause = ISO_LIBRARY[i].sections[s].clauses[c];
+          if (clause.id === clauseId) return clause;
+        }
+      }
+    }
+    return null;
+  }
+
+  function findRelevantClause(query, preferredIso) {
+    var normalized = normalizeSearchText(query || '');
+    if (!normalized) return null;
+
+    var ranked = [];
+    if (preferredIso) ranked = ranked.concat(flattenClauses(preferredIso));
+
+    var i;
+    for (i = 0; i < ISO_LIBRARY.length; i += 1) {
+      if (preferredIso && ISO_LIBRARY[i].id === preferredIso.id) continue;
+      ranked = ranked.concat(flattenClauses(ISO_LIBRARY[i]));
+    }
+
+    var bestClause = null;
+    var bestScore = 0;
+    for (i = 0; i < ranked.length; i += 1) {
+      var score = scoreClauseMatch(ranked[i], normalized);
+      if (score > bestScore) {
+        bestScore = score;
+        bestClause = ranked[i];
+      }
+    }
+
+    return bestScore >= 14 ? bestClause : null;
+  }
+
+  function scoreClauseMatch(clause, normalizedQuery) {
+    var clauseId = normalizeSearchText(clause.id);
+    var title = normalizeSearchText(clause.title);
+    var definition = normalizeSearchText(clause.definition);
+    var question = normalizeSearchText(clause.question);
+    var evidence = normalizeSearchText((clause.evidence || []).join(' '));
+    var score = 0;
+
+    if (normalizedQuery.indexOf(clauseId) !== -1) score += 120;
+    if (normalizedQuery.indexOf(title) !== -1) score += 60;
+
+    var tokens = normalizedQuery.split(' ');
+    var stopwords = {
+      a: true, al: true, como: true, con: true, cual: true, de: true, del: true, el: true, en: true,
+      esta: true, este: true, la: true, las: true, lo: true, los: true, me: true, norma: true,
+      para: true, punto: true, que: true, se: true, una: true, uno: true, y: true
+    };
+    var i;
+    for (i = 0; i < tokens.length; i += 1) {
+      var token = tokens[i];
+      if (!token || token.length < 3 || stopwords[token]) continue;
+      if (clauseId.indexOf(token) !== -1) score += 18;
+      if (title.indexOf(token) !== -1) score += 10;
+      if (definition.indexOf(token) !== -1) score += 5;
+      if (question.indexOf(token) !== -1) score += 4;
+      if (evidence.indexOf(token) !== -1) score += 2;
+    }
+
+    return score;
+  }
+
   function renderSection(section, clauses) {
     var html = '';
     var icon = section.icon || 'fa-solid fa-layer-group';
@@ -1058,6 +1580,11 @@
 
     html += '  <p class="clause-definition"><strong>Definición del punto:</strong> ' + esc(textEs(clause.definition)) + '</p>';
     html += renderEvidenceGuide(clause.evidence);
+    html += '  <div class="nora-clause-tools">';
+    html += '    <button type="button" class="btn btn-secondary btn-nora-inline" data-action="nora-explain-clause" data-clause-id="' + esc(clause.id) + '"><i class="fa-solid fa-robot"></i> NORA explica este punto</button>';
+    html += '    <button type="button" class="btn btn-secondary btn-nora-inline" data-action="nora-fill-clause" data-clause-id="' + esc(clause.id) + '"><i class="fa-solid fa-wand-magic-sparkles"></i> NORA cómo llenarlo</button>';
+    html += '  </div>';
+    html += '  <div class="nora-clause-response hidden" data-nora-response="true" aria-live="polite"></div>';
 
     html += '  <div class="finding-grid">';
     html += '    <label>Conformidad';
@@ -1191,9 +1718,20 @@
   }
 
   function onChecklistClick(event) {
-    var button = event.target.closest ? event.target.closest('button[data-action="remove-attachment"]') : null;
+    var button = event.target.closest ? event.target.closest('button[data-action]') : null;
     if (!button) return;
-    removeAttachment(button.getAttribute('data-clause-id'), button.getAttribute('data-file-id'));
+    var action = String(button.getAttribute('data-action') || '');
+    if (action === 'remove-attachment') {
+      removeAttachment(button.getAttribute('data-clause-id'), button.getAttribute('data-file-id'));
+      return;
+    }
+    if (action === 'nora-explain-clause') {
+      requestClauseHelp(button, 'explain');
+      return;
+    }
+    if (action === 'nora-fill-clause') {
+      requestClauseHelp(button, 'fill');
+    }
   }
 
   function addAttachmentsToClause(clauseId, fileList) {
@@ -1574,6 +2112,7 @@
     };
     state.history = getEmptyHistoryRows();
     state.findings = {};
+    state.noraHistory = [];
     state.signature = {
       drawnDataUrl: '',
       uploadedDataUrl: '',
@@ -1593,6 +2132,8 @@
     }
 
     syncProjectForm();
+    ensureNoraConversation();
+    renderNoraPanel();
     saveState();
     showToast('Proyecto limpio.');
   }
@@ -1768,6 +2309,10 @@
         state.findings = parsed.findings;
       }
 
+      if (parsed.noraHistory && Object.prototype.toString.call(parsed.noraHistory) === '[object Array]') {
+        state.noraHistory = parsed.noraHistory;
+      }
+
       if (parsed.signature && typeof parsed.signature === 'object') {
         state.signature.drawnDataUrl = parsed.signature.drawnDataUrl || '';
         state.signature.uploadedDataUrl = parsed.signature.uploadedDataUrl || '';
@@ -1780,6 +2325,7 @@
 
   function saveState() {
     try {
+      state.noraHistory = normalizeNoraHistory(state.noraHistory);
       writeLocal(STORAGE_KEY, JSON.stringify(state));
     } catch (err) {
       showToast('No se pudo guardar el estado local.');
