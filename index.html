@@ -11,9 +11,11 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
   <link rel="stylesheet" href="assets/css/styles.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.min.js" defer></script>
 </head>
 
 <body>
+  <div id="three-scene" class="three-scene" aria-hidden="true"></div>
   <div class="bg-layer"></div>
   <div class="liquid-orbs" aria-hidden="true">
     <span></span>
@@ -22,10 +24,49 @@
     <span></span>
   </div>
 
+  <section id="auth-gate" class="auth-gate" aria-hidden="false">
+    <div class="auth-gate-backdrop" aria-hidden="true"></div>
+    <div class="auth-gate-card">
+      <div class="auth-visual" aria-hidden="true">
+        <img src="LOGO%201080%20X%201080.jpg" alt="" class="auth-visual-logo" />
+        <div class="auth-mascot">
+          <span class="auth-mascot-head"></span>
+          <span class="auth-mascot-face"></span>
+          <span class="auth-mascot-eye auth-mascot-eye-left"></span>
+          <span class="auth-mascot-eye auth-mascot-eye-right"></span>
+          <span class="auth-mascot-mouth"></span>
+          <span class="auth-mascot-arm auth-mascot-arm-left"></span>
+          <span class="auth-mascot-arm auth-mascot-arm-right"></span>
+          <span class="auth-mascot-shadow"></span>
+        </div>
+      </div>
+      <form id="auth-form" class="auth-form" novalidate>
+        <p class="eyebrow">Acceso privado</p>
+        <h1>Introducir contraseña</h1>
+        <p class="auth-copy">Ingresa la clave para entrar a la plataforma con fondo 3D y el panel de auditoría.</p>
+        <label class="auth-field" for="auth-password">
+          <span>Contraseña</span>
+          <div class="auth-input-shell">
+            <input id="auth-password" type="password" autocomplete="current-password" placeholder="Escribe la contraseña" />
+            <button id="auth-password-toggle" class="auth-password-toggle" type="button" aria-pressed="false" aria-label="Mostrar contraseña">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </label>
+        <button id="auth-submit" class="auth-submit" type="submit">
+          <i class="fa-solid fa-right-to-bracket"></i>
+          Entrar
+        </button>
+        <p id="auth-feedback" class="auth-feedback" aria-live="polite"></p>
+        <p class="auth-tip">Tip: la contraseña queda guardada en este navegador después de entrar.</p>
+      </form>
+    </div>
+  </section>
+
   <section id="app-splash" class="app-splash" aria-hidden="false">
     <div class="splash-glow" aria-hidden="true"></div>
     <div class="splash-card">
-      <img src="assets/img/logo_indusecc.png" alt="Logo INDUSECC" class="splash-logo" />
+      <img src="LOGO%201080%20X%201080.jpg" alt="Logo INDUSECC" class="splash-logo" />
       <p class="splash-brand">INDUSECC</p>
       <h2>Cargando plataforma de auditoría</h2>
       <p class="splash-copy">Inicializando módulos, normas y panel operativo móvil.</p>
@@ -35,10 +76,10 @@
     </div>
   </section>
 
-  <section id="iso-onboarding" class="onboarding is-active">
+  <section id="iso-onboarding" class="onboarding hidden" aria-hidden="true">
     <div class="onboarding-card">
       <div class="hero-brand">
-        <img src="assets/img/logo_indusecc.png" alt="Logo INDUSECC" class="hero-logo" />
+        <img src="LOGO%201080%20X%201080.jpg" alt="Logo INDUSECC" class="hero-logo" />
       </div>
       <p class="eyebrow">INDUSECC</p>
       <h1>Plataforma de Gesti&oacute;n de Auditor&iacute;as</h1>
@@ -65,7 +106,7 @@
     </nav>
   </section>
 
-  <main id="app" class="app hidden">
+  <main id="app" class="app hidden" aria-hidden="true">
     <header class="mobile-appbar" aria-label="Barra principal móvil">
       <button id="mobile-menu-toggle" class="mobile-appbar-btn" type="button" aria-label="Abrir menú">
         <i class="fa-solid fa-bars"></i>
@@ -163,7 +204,7 @@
     <section class="workspace">
       <aside class="panel project-panel">
         <div class="sidebar-brand">
-          <img src="assets/img/logo_indusecc.png" alt="Logo INDUSECC" class="brand-logo" />
+          <img src="LOGO%201080%20X%201080.jpg" alt="Logo INDUSECC" class="brand-logo" />
           <div>
             <p class="eyebrow">INDUSECC</p>
             <h2>Centro de Gesti&oacute;n</h2>
