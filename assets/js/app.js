@@ -1102,7 +1102,7 @@
   function buildNoraWelcomeMessage() {
     var iso = getActiveIso();
     var intro = isNoraRemoteConfigured()
-      ? 'Hola, soy NORA. Estoy conectada a OpenAI y lista para ayudarte con esta norma, sus puntos y las evidencias.'
+      ? 'Hola, soy NORA. Estoy conectada a Gemini y lista para ayudarte con esta norma, sus puntos y las evidencias.'
       : 'Hola, soy NORA. Puedo ayudarte con esta norma, sus puntos y las evidencias.';
     if (!iso) return intro;
     return intro + '\n\nAhora mismo estás trabajando con ' + iso.code + ' (' + (iso.version || 'N/D') + '): ' + textEs(iso.summary || iso.focus || 'marco normativo activo') + '.';
@@ -1161,7 +1161,7 @@
 
   function getNoraModeLabel() {
     if (isNoraRemoteConfigured()) {
-      return 'Conectada a OpenAI y lista para ayudarte.';
+      return 'Conectada a Gemini y lista para ayudarte.';
     }
     return 'Modo local de apoyo con la guía normativa INDUSECC.';
   }
@@ -1303,9 +1303,9 @@
       return Promise.resolve(window.NORA_CONFIG.request(payload)).then(function (result) {
         var remoteText = extractNoraText(result);
         if (remoteText) return remoteText;
-        return buildLocalNoraAnswer(question, options, 'OpenAI respondió vacío, así que te comparto la guía interna.');
+        return buildLocalNoraAnswer(question, options, 'Gemini respondió vacío, así que te comparto la guía interna.');
       }).catch(function () {
-        return buildLocalNoraAnswer(question, options, 'No pude conectar con OpenAI, así que te respondo con la guía interna.');
+        return buildLocalNoraAnswer(question, options, 'No pude conectar con Gemini, así que te respondo con la guía interna.');
       });
     }
 

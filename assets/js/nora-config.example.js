@@ -1,11 +1,11 @@
 /*
-  Plantilla opcional para conectar NORA a un servicio externo sin quemar la clave
+  Plantilla opcional para conectar NORA a Gemini sin quemar la clave
   dentro de assets/js/app.js.
 
   Uso recomendado:
   1. Duplica este archivo fuera del control de versiones o en tu pipeline seguro.
   2. Define window.NORA_CONFIG.request(payload) para transformar el contexto local
-     del sistema en la llamada real a tu proveedor, idealmente desde un endpoint
+     del sistema en la llamada real a Gemini, idealmente desde un endpoint
      servidor como /api/nora.
   3. Devuelve una cadena o un objeto con text, answer, reply o message.
 

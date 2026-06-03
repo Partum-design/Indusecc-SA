@@ -2229,6 +2229,22 @@ h5 {
   letter-spacing: 0.02em;
 }
 
+.nora-version-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(126, 29, 47, 0.12);
+  background: rgba(255, 247, 232, 0.98);
+  color: #8a3d47;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .nora-mode {
   display: inline-flex;
   align-self: flex-start;
@@ -2358,6 +2374,12 @@ h5 {
 
   .nora-mode {
     display: none;
+  }
+
+  .nora-version-badge {
+    margin-top: 4px;
+    padding: 4px 8px;
+    font-size: 0.64rem;
   }
 
   .nora-messages {
