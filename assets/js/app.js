@@ -1102,8 +1102,8 @@
   function buildNoraWelcomeMessage() {
     var iso = getActiveIso();
     var intro = isNoraRemoteConfigured()
-      ? 'Soy NORA, tu chatbot de auditoría conectado a OpenAI. Puedo explicarte la norma activa, decirte qué significa cada punto y orientarte sobre cómo llenar el checklist.'
-      : 'Soy NORA. Puedo explicarte la norma activa, decirte qué significa cada punto y orientarte sobre cómo llenar el checklist.';
+      ? 'Hola, soy NORA. Estoy conectada a OpenAI y lista para ayudarte con esta norma, sus puntos y las evidencias.'
+      : 'Hola, soy NORA. Puedo ayudarte con esta norma, sus puntos y las evidencias.';
     if (!iso) return intro;
     return intro + '\n\nAhora mismo estás trabajando con ' + iso.code + ' (' + (iso.version || 'N/D') + '): ' + textEs(iso.summary || iso.focus || 'marco normativo activo') + '.';
   }
@@ -1161,9 +1161,9 @@
 
   function getNoraModeLabel() {
     if (isNoraRemoteConfigured()) {
-      return 'NORA conectada a OpenAI con contexto de la auditoría activo.';
+      return 'Conectada a OpenAI y lista para ayudarte.';
     }
-    return 'NORA en modo base normativa INDUSECC. Responde con el contenido ISO cargado y guía de llenado.';
+    return 'Modo local de apoyo con la guía normativa INDUSECC.';
   }
 
   function isNoraRemoteConfigured() {
@@ -1303,9 +1303,9 @@
       return Promise.resolve(window.NORA_CONFIG.request(payload)).then(function (result) {
         var remoteText = extractNoraText(result);
         if (remoteText) return remoteText;
-        return buildLocalNoraAnswer(question, options, 'La respuesta remota llegó vacía, así que tomé la base interna.');
+        return buildLocalNoraAnswer(question, options, 'OpenAI respondió vacío, así que te comparto la guía interna.');
       }).catch(function () {
-        return buildLocalNoraAnswer(question, options, 'La conexión remota no respondió; usé el conocimiento interno del sistema.');
+        return buildLocalNoraAnswer(question, options, 'No pude conectar con OpenAI, así que te respondo con la guía interna.');
       });
     }
 

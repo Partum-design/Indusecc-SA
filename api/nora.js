@@ -4,12 +4,12 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  var apiKey = process.env.OPENAI_API_KEY;
-  var model = process.env.OPENAI_MODEL || 'gpt-5.5';
+  var apiKey = process.env.OPENAI_API_KEY || process.env.NORA_OPENAI_API_KEY;
+  var model = process.env.OPENAI_MODEL || process.env.NORA_OPENAI_MODEL || 'gpt-5.5';
 
   if (!apiKey) {
     return res.status(500).json({
-      error: 'OPENAI_API_KEY no está configurada en el servidor.'
+      error: 'Falta configurar OPENAI_API_KEY o NORA_OPENAI_API_KEY en el servidor.'
     });
   }
 
@@ -52,14 +52,14 @@ module.exports = async function handler(req, res) {
   }
 
   var systemPrompt = [
-    'Eres NORA, una asistente experta en auditorías, normas ISO y control documental para INDUSECC.',
+    'Eres NORA, una asistente amable, clara y muy práctica para auditorías, normas ISO y control documental para INDUSECC.',
     'Responde SIEMPRE en español.',
-    'Sé clara, práctica y profesional.',
+    'Usa un tono cercano, simple y útil.',
     'No copies la norma literal ni redactes respuestas excesivamente largas.',
     'Prioriza pasos concretos, evidencia objetiva y recomendaciones aplicables.',
     'Si falta información, dilo de forma directa y pide el dato mínimo necesario.',
     'Cuando expliques un requisito, incluye ejemplos de evidencia o de llenado cuando sea útil.',
-    'Formato recomendado: respuesta breve con viñetas o párrafos cortos.'
+    'Formato recomendado: respuesta breve, amigable y de 2 a 4 viñetas cuando aplique.'
   ].join(' ');
 
   if (contextLines.length) {

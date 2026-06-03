@@ -2174,7 +2174,7 @@ h5 {
 
 /* NORA chatbot overrides */
 .nora-toggle {
-  right: 22px;
+  left: 22px;
   bottom: calc(22px + env(safe-area-inset-bottom, 0px));
   min-height: 58px;
   padding: 11px 18px 11px 11px;
@@ -2191,10 +2191,10 @@ h5 {
 }
 
 .nora-panel {
-  right: 22px;
+  left: 22px;
   bottom: calc(96px + env(safe-area-inset-bottom, 0px));
-  width: min(460px, calc(100vw - 32px));
-  max-height: min(78vh, 780px);
+  width: min(372px, calc(100vw - 32px));
+  max-height: min(68vh, 680px);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -2225,33 +2225,36 @@ h5 {
 }
 
 .nora-panel-head h3 {
-  font-size: 1.28rem;
+  font-size: 1.18rem;
   letter-spacing: 0.02em;
 }
 
 .nora-mode {
-  padding: 10px 12px;
-  border-radius: 14px;
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 8px 10px;
+  border-radius: 999px;
   background: rgba(126, 29, 47, 0.06);
   border: 1px solid rgba(126, 29, 47, 0.08);
-  font-size: 0.8rem;
+  font-size: 0.74rem;
   color: #704d38;
 }
 
 .nora-quick-prompts {
-  gap: 10px;
+  gap: 8px;
 }
 
 .nora-prompt-chip {
-  padding: 9px 13px;
+  padding: 7px 10px;
   border-color: rgba(126, 29, 47, 0.15);
   background: rgba(255, 246, 232, 0.96);
   box-shadow: 0 8px 18px rgba(57, 12, 20, 0.05);
+  font-size: 0.72rem;
 }
 
 .nora-messages {
   flex: 1;
-  min-height: 240px;
+  min-height: 180px;
   max-height: none;
   padding-right: 6px;
   display: flex;
@@ -2271,15 +2274,17 @@ h5 {
 
 .nora-message-role {
   color: #8f6572;
+  font-size: 0.68rem;
 }
 
 .nora-message-bubble {
   max-width: 92%;
-  border-radius: 18px;
-  padding: 12px 14px;
+  border-radius: 16px;
+  padding: 11px 12px;
   line-height: 1.55;
   border: 1px solid rgba(126, 29, 47, 0.09);
   box-shadow: 0 8px 18px rgba(38, 7, 13, 0.05);
+  font-size: 0.93rem;
 }
 
 .nora-message.user .nora-message-bubble {
@@ -2302,10 +2307,12 @@ h5 {
 
 .nora-form-label {
   color: #7c3345;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
 }
 
 .nora-form textarea {
-  min-height: 104px;
+  min-height: 90px;
   border-radius: 16px;
   border-color: #d9c39e;
   background: rgba(255, 255, 255, 0.98);
@@ -2333,25 +2340,33 @@ h5 {
 
 @media (max-width: 719px) {
   .nora-toggle {
-    left: auto;
-    right: 12px;
+    left: 12px;
+    right: auto;
     bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     min-width: 136px;
     justify-content: center;
   }
 
   .nora-panel {
-    right: 12px;
     left: 12px;
+    right: auto;
     bottom: calc(86px + env(safe-area-inset-bottom, 0px));
-    width: auto;
-    max-height: min(72vh, 720px);
+    width: min(368px, calc(100vw - 24px));
+    max-height: min(66vh, 640px);
     padding: 14px;
+  }
+
+  .nora-mode {
+    display: none;
   }
 
   .nora-messages {
     min-height: 0;
     max-height: 30vh;
+  }
+
+  .nora-prompt-chip {
+    font-size: 0.69rem;
   }
 
   .nora-form textarea {
