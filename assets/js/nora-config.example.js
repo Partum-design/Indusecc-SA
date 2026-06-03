@@ -5,7 +5,8 @@
   Uso recomendado:
   1. Duplica este archivo fuera del control de versiones o en tu pipeline seguro.
   2. Define window.NORA_CONFIG.request(payload) para transformar el contexto local
-     del sistema en la llamada real a tu proveedor.
+     del sistema en la llamada real a tu proveedor, idealmente desde un endpoint
+     servidor como /api/nora.
   3. Devuelve una cadena o un objeto con text, answer, reply o message.
 
   Nota:
@@ -18,11 +19,10 @@ window.NORA_CONFIG = {
     /*
     Ejemplo orientativo:
 
-    var response = await fetch('https://tu-endpoint-seguro.example/nora', {
+    var response = await fetch('/api/nora', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer TU_API_KEY_SEGURA'
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(payload)
     });

@@ -2170,3 +2170,191 @@ h5 {
     min-width: 170px;
   }
 }
+
+
+/* NORA chatbot overrides */
+.nora-toggle {
+  right: 22px;
+  bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+  min-height: 58px;
+  padding: 11px 18px 11px 11px;
+  background: linear-gradient(125deg, #7e1d2f, #b12a27 58%, #f3b33d 130%);
+  box-shadow:
+    0 18px 38px rgba(33, 5, 12, 0.35),
+    0 0 0 1px rgba(255, 220, 165, 0.12);
+}
+
+.nora-toggle-mark {
+  background: linear-gradient(135deg, #fff1cf, #f0b94c);
+  color: #5a1020;
+  font-weight: 900;
+}
+
+.nora-panel {
+  right: 22px;
+  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  width: min(460px, calc(100vw - 32px));
+  max-height: min(78vh, 780px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid rgba(208, 136, 18, 0.18);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 205, 125, 0.16), transparent 26%),
+    linear-gradient(165deg, rgba(255, 253, 248, 0.99), rgba(255, 245, 228, 0.97));
+  color: #4b1822;
+  box-shadow:
+    0 36px 80px rgba(25, 4, 9, 0.32),
+    0 0 0 1px rgba(255, 255, 255, 0.22) inset;
+  padding: 18px;
+  backdrop-filter: blur(22px);
+  overflow: hidden;
+}
+
+.nora-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: linear-gradient(90deg, #f0c063, #d98e04, #7e1d2f);
+}
+
+.nora-panel-head {
+  align-items: center;
+}
+
+.nora-panel-head h3 {
+  font-size: 1.28rem;
+  letter-spacing: 0.02em;
+}
+
+.nora-mode {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(126, 29, 47, 0.06);
+  border: 1px solid rgba(126, 29, 47, 0.08);
+  font-size: 0.8rem;
+  color: #704d38;
+}
+
+.nora-quick-prompts {
+  gap: 10px;
+}
+
+.nora-prompt-chip {
+  padding: 9px 13px;
+  border-color: rgba(126, 29, 47, 0.15);
+  background: rgba(255, 246, 232, 0.96);
+  box-shadow: 0 8px 18px rgba(57, 12, 20, 0.05);
+}
+
+.nora-messages {
+  flex: 1;
+  min-height: 240px;
+  max-height: none;
+  padding-right: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: auto;
+  scroll-behavior: smooth;
+}
+
+.nora-message {
+  max-width: 100%;
+}
+
+.nora-message.user {
+  align-items: flex-end;
+}
+
+.nora-message-role {
+  color: #8f6572;
+}
+
+.nora-message-bubble {
+  max-width: 92%;
+  border-radius: 18px;
+  padding: 12px 14px;
+  line-height: 1.55;
+  border: 1px solid rgba(126, 29, 47, 0.09);
+  box-shadow: 0 8px 18px rgba(38, 7, 13, 0.05);
+}
+
+.nora-message.user .nora-message-bubble {
+  background: linear-gradient(135deg, #7e1d2f, #a42324);
+  color: #fff6ec;
+  border-color: rgba(255, 223, 171, 0.12);
+  border-bottom-right-radius: 8px;
+}
+
+.nora-message.assistant .nora-message-bubble {
+  background: linear-gradient(180deg, #fffaf2, #fff3de);
+  color: #4d2430;
+  border-bottom-left-radius: 8px;
+}
+
+.nora-form {
+  gap: 10px;
+  margin-top: auto;
+}
+
+.nora-form-label {
+  color: #7c3345;
+}
+
+.nora-form textarea {
+  min-height: 104px;
+  border-radius: 16px;
+  border-color: #d9c39e;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: inset 0 1px 2px rgba(96, 31, 43, 0.06);
+}
+
+.nora-form textarea:focus {
+  border-color: #d98e04;
+  box-shadow: 0 0 0 3px rgba(217, 142, 4, 0.16);
+}
+
+.nora-form-actions {
+  justify-content: stretch;
+}
+
+.nora-form-actions .btn {
+  width: 100%;
+}
+
+.nora-panel.is-loading .nora-panel-head,
+.nora-panel.is-loading .nora-quick-prompts,
+.nora-panel.is-loading .nora-form {
+  opacity: 0.92;
+}
+
+@media (max-width: 719px) {
+  .nora-toggle {
+    left: auto;
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    min-width: 136px;
+    justify-content: center;
+  }
+
+  .nora-panel {
+    right: 12px;
+    left: 12px;
+    bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+    width: auto;
+    max-height: min(72vh, 720px);
+    padding: 14px;
+  }
+
+  .nora-messages {
+    min-height: 0;
+    max-height: 30vh;
+  }
+
+  .nora-form textarea {
+    min-height: 82px;
+  }
+}

@@ -1101,7 +1101,9 @@
 
   function buildNoraWelcomeMessage() {
     var iso = getActiveIso();
-    var intro = 'Soy NORA. Puedo explicarte la norma activa, decirte qué significa cada punto y orientarte sobre cómo llenar el checklist.';
+    var intro = isNoraRemoteConfigured()
+      ? 'Soy NORA, tu chatbot de auditoría conectado a OpenAI. Puedo explicarte la norma activa, decirte qué significa cada punto y orientarte sobre cómo llenar el checklist.'
+      : 'Soy NORA. Puedo explicarte la norma activa, decirte qué significa cada punto y orientarte sobre cómo llenar el checklist.';
     if (!iso) return intro;
     return intro + '\n\nAhora mismo estás trabajando con ' + iso.code + ' (' + (iso.version || 'N/D') + '): ' + textEs(iso.summary || iso.focus || 'marco normativo activo') + '.';
   }
@@ -1159,7 +1161,7 @@
 
   function getNoraModeLabel() {
     if (isNoraRemoteConfigured()) {
-      return 'NORA lista con adaptador externo y contexto interno de la auditoría.';
+      return 'NORA conectada a OpenAI con contexto de la auditoría activo.';
     }
     return 'NORA en modo base normativa INDUSECC. Responde con el contenido ISO cargado y guía de llenado.';
   }
@@ -1314,6 +1316,12 @@
     var clause = (options && options.clause) || findClauseById(options && options.clauseId);
     var iso = getActiveIso();
     var finding = clause ? (state.findings[clause.id] || newEmptyFinding()) : null;
+    var conversation = normalizeNoraHistory(state.noraHistory).slice(-12).map(function (item) {
+      return {
+        role: item.role,
+        text: item.text
+      };
+    });
 
     return {
       assistant: 'NORA',
@@ -1335,7 +1343,8 @@
         evidence: clause.evidence || []
       } : null,
       finding: finding,
-      project: state.project
+      project: state.project,
+      conversation: conversation
     };
   }
 
