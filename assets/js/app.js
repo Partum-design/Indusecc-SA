@@ -1102,7 +1102,7 @@
   function buildNoraWelcomeMessage() {
     var iso = getActiveIso();
     var intro = isNoraRemoteConfigured()
-      ? 'Hola, soy NORA. Estoy conectada a Gemini y lista para ayudarte con esta norma, sus puntos y las evidencias.'
+      ? 'Hola, soy NORA. Puedo ayudarte a entender y llenar cada punto de la norma.'
       : 'Hola, soy NORA. Puedo ayudarte con esta norma, sus puntos y las evidencias.';
     if (!iso) return intro;
     return intro + '\n\nAhora mismo estás trabajando con ' + iso.code + ' (' + (iso.version || 'N/D') + '): ' + textEs(iso.summary || iso.focus || 'marco normativo activo') + '.';
@@ -1313,8 +1313,9 @@
   }
 
   function buildNoraPayload(question, options) {
-    var clause = (options && options.clause) || findClauseById(options && options.clauseId);
     var iso = getActiveIso();
+    var intent = inferNoraIntent(question, options || {});
+    var clause = (options && options.clause) || findClauseById(options && options.clauseId) || findRelevantClause(question, iso);
     var finding = clause ? (state.findings[clause.id] || newEmptyFinding()) : null;
     var conversation = normalizeNoraHistory(state.noraHistory).slice(-12).map(function (item) {
       return {
@@ -1327,7 +1328,7 @@
       assistant: 'NORA',
       question: question,
       mode: options && options.mode ? options.mode : 'chat',
-      intent: options && options.intent ? options.intent : '',
+      intent: intent,
       activeIso: iso ? {
         id: iso.id,
         code: iso.code,
@@ -1363,11 +1364,12 @@
     var normalized = normalizeSearchText(question || '');
     var iso = getActiveIso();
     var clause = (options && options.clause) || findClauseById(options && options.clauseId) || findRelevantClause(question, iso);
+    var intent = inferNoraIntent(question, options || {});
     var answer = '';
 
-    if (options && options.intent === 'fill' && clause) {
+    if (intent === 'fill' && clause) {
       answer = buildClauseGuidance(clause, 'fill');
-    } else if (options && options.intent === 'explain' && clause) {
+    } else if (intent === 'explain' && clause) {
       answer = buildClauseGuidance(clause, 'explain');
     } else if (normalized.indexOf('como lleno') !== -1 || normalized.indexOf('como llenar') !== -1 || normalized.indexOf('llenarlo') !== -1 || normalized.indexOf('que pongo') !== -1) {
       answer = clause ? buildClauseGuidance(clause, 'fill') : buildChecklistGuidance(iso);
@@ -1429,6 +1431,10 @@
         + '2. Hallazgo/observación: describe lo observado con hechos, por ejemplo documento, registro, entrevista o condición detectada.\n'
         + '3. Acción o plan de mejora: indica la corrección o mejora esperada y, si es posible, responsable y plazo.\n'
         + '4. Evidencia sugerida:\n' + evidence + '\n\n'
+        + 'Puedes escribir algo como:\n'
+        + '- Conformidad: Parcial, si existe evidencia pero falta actualizarla o demostrar su uso.\n'
+        + '- Hallazgo/observación: Se revisó la evidencia disponible para el punto ' + clause.id + ', pero falta confirmar vigencia, responsable o trazabilidad completa.\n'
+        + '- Acción o plan de mejora: Actualizar la evidencia del punto, asignar responsable y conservar registros verificables para la próxima revisión.\n\n'
         + 'Lo que ya llevas en este punto:\n'
         + '- Estado: ' + (finding.status || 'Sin registrar') + '\n'
         + '- Riesgo: ' + (normalizeRiskValue(finding.risk) || 'Sin registrar') + '\n'
@@ -1476,6 +1482,24 @@
       + '- ¿Qué significa el punto 9001-8.4?\n'
       + '- ¿Cómo lleno el punto 27001-6.1.2?\n'
       + '- ¿Qué evidencia debería adjuntar?';
+  }
+
+  function inferNoraIntent(question, options) {
+    if (options && options.intent) return options.intent;
+    var normalized = normalizeSearchText(question || '');
+    if (
+      normalized.indexOf('llenar') !== -1 ||
+      normalized.indexOf('lleno') !== -1 ||
+      normalized.indexOf('llenarlo') !== -1 ||
+      normalized.indexOf('que pongo') !== -1 ||
+      normalized.indexOf('redacta') !== -1 ||
+      normalized.indexOf('escribir') !== -1
+    ) {
+      return 'fill';
+    }
+    if (normalized.indexOf('evidencia') !== -1 || normalized.indexOf('adjuntar') !== -1) return 'evidence';
+    if (normalized.indexOf('explica') !== -1 || normalized.indexOf('significa') !== -1 || normalized.indexOf('refiere') !== -1) return 'explain';
+    return '';
   }
 
   function findClauseById(clauseId) {

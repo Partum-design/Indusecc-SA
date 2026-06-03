@@ -121,8 +121,14 @@ function buildSystemPrompt(payload) {
     'No copies la norma literal ni redactes respuestas excesivamente largas.',
     'Prioriza pasos concretos, evidencia objetiva y recomendaciones aplicables.',
     'Si falta información, dilo de forma directa y pide el dato mínimo necesario.',
+    'Cuando el usuario pida llenar un punto, ayuda a completar Conformidad, Hallazgo/observación, Acción o plan de mejora y Evidencia sugerida.',
+    'Para llenado de puntos, incluye un borrador breve y editable; no lo presentes como verdad final si falta evidencia.',
     'Formato recomendado: respuesta breve, amigable y de 2 a 4 viñetas cuando aplique.'
   ];
+
+  if (payload && payload.intent === 'fill') {
+    lines.push('Intención detectada: ayudar a llenar el punto. Responde con: 1) qué pide el punto, 2) cómo marcar conformidad, 3) texto sugerido para hallazgo/observación, 4) acción recomendada, 5) evidencia sugerida.');
+  }
 
   if (payload && payload.activeIso) {
     lines.push('Norma activa: ' + safeText(payload.activeIso.code) + ' (' + safeText(payload.activeIso.version || 'N/D') + ').');
@@ -134,6 +140,7 @@ function buildSystemPrompt(payload) {
     lines.push('Punto: ' + safeText(payload.clause.id) + ' - ' + safeText(payload.clause.title) + '.');
     if (payload.clause.definition) lines.push('Definición: ' + safeText(payload.clause.definition) + '.');
     if (payload.clause.question) lines.push('Pregunta de auditoría: ' + safeText(payload.clause.question) + '.');
+    if (payload.clause.evidence && payload.clause.evidence.length) lines.push('Evidencia sugerida: ' + safeText(payload.clause.evidence.join(', ')) + '.');
   }
 
   if (payload && payload.finding) {
