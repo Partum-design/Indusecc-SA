@@ -2174,32 +2174,50 @@ h5 {
 
 /* NORA chatbot overrides */
 .nora-toggle {
-  left: 22px;
-  bottom: calc(22px + env(safe-area-inset-bottom, 0px));
-  min-height: 58px;
-  padding: 11px 18px 11px 11px;
+  left: 16px;
+  right: auto;
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  width: auto;
+  inline-size: auto;
+  max-width: calc(100vw - 32px);
+  min-width: 112px;
+  height: 48px;
+  min-height: 48px;
+  justify-content: center;
+  flex: none;
+  white-space: nowrap;
+  padding: 8px 14px 8px 8px;
+  border-radius: 999px;
   background: linear-gradient(125deg, #7e1d2f, #b12a27 58%, #f3b33d 130%);
   box-shadow:
     0 18px 38px rgba(33, 5, 12, 0.35),
     0 0 0 1px rgba(255, 220, 165, 0.12);
 }
 
+.nora-toggle span:last-child {
+  line-height: 1;
+}
+
 .nora-toggle-mark {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
   background: linear-gradient(135deg, #fff1cf, #f0b94c);
   color: #5a1020;
   font-weight: 900;
 }
 
 .nora-panel {
-  left: 22px;
-  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
-  width: min(372px, calc(100vw - 32px));
+  left: 16px;
+  right: auto;
+  bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  width: min(360px, calc(100vw - 32px));
   max-height: min(68vh, 680px);
   display: flex;
   flex-direction: column;
   gap: 12px;
   border: 1px solid rgba(208, 136, 18, 0.18);
-  border-radius: 28px;
+  border-radius: 22px;
   background:
     radial-gradient(circle at top right, rgba(255, 205, 125, 0.16), transparent 26%),
     linear-gradient(165deg, rgba(255, 253, 248, 0.99), rgba(255, 245, 228, 0.97));
@@ -2225,35 +2243,13 @@ h5 {
 }
 
 .nora-panel-head h3 {
-  font-size: 1.18rem;
+  font-size: 1.2rem;
   letter-spacing: 0.02em;
-}
-
-.nora-version-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 6px;
-  padding: 5px 9px;
-  border-radius: 999px;
-  border: 1px solid rgba(126, 29, 47, 0.12);
-  background: rgba(255, 247, 232, 0.98);
-  color: #8a3d47;
-  font-size: 0.68rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .nora-mode {
-  display: inline-flex;
-  align-self: flex-start;
-  padding: 8px 10px;
-  border-radius: 999px;
-  background: rgba(126, 29, 47, 0.06);
-  border: 1px solid rgba(126, 29, 47, 0.08);
-  font-size: 0.74rem;
-  color: #704d38;
+  display: none;
 }
 
 .nora-quick-prompts {
@@ -2358,28 +2354,28 @@ h5 {
   .nora-toggle {
     left: 12px;
     right: auto;
-    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-    min-width: 136px;
+    bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+    width: auto;
+    inline-size: auto;
+    max-width: calc(100vw - 24px);
+    min-width: 104px;
+    height: 46px;
+    min-height: 46px;
     justify-content: center;
+    padding: 7px 13px 7px 7px;
   }
 
   .nora-panel {
     left: 12px;
     right: auto;
-    bottom: calc(86px + env(safe-area-inset-bottom, 0px));
-    width: min(368px, calc(100vw - 24px));
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    width: min(344px, calc(100vw - 24px));
     max-height: min(66vh, 640px);
     padding: 14px;
   }
 
   .nora-mode {
     display: none;
-  }
-
-  .nora-version-badge {
-    margin-top: 4px;
-    padding: 4px 8px;
-    font-size: 0.64rem;
   }
 
   .nora-messages {
