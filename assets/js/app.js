@@ -1,10 +1,19 @@
 (function () {
   'use strict';
 
-  var STORAGE_KEY = 'sg_audit_state_v4';
   var TUTORIAL_KEY = 'sg_audit_tutorial_seen_v1';
-  var AUTH_KEY = 'sg_audit_unlocked_v1';
+  var LAST_ISO_KEY = 'sg_audit_last_iso_v1';
+  var EVIDENCE_BUCKET = 'audit-evidence';
+  var SIGNATURE_BUCKET = 'audit-signatures';
   var ROUTES = getRoutes();
+
+  var sb = null;
+  var currentUser = null;
+  var currentProfile = null;
+  var currentAudit = null;
+  var saveDebounceTimer = null;
+  var syncedNoraCount = 0;
+  var syncedSignatureSource = '';
 
   var ISO_LIBRARY = [];
   var dom = {};
@@ -70,11 +79,33 @@
     };
   }
 
-  function init() {
-    if (!isUnlocked()) {
+  async function init() {
+    if (!window.supabase || !window.SUPABASE_CONFIG) {
       window.location.replace(ROUTES.login);
       return;
     }
+
+    sb = window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey);
+
+    var sessionResult = await sb.auth.getSession();
+    var session = sessionResult.data && sessionResult.data.session;
+    if (!session) {
+      window.location.replace(ROUTES.login);
+      return;
+    }
+    currentUser = session.user;
+
+    var profileResult = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+    if (profileResult.error || !profileResult.data || !profileResult.data.active) {
+      await sb.auth.signOut();
+      window.location.replace(ROUTES.login);
+      return;
+    }
+    currentProfile = profileResult.data;
+
+    sb.auth.onAuthStateChange(function (event) {
+      if (event === 'SIGNED_OUT') window.location.replace(ROUTES.login);
+    });
 
     cacheDom();
     ISO_LIBRARY = normalizeLibrary(window.ISO_LIBRARY);
@@ -84,23 +115,68 @@
       return;
     }
 
-    loadState();
     applyDefaultIso();
     bindEvents();
     setupSignatureCanvas();
-    syncProjectForm();
     renderFrameworkTabs();
     syncFilterControls();
     renderIsoOptions();
     renderIsoQuickSelector();
     renderIsoDetailCard(findIsoById(state.selectedIsoId));
+
+    await loadCurrentAudit();
+
+    syncProjectForm();
     renderSignaturePreview();
     ensureNoraConversation();
     renderNoraPanel();
     cacheLogoDataUrl();
     startSplashSequence();
+    applyRoleRestrictions();
+    renderSessionInfo();
+  }
 
-    saveState();
+  function renderSessionInfo() {
+    if (dom.sessionUser && currentProfile) {
+      dom.sessionUser.textContent = currentProfile.email + ' · ' + roleLabel(currentProfile.role);
+    }
+  }
+
+  function roleLabel(role) {
+    if (role === 'admin') return 'Administrador';
+    if (role === 'auditor') return 'Auditor';
+    return 'Solo lectura';
+  }
+
+  function applyRoleRestrictions() {
+    if (!currentProfile || currentProfile.role !== 'viewer') return;
+
+    var i;
+    var readOnlySelectors = [
+      '#project-name', '#auditor-name', '#audit-site', '#audit-date', '#audit-scope',
+      '#doc-version', '#audited-rep', '[data-history-row]', '#clear-project', '#floating-clear',
+      '#clear-signature', '#signature-file'
+    ];
+    for (i = 0; i < readOnlySelectors.length; i += 1) {
+      var nodes = document.querySelectorAll(readOnlySelectors[i]);
+      var n;
+      for (n = 0; n < nodes.length; n += 1) {
+        nodes[n].disabled = true;
+        nodes[n].setAttribute('readonly', 'readonly');
+      }
+    }
+
+    if (dom.signatureCanvas) {
+      dom.signatureCanvas.style.pointerEvents = 'none';
+    }
+
+    showToast('Tu cuenta es de solo lectura: puedes ver la auditoría pero no editarla.');
+  }
+
+  async function logoutApp() {
+    if (!sb) return;
+    await sb.auth.signOut();
+    window.location.replace(ROUTES.login);
   }
 
   function cacheDom() {
@@ -179,6 +255,8 @@
     dom.noraSend = document.getElementById('nora-send');
     dom.toast = document.getElementById('toast');
     dom.headerLogo = document.querySelector('.project-panel .brand-logo') || document.querySelector('.hero-logo');
+    dom.sessionUser = document.getElementById('session-user');
+    dom.logoutApp = document.getElementById('logout-app');
   }
 
   function normalizeLibrary(list) {
@@ -229,14 +307,13 @@
   }
 
   function applyDefaultIso() {
+    var lastId = readLocal(LAST_ISO_KEY);
     var preferred = findIsoById('iso27001');
-    if (!state.selectedIsoId || !findIsoById(state.selectedIsoId)) {
+    if (lastId && findIsoById(lastId)) {
+      state.selectedIsoId = lastId;
+    } else if (!state.selectedIsoId || !findIsoById(state.selectedIsoId)) {
       state.selectedIsoId = preferred ? preferred.id : ISO_LIBRARY[0].id;
     }
-  }
-
-  function isUnlocked() {
-    return readAuthState() === '1';
   }
 
   function bindEvents() {
@@ -420,7 +497,8 @@
 
     if (dom.clearProject) {
       dom.clearProject.addEventListener('click', function () {
-        if (!window.confirm('Se limpiará toda la información de esta auditoría. ¿Continuar?')) return;
+        if (isReadOnlyUser()) return;
+        if (!window.confirm('Se archivará esta auditoría y se abrirá una nueva en blanco. ¿Continuar?')) return;
         clearCurrentAudit();
       });
     }
@@ -428,7 +506,8 @@
     if (dom.mobileMenuClear) {
       dom.mobileMenuClear.addEventListener('click', function () {
         closeMobileOffcanvas();
-        if (!window.confirm('Se limpiará toda la información de esta auditoría. ¿Continuar?')) return;
+        if (isReadOnlyUser()) return;
+        if (!window.confirm('Se archivará esta auditoría y se abrirá una nueva en blanco. ¿Continuar?')) return;
         clearCurrentAudit();
       });
     }
@@ -463,13 +542,15 @@
           dom.clearProject.click();
           return;
         }
-        if (!window.confirm('Se limpiará toda la información de esta auditoría. ¿Continuar?')) return;
+        if (isReadOnlyUser()) return;
+        if (!window.confirm('Se archivará esta auditoría y se abrirá una nueva en blanco. ¿Continuar?')) return;
         clearCurrentAudit();
       });
     }
 
     if (dom.clearSignature) {
       dom.clearSignature.addEventListener('click', function () {
+        if (isReadOnlyUser()) return;
         clearSignatureCanvas();
         state.signature.drawnDataUrl = '';
         saveState();
@@ -480,11 +561,20 @@
     if (dom.signatureFile) {
       dom.signatureFile.addEventListener('change', onSignatureFileChange);
     }
+
+    if (dom.logoutApp) {
+      dom.logoutApp.addEventListener('click', logoutApp);
+    }
+  }
+
+  function isReadOnlyUser() {
+    return Boolean(currentProfile && currentProfile.role === 'viewer');
   }
 
   function bindProjectField(input, key) {
     if (!input) return;
     input.addEventListener('input', function () {
+      if (isReadOnlyUser()) return;
       state.project[key] = input.value;
       saveState();
     });
@@ -496,6 +586,7 @@
     var i;
     for (i = 0; i < dom.historyInputs.length; i += 1) {
       dom.historyInputs[i].addEventListener('input', function () {
+        if (isReadOnlyUser()) return;
         var row = Number(this.getAttribute('data-history-row'));
         var field = this.getAttribute('data-history-field');
         if (row < 0 || row > 2 || !field) return;
@@ -525,7 +616,7 @@
   }
 
   function onSignaturePointerDown(event) {
-    if (!signatureCtx || !dom.signatureCanvas) return;
+    if (!signatureCtx || !dom.signatureCanvas || isReadOnlyUser()) return;
     event.preventDefault();
     isDrawing = true;
     var pos = getCanvasPointerPosition(event);
@@ -570,6 +661,7 @@
   }
 
   function onSignatureFileChange(event) {
+    if (isReadOnlyUser()) return;
     var input = event.target;
     var file = input && input.files && input.files[0] ? input.files[0] : null;
     if (!file) return;
@@ -760,12 +852,12 @@
     }
   }
 
-  function setSelectedIso(isoId) {
+  async function setSelectedIso(isoId) {
     var iso = findIsoById(isoId);
     if (!iso) return;
 
     state.selectedIsoId = iso.id;
-    saveState();
+    writeLocal(LAST_ISO_KEY, iso.id);
 
     renderIsoOptions();
     renderIsoQuickSelector();
@@ -773,11 +865,15 @@
 
     if (!dom.app || dom.app.classList.contains('hidden')) return;
 
+    await loadCurrentAudit();
     ensureFindingsSkeleton(iso);
     ensureActiveSection(iso);
+    syncProjectForm();
     renderSectionTabs(iso);
     renderChecklist(iso);
     renderMetrics(iso);
+    renderSignaturePreview();
+    ensureNoraConversation();
     renderNoraPanel();
     if (dom.isoUpdatedNote) dom.isoUpdatedNote.textContent = textEs(iso.updatedNote || '');
   }
@@ -799,7 +895,7 @@
     setActiveScreen(dom.onboarding, dom.app);
   }
 
-  function openAuditWorkspace() {
+  async function openAuditWorkspace() {
     closeMobileOffcanvas();
     var iso = findIsoById(state.selectedIsoId);
     if (!iso) {
@@ -807,6 +903,7 @@
       return;
     }
 
+    await loadCurrentAudit();
     ensureFindingsSkeleton(iso);
     setActiveScreen(dom.app, dom.onboarding);
 
@@ -820,7 +917,6 @@
     renderChecklist(iso);
     renderMetrics(iso);
     renderSignaturePreview();
-    saveState();
   }
 
   function setActiveScreen(showElement, hideElement) {
@@ -1695,6 +1791,7 @@
         + '    <strong>' + esc(file.name) + '</strong><br />'
         + '    Tipo: ' + esc(file.type || 'N/D') + ' | Tamaño: ' + esc(formatBytes(file.size || 0))
         + '  </div>'
+        + (file.storagePath ? '  <button class="btn btn-secondary" data-action="download-attachment" data-path="' + esc(file.storagePath) + '"><i class="fa-solid fa-download"></i> Descargar</button>' : '')
         + '  <button class="btn btn-danger" data-action="remove-attachment" data-clause-id="' + esc(clauseId) + '" data-file-id="' + esc(file.id) + '"><i class="fa-solid fa-trash"></i> Quitar</button>'
         + '</article>';
     }
@@ -1755,7 +1852,12 @@
     if (!button) return;
     var action = String(button.getAttribute('data-action') || '');
     if (action === 'remove-attachment') {
+      if (isReadOnlyUser()) return;
       removeAttachment(button.getAttribute('data-clause-id'), button.getAttribute('data-file-id'));
+      return;
+    }
+    if (action === 'download-attachment') {
+      downloadAttachment(button.getAttribute('data-path'));
       return;
     }
     if (action === 'nora-explain-clause') {
@@ -1767,48 +1869,108 @@
     }
   }
 
-  function addAttachmentsToClause(clauseId, fileList) {
+  async function downloadAttachment(path) {
+    if (!path || !sb) return;
+    var result = await sb.storage.from(EVIDENCE_BUCKET).createSignedUrl(path, 300);
+    if (result.error || !result.data) {
+      showToast('No se pudo generar el enlace de descarga.');
+      return;
+    }
+    window.open(result.data.signedUrl, '_blank', 'noopener');
+  }
+
+  async function addAttachmentsToClause(clauseId, fileList) {
+    if (isReadOnlyUser() || !sb || !currentAudit || !currentUser) return;
+    var iso = findIsoById(state.selectedIsoId);
+    if (!iso) return;
+
+    var findingResult = await sb.from('audit_findings').upsert({
+      audit_id: currentAudit.id,
+      clause_id: clauseId,
+      status: (state.findings[clauseId] && state.findings[clauseId].status) || '',
+      risk: (state.findings[clauseId] && state.findings[clauseId].risk) || '',
+      note: (state.findings[clauseId] && state.findings[clauseId].note) || '',
+      action: (state.findings[clauseId] && state.findings[clauseId].action) || '',
+      updated_by: currentUser.id
+    }, { onConflict: 'audit_id,clause_id' }).select().single();
+
+    if (findingResult.error) {
+      showToast('No se pudo guardar el hallazgo antes de subir el archivo.');
+      return;
+    }
+
+    var findingId = findingResult.data.id;
     var finding = state.findings[clauseId] || newEmptyFinding();
-    var attachments = finding.attachments || [];
     var i;
 
     for (i = 0; i < fileList.length; i += 1) {
       var file = fileList[i];
-      attachments.push({
-        id: makeId(),
+      var path = currentUser.id + '/' + currentAudit.id + '/' + clauseId + '/' + Date.now() + '_' + Math.floor(Math.random() * 100000) + '_' + file.name;
+
+      var uploadResult = await sb.storage.from(EVIDENCE_BUCKET).upload(path, file, {
+        contentType: file.type || 'application/octet-stream'
+      });
+
+      if (uploadResult.error) {
+        showToast('No se pudo subir "' + file.name + '" al servidor.');
+        continue;
+      }
+
+      var evidenceResult = await sb.from('audit_evidence').insert({
+        finding_id: findingId,
+        storage_path: path,
+        file_name: file.name,
+        mime_type: file.type || 'application/octet-stream',
+        size_bytes: file.size,
+        uploaded_by: currentUser.id
+      }).select().single();
+
+      if (evidenceResult.error) {
+        showToast('El archivo se subió pero no se pudo registrar.');
+        continue;
+      }
+
+      finding.attachments = finding.attachments || [];
+      finding.attachments.push({
+        id: evidenceResult.data.id,
         name: file.name,
         size: file.size,
         type: file.type || 'application/octet-stream',
-        createdAt: new Date().toISOString()
+        storagePath: path,
+        createdAt: evidenceResult.data.created_at
       });
     }
 
-    finding.attachments = attachments;
     state.findings[clauseId] = finding;
-    saveState();
 
-    var iso = findIsoById(state.selectedIsoId);
-    if (iso) {
-      renderChecklist(iso);
-      renderMetrics(iso);
-    }
-
+    renderChecklist(iso);
+    renderMetrics(iso);
     showToast('Archivo(s) agregado(s) al punto ' + clauseId + '.');
   }
 
-  function removeAttachment(clauseId, fileId) {
+  async function removeAttachment(clauseId, fileId) {
+    if (!sb) return;
     var finding = state.findings[clauseId] || newEmptyFinding();
     var attachments = finding.attachments || [];
+    var target = null;
     var filtered = [];
     var i;
 
     for (i = 0; i < attachments.length; i += 1) {
-      if (attachments[i].id !== fileId) filtered.push(attachments[i]);
+      if (attachments[i].id === fileId) {
+        target = attachments[i];
+      } else {
+        filtered.push(attachments[i]);
+      }
     }
+
+    if (target && target.storagePath) {
+      await sb.storage.from(EVIDENCE_BUCKET).remove([target.storagePath]);
+    }
+    await sb.from('audit_evidence').delete().eq('id', fileId);
 
     finding.attachments = filtered;
     state.findings[clauseId] = finding;
-    saveState();
 
     var iso = findIsoById(state.selectedIsoId);
     if (iso) {
@@ -2133,30 +2295,22 @@
     return parts.join('; ');
   }
 
-  function clearCurrentAudit() {
-    state.project = {
-      name: '',
-      auditor: '',
-      site: '',
-      date: '',
-      scope: '',
-      docVersion: '',
-      auditedRep: ''
-    };
-    state.history = getEmptyHistoryRows();
-    state.findings = {};
-    state.noraHistory = [];
-    state.signature = {
-      drawnDataUrl: '',
-      uploadedDataUrl: '',
-      uploadedName: ''
-    };
+  async function clearCurrentAudit() {
+    if (isReadOnlyUser() || !sb) return;
+
+    // No se destruye la auditoría existente: se archiva (status = completed) y se
+    // abre una nueva en blanco. Así nunca se pierde información ya capturada.
+    if (currentAudit) {
+      await sb.from('audits').update({ status: 'completed' }).eq('id', currentAudit.id);
+    }
+
+    currentAudit = null;
+    var iso = findIsoById(state.selectedIsoId);
+    await loadCurrentAudit();
 
     clearSignatureCanvas();
-    renderSignaturePreview();
     if (dom.signatureFile) dom.signatureFile.value = '';
 
-    var iso = findIsoById(state.selectedIsoId);
     if (iso) {
       ensureFindingsSkeleton(iso);
       renderSectionTabs(iso);
@@ -2165,10 +2319,10 @@
     }
 
     syncProjectForm();
+    renderSignaturePreview();
     ensureNoraConversation();
     renderNoraPanel();
-    saveState();
-    showToast('Proyecto limpio.');
+    showToast('Auditoría archivada. Se abrió una nueva en blanco.');
   }
 
   function findIsoById(id) {
@@ -2305,63 +2459,249 @@
     writeLocal(TUTORIAL_KEY, '1');
   }
 
-  function loadState() {
-    var raw = readLocal(STORAGE_KEY);
-    if (!raw) return;
+  // ---------------------------------------------------------------------
+  // Persistencia real contra Supabase (reemplaza el antiguo localStorage).
+  // ---------------------------------------------------------------------
 
-    try {
-      var parsed = JSON.parse(raw);
-      if (!parsed) return;
+  async function loadCurrentAudit() {
+    var iso = findIsoById(state.selectedIsoId);
+    if (!iso || !sb || !currentUser) return;
 
-      if (parsed.selectedIsoId) state.selectedIsoId = parsed.selectedIsoId;
+    if (currentAudit && currentAudit.iso_code === iso.id) return;
 
-      if (parsed.project && typeof parsed.project === 'object') {
-        state.project.name = parsed.project.name || '';
-        state.project.auditor = parsed.project.auditor || '';
-        state.project.site = parsed.project.site || '';
-        state.project.date = parsed.project.date || '';
-        state.project.scope = parsed.project.scope || '';
-        state.project.docVersion = parsed.project.docVersion || '';
-        state.project.auditedRep = parsed.project.auditedRep || '';
+    var query = sb.from('audits')
+      .select('*')
+      .eq('iso_code', iso.id)
+      .eq('status', 'in_progress')
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    var result = await query.maybeSingle();
+
+    if (result.error) {
+      showToast('No se pudo leer la auditoría desde el servidor.');
+      return;
+    }
+
+    var row = result.data;
+
+    if (!row && !isReadOnlyUser()) {
+      var insertResult = await sb.from('audits').insert({
+        iso_code: iso.id,
+        iso_version: iso.version || '',
+        created_by: currentUser.id,
+        auditor_id: currentUser.id
+      }).select().single();
+
+      if (insertResult.error) {
+        showToast('No se pudo crear la auditoría en el servidor.');
+        return;
       }
+      row = insertResult.data;
+    }
 
-      if (parsed.history && Object.prototype.toString.call(parsed.history) === '[object Array]') {
-        state.history = getEmptyHistoryRows();
-        var i;
-        for (i = 0; i < state.history.length; i += 1) {
-          var source = parsed.history[i] || {};
-          state.history[i].version = source.version || '';
-          state.history[i].date = source.date || '';
-          state.history[i].author = source.author || '';
-          state.history[i].description = source.description || '';
+    currentAudit = row || null;
+    syncedNoraCount = 0;
+    syncedSignatureSource = '';
+
+    state.project = {
+      name: (currentAudit && currentAudit.name) || '',
+      auditor: (currentAudit && currentAudit.auditor_name) || '',
+      site: (currentAudit && currentAudit.site) || '',
+      date: (currentAudit && currentAudit.audit_date) || '',
+      scope: (currentAudit && currentAudit.scope) || '',
+      docVersion: (currentAudit && currentAudit.doc_version) || '',
+      auditedRep: (currentAudit && currentAudit.audited_rep) || ''
+    };
+    state.history = getEmptyHistoryRows();
+    if (currentAudit && Object.prototype.toString.call(currentAudit.history) === '[object Array]') {
+      var h;
+      for (h = 0; h < state.history.length && h < currentAudit.history.length; h += 1) {
+        var src = currentAudit.history[h] || {};
+        state.history[h].version = src.version || '';
+        state.history[h].date = src.date || '';
+        state.history[h].author = src.author || '';
+        state.history[h].description = src.description || '';
+      }
+    }
+    state.findings = {};
+    state.noraHistory = [];
+    state.signature = { drawnDataUrl: '', uploadedDataUrl: '', uploadedName: '' };
+
+    if (!currentAudit) return;
+
+    var findingsResult = await sb.from('audit_findings').select('*').eq('audit_id', currentAudit.id);
+    var findingRows = findingsResult.data || [];
+    var findingIdByClause = {};
+    var i;
+    for (i = 0; i < findingRows.length; i += 1) {
+      var f = findingRows[i];
+      findingIdByClause[f.clause_id] = f.id;
+      state.findings[f.clause_id] = {
+        status: f.status || '',
+        risk: f.risk || '',
+        note: f.note || '',
+        action: f.action || '',
+        attachments: []
+      };
+    }
+
+    var findingIds = findingRows.map(function (f) { return f.id; });
+    if (findingIds.length) {
+      var evidenceResult = await sb.from('audit_evidence').select('*').in('finding_id', findingIds);
+      var evidenceRows = evidenceResult.data || [];
+      var clauseByFindingId = {};
+      var keys = Object.keys(findingIdByClause);
+      for (i = 0; i < keys.length; i += 1) clauseByFindingId[findingIdByClause[keys[i]]] = keys[i];
+
+      for (i = 0; i < evidenceRows.length; i += 1) {
+        var ev = evidenceRows[i];
+        var clauseId = clauseByFindingId[ev.finding_id];
+        if (!clauseId || !state.findings[clauseId]) continue;
+        state.findings[clauseId].attachments.push({
+          id: ev.id,
+          name: ev.file_name,
+          size: ev.size_bytes || 0,
+          type: ev.mime_type || 'application/octet-stream',
+          storagePath: ev.storage_path,
+          createdAt: ev.created_at
+        });
+      }
+    }
+
+    var noraResult = await sb.from('nora_conversations').select('*').eq('audit_id', currentAudit.id).order('created_at', { ascending: true });
+    var noraRows = noraResult.data || [];
+    for (i = 0; i < noraRows.length; i += 1) {
+      state.noraHistory.push({
+        id: noraRows[i].id,
+        role: noraRows[i].role === 'user' ? 'user' : 'assistant',
+        text: noraRows[i].message,
+        createdAt: noraRows[i].created_at
+      });
+    }
+    syncedNoraCount = state.noraHistory.length;
+
+    var signatureResult = await sb.from('audit_signatures').select('*').eq('audit_id', currentAudit.id).maybeSingle();
+    if (signatureResult.data && signatureResult.data.storage_path) {
+      var signedUrlResult = await sb.storage.from(SIGNATURE_BUCKET).createSignedUrl(signatureResult.data.storage_path, 3600);
+      if (signedUrlResult.data && signedUrlResult.data.signedUrl) {
+        var signatureDataUrl = await urlToDataUrl(signedUrlResult.data.signedUrl);
+        if (signatureDataUrl) {
+          state.signature.drawnDataUrl = signatureDataUrl;
+          syncedSignatureSource = signatureDataUrl;
         }
       }
+    }
+  }
 
-      if (parsed.findings && typeof parsed.findings === 'object') {
-        state.findings = parsed.findings;
-      }
-
-      if (parsed.noraHistory && Object.prototype.toString.call(parsed.noraHistory) === '[object Array]') {
-        state.noraHistory = parsed.noraHistory;
-      }
-
-      if (parsed.signature && typeof parsed.signature === 'object') {
-        state.signature.drawnDataUrl = parsed.signature.drawnDataUrl || '';
-        state.signature.uploadedDataUrl = parsed.signature.uploadedDataUrl || '';
-        state.signature.uploadedName = parsed.signature.uploadedName || '';
-      }
+  async function urlToDataUrl(url) {
+    try {
+      var response = await fetch(url);
+      var blob = await response.blob();
+      return await new Promise(function (resolve) {
+        var reader = new FileReader();
+        reader.onload = function () { resolve(String(reader.result || '')); };
+        reader.onerror = function () { resolve(''); };
+        reader.readAsDataURL(blob);
+      });
     } catch (err) {
-      state = createInitialState();
+      return '';
     }
   }
 
   function saveState() {
+    state.noraHistory = normalizeNoraHistory(state.noraHistory);
+    if (saveDebounceTimer) window.clearTimeout(saveDebounceTimer);
+    saveDebounceTimer = window.setTimeout(persistStateToSupabase, 700);
+  }
+
+  async function persistStateToSupabase() {
+    if (!sb || !currentAudit || !currentUser || isReadOnlyUser()) return;
+
     try {
-      state.noraHistory = normalizeNoraHistory(state.noraHistory);
-      writeLocal(STORAGE_KEY, JSON.stringify(state));
+      await sb.from('audits').update({
+        name: state.project.name || '',
+        auditor_name: state.project.auditor || '',
+        site: state.project.site || '',
+        audit_date: state.project.date || '',
+        scope: state.project.scope || '',
+        doc_version: state.project.docVersion || '',
+        audited_rep: state.project.auditedRep || '',
+        history: state.history
+      }).eq('id', currentAudit.id);
+
+      var clauseIds = Object.keys(state.findings);
+      if (clauseIds.length) {
+        var rows = clauseIds.map(function (clauseId) {
+          var f = state.findings[clauseId];
+          return {
+            audit_id: currentAudit.id,
+            clause_id: clauseId,
+            status: f.status || '',
+            risk: f.risk || '',
+            note: f.note || '',
+            action: f.action || '',
+            updated_by: currentUser.id
+          };
+        });
+        await sb.from('audit_findings').upsert(rows, { onConflict: 'audit_id,clause_id' });
+      }
+
+      if (state.noraHistory.length > syncedNoraCount) {
+        var newMessages = state.noraHistory.slice(syncedNoraCount).map(function (item) {
+          return {
+            audit_id: currentAudit.id,
+            role: item.role === 'user' ? 'user' : 'model',
+            message: item.text
+          };
+        });
+        await sb.from('nora_conversations').insert(newMessages);
+        syncedNoraCount = state.noraHistory.length;
+      }
+
+      var activeSignature = state.signature.drawnDataUrl || state.signature.uploadedDataUrl;
+      if (activeSignature && activeSignature.indexOf('data:') === 0 && activeSignature !== syncedSignatureSource) {
+        await uploadSignature(activeSignature);
+        syncedSignatureSource = activeSignature;
+      }
     } catch (err) {
-      showToast('No se pudo guardar el estado local.');
+      showToast('No se pudo sincronizar con el servidor.');
     }
+  }
+
+  async function uploadSignature(dataUrl) {
+    var blob = dataUrlToBlob(dataUrl);
+    if (!blob) return;
+    var path = currentUser.id + '/' + currentAudit.id + '.png';
+
+    var uploadResult = await sb.storage.from(SIGNATURE_BUCKET).upload(path, blob, {
+      contentType: 'image/png',
+      upsert: true
+    });
+    if (uploadResult.error) {
+      showToast('No se pudo guardar la firma en el servidor.');
+      return;
+    }
+
+    await sb.from('audit_signatures').upsert({
+      audit_id: currentAudit.id,
+      storage_path: path,
+      signed_by: currentUser.id,
+      signed_at: new Date().toISOString()
+    }, { onConflict: 'audit_id' });
+  }
+
+  function dataUrlToBlob(dataUrl) {
+    var parts = String(dataUrl || '').split(',');
+    if (parts.length < 2) return null;
+    var match = /data:(.*?);base64/.exec(parts[0]);
+    var mime = match ? match[1] : 'image/png';
+    var binary = window.atob(parts[1]);
+    var bytes = new Uint8Array(binary.length);
+    var i;
+    for (i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+    return new Blob([bytes], { type: mime });
   }
 
   function readLocal(key) {
@@ -2377,40 +2717,6 @@
       window.localStorage.setItem(key, value);
     } catch (err) {
       // ignore quota errors
-    }
-  }
-
-  function readAuthState() {
-    try {
-      if (window.sessionStorage.getItem(AUTH_KEY) === '1') {
-        return '1';
-      }
-    } catch (err) {
-      // ignore storage errors
-    }
-
-    try {
-      if (window.localStorage.getItem(AUTH_KEY) === '1') {
-        window.localStorage.removeItem(AUTH_KEY);
-      }
-    } catch (err2) {
-      // ignore storage errors
-    }
-
-    return null;
-  }
-
-  function writeAuthState(value) {
-    try {
-      window.sessionStorage.setItem(AUTH_KEY, value);
-    } catch (err) {
-      // ignore storage errors
-    }
-
-    try {
-      window.localStorage.removeItem(AUTH_KEY);
-    } catch (err2) {
-      // ignore storage errors
     }
   }
 

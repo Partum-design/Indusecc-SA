@@ -1,11 +1,10 @@
 // Register the plugin (Required for GSAP v3)
 gsap.registerPlugin(MorphSVGPlugin);
 
-var AUTH_KEY = "sg_audit_unlocked_v1";
-var ACCESS_EMAIL = "acceso@indusecc.com";
-var ACCESS_USER = "indusecc";
-var ACCESS_PASSWORD = "INDUSECC360";
 var ROUTES = getRoutes();
+var sb = (window.SUPABASE_CONFIG && window.supabase)
+  ? window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey)
+  : null;
 
 var emailLabel = document.querySelector('#loginEmailLabel'),
     email = document.querySelector('#loginEmail'),
@@ -349,54 +348,21 @@ function isMobileDevice() {
     return check;
 };
 
-function readLocal(key) {
-    try {
-        return window.localStorage.getItem(key);
-    } catch (err) {
-        return null;
+function translateAuthError(message) {
+    var text = String(message || "");
+    if (text.indexOf("Invalid login credentials") !== -1) {
+        return "Correo o contraseña incorrectos.";
     }
+    if (text.indexOf("Email not confirmed") !== -1) {
+        return "Confirma tu correo antes de iniciar sesión.";
+    }
+    return text || "No se pudo iniciar sesión. Intenta otra vez.";
 }
 
-function writeLocal(key, value) {
-    try {
-        window.localStorage.setItem(key, value);
-    } catch (err) {
-        // ignore storage failures
-    }
-}
-
-function readAuthState() {
-    try {
-        if (window.sessionStorage.getItem(AUTH_KEY) === "1") {
-            return "1";
-        }
-    } catch (err) {
-        // ignore storage failures
-    }
-
-    try {
-        if (window.localStorage.getItem(AUTH_KEY) === "1") {
-            window.localStorage.removeItem(AUTH_KEY);
-        }
-    } catch (err2) {
-        // ignore storage failures
-    }
-
-    return null;
-}
-
-function writeAuthState(value) {
-    try {
-        window.sessionStorage.setItem(AUTH_KEY, value);
-    } catch (err) {
-        // ignore storage failures
-    }
-
-    try {
-        window.localStorage.removeItem(AUTH_KEY);
-    } catch (err2) {
-        // ignore storage failures
-    }
+async function fetchActiveProfile(userId) {
+    var result = await sb.from("profiles").select("active, role").eq("id", userId).single();
+    if (result.error) return null;
+    return result.data;
 }
 
 function showFeedback(message, isError) {
@@ -460,17 +426,24 @@ function applyBrandPalette() {
     });
 }
 
-function onLoginSubmit(event) {
+async function onLoginSubmit(event) {
     if (event) event.preventDefault();
-    if (!email || !password) return;
+    if (!email || !password || !sb) return;
 
     var userValue = String(email.value || "").trim().toLowerCase();
     var passwordValue = String(password.value || "").trim();
 
     if (!userValue) {
-        showFeedback("Escribe tu usuario o correo para continuar.", true);
+        showFeedback("Escribe tu correo para continuar.", true);
         shakeLogin();
         email.focus();
+        return;
+    }
+
+    if (userValue.indexOf("@") === -1) {
+        showFeedback("Usa tu correo de INDUSECC (no un nombre de usuario).", true);
+        shakeLogin();
+        email.select();
         return;
     }
 
@@ -481,32 +454,47 @@ function onLoginSubmit(event) {
         return;
     }
 
-    if (userValue !== ACCESS_EMAIL && userValue !== ACCESS_USER) {
-        showFeedback("El correo o usuario no coincide con el acceso configurado.", true);
-        shakeLogin();
-        email.select();
-        return;
-    }
+    if (loginButton) loginButton.disabled = true;
+    showFeedback("Verificando acceso...", false);
 
-    if (passwordValue !== ACCESS_PASSWORD) {
-        showFeedback("La contraseña no coincide. Intenta otra vez.", true);
+    var signInResult = await sb.auth.signInWithPassword({ email: userValue, password: passwordValue });
+
+    if (signInResult.error) {
+        showFeedback(translateAuthError(signInResult.error.message), true);
         shakeLogin();
         password.select();
+        if (loginButton) loginButton.disabled = false;
         return;
     }
 
-    writeAuthState("1");
+    var profile = await fetchActiveProfile(signInResult.data.user.id);
+
+    if (!profile || !profile.active) {
+        await sb.auth.signOut();
+        showFeedback("Tu cuenta existe pero aún no ha sido activada por un administrador.", true);
+        shakeLogin();
+        if (loginButton) loginButton.disabled = false;
+        return;
+    }
+
     showFeedback("Acceso concedido. Redirigiendo a selección de ISO...", false);
-    if (loginButton) loginButton.disabled = true;
     window.setTimeout(function () {
         window.location.href = ROUTES.app;
     }, 320);
 }
 
-function initLoginForm() {
-    if (readAuthState() === "1") {
-        window.location.replace(ROUTES.app);
-        return;
+async function initLoginForm() {
+    if (sb) {
+        var sessionResult = await sb.auth.getSession();
+        var session = sessionResult.data && sessionResult.data.session;
+        if (session) {
+            var profile = await fetchActiveProfile(session.user.id);
+            if (profile && profile.active) {
+                window.location.replace(ROUTES.app);
+                return;
+            }
+            await sb.auth.signOut();
+        }
     }
 
     applyBrandPalette();
