@@ -103,6 +103,9 @@
     }
     currentProfile = profileResult.data;
 
+    touchPresence();
+    window.setInterval(touchPresence, 60000);
+
     sb.auth.onAuthStateChange(function (event) {
       if (event === 'SIGNED_OUT') window.location.replace(ROUTES.login);
     });
@@ -140,6 +143,14 @@
     if (dom.sessionUser && currentProfile) {
       dom.sessionUser.textContent = currentProfile.email + ' · ' + roleLabel(currentProfile.role);
     }
+    if (dom.openAdminPanel && currentProfile && currentProfile.role === 'admin') {
+      dom.openAdminPanel.classList.remove('hidden');
+    }
+  }
+
+  async function touchPresence() {
+    if (!sb) return;
+    await sb.rpc('touch_presence');
   }
 
   function roleLabel(role) {
@@ -257,6 +268,7 @@
     dom.headerLogo = document.querySelector('.project-panel .brand-logo') || document.querySelector('.hero-logo');
     dom.sessionUser = document.getElementById('session-user');
     dom.logoutApp = document.getElementById('logout-app');
+    dom.openAdminPanel = document.getElementById('open-admin-panel');
   }
 
   function normalizeLibrary(list) {
@@ -2132,10 +2144,21 @@
 
       var filename = 'Auditoria_' + iso.code.replace(/[^a-zA-Z0-9]/g, '') + '_' + formatDateName(new Date()) + '.pdf';
       doc.save(filename);
+      logActivity('pdf_exported', { filename: filename, iso_code: iso.code });
       showToast('PDF exportado correctamente.');
     } catch (err) {
       showToast('Error al exportar PDF.');
     }
+  }
+
+  async function logActivity(action, detail) {
+    if (!sb || !currentUser) return;
+    await sb.from('audit_activity_log').insert({
+      audit_id: currentAudit ? currentAudit.id : null,
+      actor_id: currentUser.id,
+      action: action,
+      detail: detail || {}
+    });
   }
 
   function drawTitle(doc, iso) {

@@ -12,6 +12,10 @@
     {
       "source": "/acceso",
       "destination": "/login"
+    },
+    {
+      "source": "/administracion",
+      "destination": "/admin"
     }
   ]
 }

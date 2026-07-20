@@ -477,6 +477,11 @@ async function onLoginSubmit(event) {
         return;
     }
 
+    await sb.from("profiles").update({
+        last_login_at: new Date().toISOString(),
+        last_seen_at: new Date().toISOString()
+    }).eq("id", signInResult.data.user.id);
+
     showFeedback("Acceso concedido. Redirigiendo a selección de ISO...", false);
     window.setTimeout(function () {
         window.location.href = ROUTES.app;

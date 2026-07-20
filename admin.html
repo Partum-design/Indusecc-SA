@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Control administrativo | INDUSECC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/admin.css">
+</head>
+<body>
+  <div id="admin-loading" class="loading-screen">
+    <div class="loading-mark"><span></span></div>
+    <p>Verificando control administrativo</p>
+  </div>
+
+  <div id="admin-app" class="admin-app hidden">
+    <aside class="admin-sidebar">
+      <a class="admin-brand" href="index.html" aria-label="Volver a auditorías">
+        <span class="admin-logo-frame"><img src="LOGO%201080%20X%201080.jpg" alt="INDUSECC"></span>
+        <span><b>INDUSECC</b><small>Control de auditoría</small></span>
+      </a>
+
+      <nav aria-label="Navegación administrativa">
+        <a class="active" href="#overview"><i class="fa-solid fa-chart-line"></i> Vista general</a>
+        <a href="#users"><i class="fa-solid fa-users"></i> Personas y accesos</a>
+        <a href="#activity"><i class="fa-solid fa-clock-rotate-left"></i> Actividad reciente</a>
+      </nav>
+
+      <div class="sidebar-foot">
+        <p>Sesión administrativa</p>
+        <strong id="admin-identity">—</strong>
+        <a href="index.html"><i class="fa-solid fa-arrow-left"></i> Volver a auditorías</a>
+        <button id="admin-logout" type="button"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</button>
+      </div>
+    </aside>
+
+    <main>
+      <header class="admin-header">
+        <div>
+          <p class="eyebrow">Centro de control</p>
+          <h1>Administración y trazabilidad</h1>
+          <p>Accesos, actividad y entregables de auditoría en una sola vista.</p>
+        </div>
+        <div class="header-actions">
+          <span id="sync-state" class="sync-state"><i class="fa-solid fa-circle"></i> Sincronizado</span>
+          <button id="refresh-admin" class="button secondary" type="button"><i class="fa-solid fa-rotate"></i> Actualizar</button>
+          <button id="open-create-user" class="button primary" type="button"><i class="fa-solid fa-user-plus"></i> Crear acceso</button>
+        </div>
+      </header>
+
+      <section id="overview" class="metric-grid" aria-label="Resumen">
+        <article class="metric-card accent">
+          <div><span>Personas con acceso</span><strong id="metric-users">0</strong></div>
+          <i class="fa-solid fa-users"></i>
+          <small id="metric-active-users">0 cuentas activas</small>
+        </article>
+        <article class="metric-card">
+          <div><span>En línea ahora</span><strong id="metric-online">0</strong></div>
+          <i class="fa-solid fa-signal"></i>
+          <small>Actividad en los últimos 3 minutos</small>
+        </article>
+        <article class="metric-card">
+          <div><span>Auditorías</span><strong id="metric-audits">0</strong></div>
+          <i class="fa-solid fa-clipboard-check"></i>
+          <small id="metric-completed">0 concluidas</small>
+        </article>
+        <article class="metric-card">
+          <div><span>PDF exportados</span><strong id="metric-exports">0</strong></div>
+          <i class="fa-solid fa-file-export"></i>
+          <small>Entregables registrados</small>
+        </article>
+      </section>
+
+      <section id="users" class="admin-panel">
+        <div class="panel-title">
+          <div>
+            <p class="eyebrow">Personas y accesos</p>
+            <h2>Directorio operativo</h2>
+          </div>
+          <label class="admin-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input id="user-search" type="search" placeholder="Buscar por nombre o correo">
+          </label>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Persona</th>
+                <th>Estado</th>
+                <th>Rol</th>
+                <th>Último acceso</th>
+                <th>Auditorías</th>
+                <th>Exportaciones</th>
+                <th aria-label="Acciones"></th>
+              </tr>
+            </thead>
+            <tbody id="users-table-body"></tbody>
+          </table>
+          <div id="users-empty" class="empty-state hidden">No hay personas que coincidan con la búsqueda.</div>
+        </div>
+      </section>
+
+      <section id="activity" class="admin-panel activity-panel">
+        <div class="panel-title">
+          <div>
+            <p class="eyebrow">Registro verificable</p>
+            <h2>Actividad reciente</h2>
+          </div>
+          <span class="retention-note"><i class="fa-solid fa-shield-halved"></i> Bitácora protegida</span>
+        </div>
+        <div id="activity-list" class="activity-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="create-user-dialog">
+    <form id="create-user-form" method="dialog">
+      <button class="dialog-close" type="button" data-close-dialog aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+      <p class="eyebrow">Nuevo acceso</p>
+      <h2>Crear una cuenta</h2>
+      <p class="dialog-intro">La cuenta quedará confirmada y lista para iniciar sesión.</p>
+      <label>Nombre completo<input name="fullName" required autocomplete="name" placeholder="Nombre y apellidos"></label>
+      <label>Correo<input name="email" type="email" required autocomplete="off" placeholder="persona@empresa.com"></label>
+      <label>Contraseña temporal<input name="password" type="password" minlength="8" required autocomplete="new-password" placeholder="Mínimo 8 caracteres"></label>
+      <label>Rol
+        <select name="role">
+          <option value="auditor">Auditor</option>
+          <option value="viewer">Solo lectura</option>
+          <option value="admin">Administrador</option>
+        </select>
+      </label>
+      <label class="switch-row"><span><b>Activar acceso</b><small>Puede iniciar sesión de inmediato</small></span><input name="active" type="checkbox" checked></label>
+      <p id="create-user-feedback" class="form-feedback" aria-live="polite"></p>
+      <button class="button primary full" type="submit">Crear acceso</button>
+    </form>
+  </dialog>
+
+  <div id="admin-toast" class="admin-toast" role="status"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="assets/js/supabase-config.js"></script>
+  <script src="assets/js/admin.js"></script>
+</body>
+</html>
