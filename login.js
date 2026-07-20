@@ -428,7 +428,13 @@ function applyBrandPalette() {
 
 async function onLoginSubmit(event) {
     if (event) event.preventDefault();
-    if (!email || !password || !sb) return;
+    if (!email || !password) return;
+
+    if (!sb) {
+        showFeedback("El acceso no está configurado. Revisa la conexión con Supabase.", true);
+        shakeLogin();
+        return;
+    }
 
     var userValue = String(email.value || "").trim().toLowerCase();
     var passwordValue = String(password.value || "").trim();
@@ -457,7 +463,15 @@ async function onLoginSubmit(event) {
     if (loginButton) loginButton.disabled = true;
     showFeedback("Verificando acceso...", false);
 
-    var signInResult = await sb.auth.signInWithPassword({ email: userValue, password: passwordValue });
+    var signInResult;
+    try {
+        signInResult = await sb.auth.signInWithPassword({ email: userValue, password: passwordValue });
+    } catch (error) {
+        showFeedback("No se pudo conectar con el servicio de acceso. Intenta otra vez.", true);
+        shakeLogin();
+        if (loginButton) loginButton.disabled = false;
+        return;
+    }
 
     if (signInResult.error) {
         showFeedback(translateAuthError(signInResult.error.message), true);
@@ -489,6 +503,11 @@ async function onLoginSubmit(event) {
 }
 
 async function initLoginForm() {
+    if (!sb) {
+        showFeedback("El acceso no está configurado. Revisa Supabase antes de publicar.", true);
+        if (loginButton) loginButton.disabled = true;
+    }
+
     if (sb) {
         var sessionResult = await sb.auth.getSession();
         var session = sessionResult.data && sessionResult.data.session;

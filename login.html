@@ -195,12 +195,13 @@
 
         <div class="inputGroup inputGroup1">
             <label for="loginEmail" id="loginEmailLabel">Usuario o correo</label>
-            <input type="text" id="loginEmail" maxlength="254" autocomplete="username" />
-            <p class="helper helper1">acceso@indusecc.com</p>
+            <input type="email" id="loginEmail" name="email" maxlength="254" autocomplete="username"
+                aria-describedby="loginEmailHint" required />
+            <p class="helper helper1" id="loginEmailHint">acceso@indusecc.com</p>
         </div>
         <div class="inputGroup inputGroup2">
             <label for="loginPassword" id="loginPasswordLabel">Contraseña</label>
-            <input type="password" id="loginPassword" autocomplete="current-password" />
+            <input type="password" id="loginPassword" name="password" autocomplete="current-password" required />
             <label id="showPasswordToggle" for="showPasswordCheck">Mostrar
                 <input id="showPasswordCheck" type="checkbox" />
                 <div class="indicator"></div>
