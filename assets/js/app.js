@@ -139,26 +139,7 @@
     applyRoleRestrictions();
     renderSessionInfo();
     maybeShowProfileSetup();
-    renderWatermark();
-    window.setInterval(renderWatermark, 60000);
-    window.addEventListener('resize', renderWatermark);
     setupCaptureGuard();
-  }
-
-  function renderWatermark() {
-    var layer = document.getElementById('watermark-layer');
-    if (!layer || !currentProfile) return;
-    var stamp = new Intl.DateTimeFormat('es-MX', { dateStyle: 'short', timeStyle: 'short' }).format(new Date());
-    var label = (currentProfile.email || 'INDUSECC') + ' · ' + stamp;
-    var cols = Math.max(1, Math.ceil(window.innerWidth / 320));
-    var rows = Math.max(1, Math.ceil(window.innerHeight / 160));
-    var tileCount = cols * rows;
-    var html = '';
-    var i;
-    for (i = 0; i < tileCount; i += 1) {
-      html += '<span>' + esc(label) + '</span>';
-    }
-    layer.innerHTML = html;
   }
 
   function setupCaptureGuard() {

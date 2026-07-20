@@ -114,6 +114,21 @@
     on("wipe-confirm-input", "input", syncWipeConfirmState);
   }
 
+  async function apiRequest(path, options) {
+    try {
+      var response = await fetch(path, options);
+      var data = {};
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        data = { error: "El servidor respondió de forma inesperada. Intenta otra vez." };
+      }
+      return { ok: response.ok, status: response.status, data: data };
+    } catch (networkError) {
+      return { ok: false, status: 0, data: { error: "No se pudo conectar con el servidor. Revisa tu conexión e intenta otra vez." } };
+    }
+  }
+
   function generatePasswordClient() {
     var out = "";
     var i;
@@ -354,14 +369,14 @@
     submit.disabled = true;
     feedback.textContent = "Borrando todos los datos y archivos…";
 
-    var response = await fetch("/api/admin-wipe-data", {
+    var result = await apiRequest("/api/admin-wipe-data", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.access_token },
       body: JSON.stringify({ confirm: input.value.trim() })
     });
-    var result = await response.json();
-    if (!response.ok) {
-      feedback.textContent = result.error || "No se pudo completar el borrado.";
+
+    if (!result.ok) {
+      feedback.textContent = (result.data && result.data.error) || "No se pudo completar el borrado.";
       syncWipeConfirmState();
       return;
     }
@@ -403,7 +418,7 @@
     submit.disabled = true;
     feedback.textContent = "Creando acceso…";
 
-    var response = await fetch("/api/admin-users", {
+    var response = await apiRequest("/api/admin-users", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.access_token },
       body: JSON.stringify({
@@ -417,8 +432,8 @@
         sendEmail: values.get("sendEmail") === "on"
       })
     });
-    var result = await response.json();
     submit.disabled = false;
+    var result = response.data;
     if (!response.ok) {
       feedback.textContent = result.error || "No se pudo crear el acceso.";
       return;
@@ -444,7 +459,7 @@
     submit.disabled = true;
     feedback.textContent = "Guardando…";
 
-    var response = await fetch("/api/admin-users", {
+    var response = await apiRequest("/api/admin-users", {
       method: "PATCH",
       headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.access_token },
       body: JSON.stringify({
@@ -457,8 +472,8 @@
         active: values.get("active") === "on"
       })
     });
-    var result = await response.json();
     submit.disabled = false;
+    var result = response.data;
     if (!response.ok) {
       feedback.textContent = result.error || "No se pudo guardar la cuenta.";
       return;
@@ -479,12 +494,12 @@
     var feedback = document.getElementById("edit-user-feedback");
     feedback.textContent = "Generando nueva contraseña…";
 
-    var response = await fetch("/api/admin-users", {
+    var response = await apiRequest("/api/admin-users", {
       method: "PATCH",
       headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.access_token },
       body: JSON.stringify({ userId: userId, resetPassword: true, currentEmail: email })
     });
-    var result = await response.json();
+    var result = response.data;
     feedback.textContent = "";
     if (!response.ok) {
       feedback.textContent = result.error || "No se pudo restablecer la contraseña.";
@@ -503,13 +518,12 @@
   }
 
   async function deleteUser(userId) {
-    var response = await fetch("/api/admin-users", {
+    var response = await apiRequest("/api/admin-users", {
       method: "DELETE",
       headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.access_token },
       body: JSON.stringify({ userId: userId })
     });
-    var result = await response.json();
-    if (!response.ok) return showToast(result.error || "No se pudo eliminar el usuario.");
+    if (!response.ok) return showToast((response.data && response.data.error) || "No se pudo eliminar el usuario.");
     showToast("Usuario eliminado.");
     await loadDashboard();
   }
