@@ -56,6 +56,7 @@ form {
   display: grid;
   grid-template-columns: minmax(290px, 0.92fr) minmax(360px, 1.08fr);
   grid-template-areas:
+    "brand field-logo"
     "brand email"
     "brand password"
     "brand action"
@@ -102,23 +103,25 @@ form {
   letter-spacing: .18em;
 }
 
-.brand-logo-frame {
-  position: absolute;
-  top: 2rem;
-  left: 2rem;
-  width: 64px;
-  height: 64px;
+.field-brand {
+  grid-area: field-logo;
+  justify-self: end;
+  align-self: end;
+  width: 82px;
+  height: 82px;
+  margin: 2.5rem 0 0;
   display: grid;
   place-items: center;
   background: #7D260F;
-  border: 1px solid rgba(255,255,255,.32);
-  outline: 5px solid #7D260F;
-  box-shadow: 0 0 0 6px rgba(255,255,255,.18);
+  border: 2px solid #f1d6ad;
+  border-radius: 50%;
+  box-shadow: 0 0 0 6px rgba(125,38,15,.10), 0 14px 28px rgba(57,20,11,.16);
+  overflow: hidden;
 }
 
-.brand-logo {
-  width: 78%;
-  height: auto;
+.field-brand img {
+  width: 72%;
+  height: 72%;
   display: block;
   object-fit: contain;
 }
@@ -429,7 +432,7 @@ form .inputGroup2 #showPasswordToggle input:disabled ~ .indicator:after {
     padding: 0 1rem 1.2rem;
     border-radius: 22px;
     grid-template-columns: 1fr;
-    grid-template-areas: "brand" "email" "password" "action" "feedback" "note";
+    grid-template-areas: "brand" "field-logo" "email" "password" "action" "feedback" "note";
     column-gap: 0;
   }
 
@@ -449,11 +452,12 @@ form .inputGroup2 #showPasswordToggle input:disabled ~ .indicator:after {
     bottom: 1.25rem;
   }
 
-  .brand-logo-frame {
-    top: 1.25rem;
-    left: 1.25rem;
-    width: 54px;
-    height: 54px;
+  .field-brand {
+    justify-self: center;
+    align-self: center;
+    width: 74px;
+    height: 74px;
+    margin: .25rem 0 .9rem;
   }
 
   .brand-copy {
