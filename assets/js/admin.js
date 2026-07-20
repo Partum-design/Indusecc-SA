@@ -38,21 +38,8 @@
     document.getElementById("admin-app").classList.remove("hidden");
     await loadDashboard();
     touchPresence();
-    renderWatermark();
     window.setInterval(touchPresence, 60000);
     window.setInterval(loadDashboard, 120000);
-    window.setInterval(renderWatermark, 60000);
-  }
-
-  function renderWatermark() {
-    var layer = document.getElementById("watermark-layer");
-    if (!layer || !currentProfile) return;
-    var stamp = new Intl.DateTimeFormat("es-MX", { dateStyle: "short", timeStyle: "short" }).format(new Date());
-    var label = (currentProfile.email || "INDUSECC") + " · " + stamp;
-    var html = "";
-    var i;
-    for (i = 0; i < 60; i += 1) html += "<span>" + esc(label) + "</span>";
-    layer.innerHTML = html;
   }
 
   function on(id, event, handler) {

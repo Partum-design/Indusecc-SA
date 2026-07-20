@@ -63,7 +63,8 @@ h5 {
   inset: 0;
   z-index: 5;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-auto-rows: 160px;
   overflow: hidden;
   pointer-events: none;
   user-select: none;
@@ -73,12 +74,10 @@ h5 {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 46px 6px;
-  transform: rotate(-30deg);
-  color: #808080;
-  mix-blend-mode: difference;
-  opacity: 0.5;
-  font: 700 12px/1.3 'IBM Plex Sans', sans-serif;
+  transform: rotate(-28deg);
+  color: #5a0d1b;
+  opacity: 0.05;
+  font: 600 11px/1.3 'IBM Plex Sans', sans-serif;
   white-space: nowrap;
   text-align: center;
 }
@@ -88,8 +87,42 @@ h5 {
     display: grid !important;
   }
   .watermark-layer span {
-    opacity: 0.35;
+    opacity: 0.22;
   }
+}
+
+.capture-guard {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: grid;
+  place-items: center;
+  gap: 14px;
+  background: #060302;
+  color: #f4e9da;
+  text-align: center;
+  padding: 24px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.18s ease, visibility 0.18s ease;
+}
+
+.capture-guard.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.capture-guard i {
+  font-size: 2rem;
+  color: var(--md-gold);
+}
+
+.capture-guard p {
+  margin: 0;
+  max-width: 40ch;
+  font-size: 0.95rem;
+  color: rgba(244, 233, 218, 0.78);
 }
 
 .app-splash {

@@ -141,6 +141,8 @@
     maybeShowProfileSetup();
     renderWatermark();
     window.setInterval(renderWatermark, 60000);
+    window.addEventListener('resize', renderWatermark);
+    setupCaptureGuard();
   }
 
   function renderWatermark() {
@@ -148,13 +150,37 @@
     if (!layer || !currentProfile) return;
     var stamp = new Intl.DateTimeFormat('es-MX', { dateStyle: 'short', timeStyle: 'short' }).format(new Date());
     var label = (currentProfile.email || 'INDUSECC') + ' · ' + stamp;
-    var tileCount = 60;
+    var cols = Math.max(1, Math.ceil(window.innerWidth / 320));
+    var rows = Math.max(1, Math.ceil(window.innerHeight / 160));
+    var tileCount = cols * rows;
     var html = '';
     var i;
     for (i = 0; i < tileCount; i += 1) {
       html += '<span>' + esc(label) + '</span>';
     }
     layer.innerHTML = html;
+  }
+
+  function setupCaptureGuard() {
+    var guard = document.getElementById('capture-guard');
+    if (!guard || guard.dataset.bound) return;
+    guard.dataset.bound = 'true';
+    var hideTimer = null;
+
+    function show() {
+      window.clearTimeout(hideTimer);
+      guard.classList.add('active');
+    }
+    function hide() {
+      window.clearTimeout(hideTimer);
+      hideTimer = window.setTimeout(function () { guard.classList.remove('active'); }, 120);
+    }
+
+    window.addEventListener('blur', show);
+    window.addEventListener('focus', hide);
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) show(); else hide();
+    });
   }
 
   function maybeShowProfileSetup() {
