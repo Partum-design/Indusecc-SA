@@ -1,6 +1,15 @@
 # Backend Supabase — Indusecc OS
 
-Proyecto: `tyxugmbnpszilcgguwlw` (https://tyxugmbnpszilcgguwlw.supabase.co)
+Proyecto: `fexfgdttbowtjtppkmqj` (https://fexfgdttbowtjtppkmqj.supabase.co)
+
+## URLs de autenticación
+
+Configura en Supabase → Authentication → URL Configuration:
+
+- Site URL: `https://indusecc-auditorias.vercel.app`
+- Redirect URLs: `https://indusecc-auditorias.vercel.app/**` y `http://localhost:3000/**`
+
+Para trabajar en local, inicia Vercel con `vercel dev` para que exista el puerto 3000.
 
 ## Estado de la integración administrativa
 
@@ -12,7 +21,7 @@ Para que el panel pueda crear y eliminar usuarios de Supabase Auth, configura en
 como variable privada del servidor:
 
 ```text
-SUPABASE_SERVICE_ROLE_KEY=<service_role del proyecto tyxugmbnpszilcgguwlw>
+SUPABASE_SERVICE_ROLE_KEY=<service_role del proyecto fexfgdttbowtjtppkmqj>
 ```
 
 Nunca pongas esa llave en `assets/js/supabase-config.js`, en el navegador o en Git. La ruta
@@ -28,6 +37,13 @@ Nunca pongas esa llave en `assets/js/supabase-config.js`, en el navegador o en G
 - `audit_signatures` — metadato de la firma; el binario vive en el bucket `audit-signatures`.
 - `nora_conversations` — historial del chat con NORA por auditoría.
 - `audit_activity_log` — bitácora de solo-inserción (quién hizo qué y cuándo).
+- `login_events` — bitácora de conexiones (usuario, IP, dispositivo, fecha). Solo la escribe
+  `/api/log-login` con la `service_role` key; nadie puede insertarla desde el navegador.
+- `audit_exports` — bóveda: metadato de cada PDF exportado (quién, cuándo, norma, tamaño). El
+  binario vive en el bucket privado `audit-exports`.
+
+`profiles` también incluye `phone`, `department` y `onboarded_at` (se llena la primera vez que la
+persona guarda sus datos de contacto desde el modal de bienvenida en `index.html`).
 
 Todo tiene Row Level Security activo. Nadie borra físicamente auditorías o hallazgos salvo `admin`
 (se prefiere `deleted_at` para borrado lógico).
@@ -52,10 +68,29 @@ Todo tiene Row Level Security activo. Nadie borra físicamente auditorías o hal
 - Los `viewer` ven todo pero tienen los campos deshabilitados en el cliente (y bloqueados también
   por RLS del lado del servidor, por si acaso).
 
+## Contraseñas: generación automática y correo de acceso
+
+Desde el panel administrativo (`/administracion` → Personas y accesos) el admin puede crear una
+cuenta sin escribir contraseña: `/api/admin-users` genera una contraseña temporal fuerte (14
+caracteres) con `crypto.randomBytes`, la asigna a la cuenta y, si el checkbox "Enviar correo de
+acceso" está activo, dispara el correo nativo de Supabase (`POST /auth/v1/recover`) para que la
+persona configure su propia contraseña desde un enlace seguro (`/reset.html`). No se manda la
+contraseña en texto plano por correo; el panel la muestra una sola vez para que el admin la
+comparta manualmente si lo necesita como respaldo.
+
+El botón "Generar y enviar nueva contraseña" dentro de Editar cuenta hace lo mismo para restablecer
+el acceso de alguien que ya existe. En login.html hay además un enlace "¿Olvidaste tu contraseña?"
+para que cualquier usuario active este mismo flujo por sí mismo.
+
+Para que la entrega del correo sea confiable en producción, configura un proveedor SMTP propio en
+Supabase Dashboard → Authentication → Emails (el SMTP por defecto de Supabase tiene límites bajos,
+pensados solo para pruebas). También puedes editar ahí las plantillas "Reset password" / "Invite
+user" con la marca de INDUSECC.
+
 ## Cómo dar de alta al primer administrador
 
-1. La persona se registra normalmente (Supabase Auth: email + contraseña, o el método que se
-   habilite). Queda creada en `profiles` con `role = viewer`, `active = false`.
+1. Crea la primera cuenta desde Supabase Dashboard → Authentication → Users (email + contraseña).
+   Queda creada en `profiles` con `role = viewer`, `active = false`.
 2. Con acceso directo a la base (SQL editor de Supabase o `service_role` key, nunca desde el
    cliente), promover manualmente a esa primera cuenta:
 
@@ -66,7 +101,7 @@ Todo tiene Row Level Security activo. Nadie borra físicamente auditorías o hal
    ```
 
 3. De ahí en adelante, ese admin activa y asigna rol a los demás usuarios desde la app
-   (usando su sesión, protegido por la política `profiles_admin_all`).
+   (usando su sesión, protegido por la política `profiles_update_own_or_admin`).
 
 ## Roles
 

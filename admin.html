@@ -4,6 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Control administrativo | INDUSECC</title>
+  <link rel="icon" href="assets/img/logo_indusecc.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
@@ -26,6 +30,8 @@
       <nav aria-label="Navegación administrativa">
         <a class="active" href="#overview"><i class="fa-solid fa-chart-line"></i> Vista general</a>
         <a href="#users"><i class="fa-solid fa-users"></i> Personas y accesos</a>
+        <a href="#vault"><i class="fa-solid fa-box-archive"></i> Bóveda de exportaciones</a>
+        <a href="#connections"><i class="fa-solid fa-network-wired"></i> Conexiones</a>
         <a href="#activity"><i class="fa-solid fa-clock-rotate-left"></i> Actividad reciente</a>
       </nav>
 
@@ -104,6 +110,62 @@
         </div>
       </section>
 
+      <section id="vault" class="admin-panel">
+        <div class="panel-title">
+          <div>
+            <p class="eyebrow">Entregables guardados</p>
+            <h2>Bóveda de exportaciones</h2>
+          </div>
+          <label class="admin-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input id="vault-search" type="search" placeholder="Buscar por archivo o persona">
+          </label>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Archivo</th>
+                <th>Persona</th>
+                <th>Norma</th>
+                <th>Tamaño</th>
+                <th>Fecha</th>
+                <th aria-label="Acciones"></th>
+              </tr>
+            </thead>
+            <tbody id="vault-table-body"></tbody>
+          </table>
+          <div id="vault-empty" class="empty-state hidden">Aún no hay exportaciones guardadas en la bóveda.</div>
+        </div>
+      </section>
+
+      <section id="connections" class="admin-panel">
+        <div class="panel-title">
+          <div>
+            <p class="eyebrow">Bitácora de accesos</p>
+            <h2>Conexiones</h2>
+          </div>
+          <label class="admin-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input id="connections-search" type="search" placeholder="Buscar por persona o IP">
+          </label>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Persona</th>
+                <th>IP</th>
+                <th>Dispositivo</th>
+                <th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody id="connections-table-body"></tbody>
+          </table>
+          <div id="connections-empty" class="empty-state hidden">Aún no hay conexiones registradas.</div>
+        </div>
+      </section>
+
       <section id="activity" class="admin-panel activity-panel">
         <div class="panel-title">
           <div>
@@ -125,7 +187,14 @@
       <p class="dialog-intro">La cuenta quedará confirmada y lista para iniciar sesión.</p>
       <label>Nombre completo<input name="fullName" required autocomplete="name" placeholder="Nombre y apellidos"></label>
       <label>Correo<input name="email" type="email" required autocomplete="off" placeholder="persona@empresa.com"></label>
-      <label>Contraseña temporal<input name="password" type="password" minlength="8" required autocomplete="new-password" placeholder="Mínimo 8 caracteres"></label>
+      <label>Teléfono<input name="phone" type="tel" autocomplete="off" placeholder="Opcional"></label>
+      <label>Área o puesto<input name="department" type="text" autocomplete="off" placeholder="Opcional"></label>
+      <label class="password-row">Contraseña temporal
+        <div class="password-input-row">
+          <input name="password" type="text" minlength="8" autocomplete="off" placeholder="Déjalo vacío para generarla automáticamente">
+          <button type="button" class="button secondary" data-generate-password>Generar</button>
+        </div>
+      </label>
       <label>Rol
         <select name="role">
           <option value="auditor">Auditor</option>
@@ -134,9 +203,48 @@
         </select>
       </label>
       <label class="switch-row"><span><b>Activar acceso</b><small>Puede iniciar sesión de inmediato</small></span><input name="active" type="checkbox" checked></label>
+      <label class="switch-row"><span><b>Enviar correo de acceso</b><small>Supabase le envía un enlace para crear su propia contraseña</small></span><input name="sendEmail" type="checkbox" checked></label>
       <p id="create-user-feedback" class="form-feedback" aria-live="polite"></p>
       <button class="button primary full" type="submit">Crear acceso</button>
     </form>
+  </dialog>
+
+  <dialog id="edit-user-dialog">
+    <form id="edit-user-form" method="dialog">
+      <button class="dialog-close" type="button" data-close-dialog aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+      <p class="eyebrow">Editar acceso</p>
+      <h2>Modificar cuenta</h2>
+      <input name="userId" type="hidden">
+      <label>Nombre completo<input name="fullName" required autocomplete="name"></label>
+      <label>Correo<input name="email" type="email" required autocomplete="off"></label>
+      <label>Teléfono<input name="phone" type="tel" autocomplete="off"></label>
+      <label>Área o puesto<input name="department" type="text" autocomplete="off"></label>
+      <label>Rol
+        <select name="role">
+          <option value="auditor">Auditor</option>
+          <option value="viewer">Solo lectura</option>
+          <option value="admin">Administrador</option>
+        </select>
+      </label>
+      <label class="switch-row"><span><b>Acceso activo</b><small>Puede iniciar sesión</small></span><input name="active" type="checkbox"></label>
+      <button id="edit-user-reset-password" type="button" class="button secondary full"><i class="fa-solid fa-key"></i> Generar y enviar nueva contraseña</button>
+      <p id="edit-user-feedback" class="form-feedback" aria-live="polite"></p>
+      <button class="button primary full" type="submit">Guardar cambios</button>
+    </form>
+  </dialog>
+
+  <dialog id="password-reveal-dialog">
+    <div class="password-reveal-body">
+      <button class="dialog-close" type="button" data-close-dialog aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+      <p class="eyebrow">Contraseña temporal</p>
+      <h2>Acceso generado</h2>
+      <p id="password-reveal-note" class="dialog-intro"></p>
+      <div class="password-reveal-value">
+        <code id="password-reveal-value"></code>
+        <button id="password-reveal-copy" type="button" class="button secondary" title="Copiar"><i class="fa-solid fa-copy"></i></button>
+      </div>
+      <button class="button primary full" type="button" data-close-dialog>Entendido</button>
+    </div>
   </dialog>
 
   <div id="admin-toast" class="admin-toast" role="status"></div>

@@ -241,6 +241,13 @@ dialog input:focus, dialog select:focus { border-color: var(--wine); box-shadow:
 .switch-row span small { margin-top: .2rem; color: var(--muted); font-weight: 400; }
 .switch-row input { width: 18px; min-height: 18px; accent-color: var(--wine); }
 .form-feedback { min-height: 1.1rem; margin: -.25rem 0; color: var(--danger); font-size: .8rem; }
+.password-input-row { display: flex; gap: .5rem; }
+.password-input-row input { flex: 1; }
+.password-input-row .button { white-space: nowrap; }
+#edit-user-reset-password { justify-content: center; }
+.password-reveal-body { position: relative; padding: 2rem; display: grid; gap: .9rem; }
+.password-reveal-value { display: flex; align-items: center; gap: .6rem; padding: .8rem 1rem; border: 1px dashed var(--line); border-radius: 9px; background: #faf9f7; }
+.password-reveal-value code { flex: 1; font: 700 1.05rem/1.3 "DM Mono", "SFMono-Regular", monospace; letter-spacing: .03em; word-break: break-all; }
 .admin-toast { position: fixed; right: 1.2rem; bottom: 1.2rem; z-index: 30; max-width: 380px; padding: .85rem 1rem; border-radius: 9px; color: #fff; background: var(--ink); box-shadow: var(--shadow); opacity: 0; transform: translateY(12px); pointer-events: none; transition: .2s; }
 .admin-toast.show { opacity: 1; transform: translateY(0); }
 

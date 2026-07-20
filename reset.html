@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restablecer contraseña | INDUSECC</title>
+    <link rel="icon" href="assets/img/logo_indusecc.png" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="./login.css">
+    <style>
+        .reset-shell {
+            display: grid;
+            gap: 1.4rem;
+            width: min(calc(100% - 40px), 440px);
+            margin: 10vh auto;
+            padding: clamp(2rem, 5vw, 2.75rem);
+            background: #fff;
+            border: 1px solid rgba(42, 31, 26, .1);
+            border-radius: 26px;
+            box-shadow: var(--ind-shadow);
+        }
+        .reset-shell .field-brand { position: static; margin: 0 auto; }
+        .reset-shell h1 { margin: 0; font-family: "Playfair Display", Georgia, serif; font-size: 1.7rem; color: #171a1f; text-align: center; }
+        .reset-shell p.lead { margin: 0; color: #6b5f58; text-align: center; font-size: .92rem; line-height: 1.5; }
+        .reset-shell label { display: block; margin: 0 0 .5rem; font-size: .92rem; font-weight: 700; color: #4c403a; }
+        .reset-shell input {
+            width: 100%; min-height: 56px; padding: .8em 1em; box-sizing: border-box;
+            background: #f7f5f2; border: 1px solid #d8d0ca; border-radius: 10px;
+            font: inherit; font-size: 1rem; color: #171a1f;
+        }
+        .reset-shell input:focus { outline: none; border-color: var(--ind-vino); box-shadow: 0 0 0 4px rgba(125,38,15,.11); }
+        .reset-shell button {
+            display: flex; align-items: center; justify-content: center; gap: .6rem;
+            width: 100%; min-height: 56px; border: none; border-radius: 10px;
+            background: var(--ind-vino); color: #fff; font-weight: 700; font-size: 1rem;
+            cursor: pointer; box-shadow: 0 12px 26px rgba(125,38,15,.22);
+            transition: transform .2s ease-out, filter .2s ease-out;
+        }
+        .reset-shell button:hover { transform: translateY(-2px); filter: brightness(1.08); }
+        .reset-shell button:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+        #reset-feedback { min-height: 1.2em; text-align: center; font-size: .9rem; color: var(--ind-vino); }
+        .reset-field { position: relative; }
+        .reset-field i { position: absolute; left: 1em; top: 50%; transform: translateY(-50%); color: #a08f85; }
+        .reset-field input { padding-left: 2.6em; }
+    </style>
+</head>
+
+<body>
+    <form id="reset-form" class="reset-shell" novalidate>
+        <div class="field-brand" aria-label="Logo INDUSECC">
+            <img src="LOGO%201080%20X%201080.jpg" alt="Logo INDUSECC">
+        </div>
+        <h1>Crea tu nueva contraseña</h1>
+        <p class="lead">Este enlace es de un solo uso. Elige una contraseña que no hayas usado antes en INDUSECC.</p>
+
+        <div class="reset-field">
+            <label for="newPassword">Nueva contraseña</label>
+            <i class="fa-solid fa-lock"></i>
+            <input id="newPassword" type="password" minlength="8" autocomplete="new-password" required>
+        </div>
+        <div class="reset-field">
+            <label for="confirmPassword">Confirma la contraseña</label>
+            <i class="fa-solid fa-lock"></i>
+            <input id="confirmPassword" type="password" minlength="8" autocomplete="new-password" required>
+        </div>
+
+        <button id="reset-submit" type="submit"><i class="fa-solid fa-key"></i> Guardar y entrar</button>
+        <p id="reset-feedback" aria-live="polite"></p>
+    </form>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="assets/js/supabase-config.js"></script>
+    <script src="./reset.js"></script>
+</body>
+
+</html>

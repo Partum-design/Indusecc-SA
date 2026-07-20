@@ -1,5 +1,6 @@
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const PASSWORD_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%";
 
 function send(res, status, body) {
   res.statusCode = status;
@@ -38,6 +39,34 @@ async function requireAdmin(req) {
   return profile && profile.active && profile.role === "admin" ? user : null;
 }
 
+function generatePassword() {
+  const bytes = require("crypto").randomBytes(16);
+  let out = "";
+  for (let i = 0; i < 14; i += 1) {
+    out += PASSWORD_CHARS[bytes[i] % PASSWORD_CHARS.length];
+  }
+  return out;
+}
+
+function siteOrigin(req) {
+  const configured = process.env.APP_URL;
+  if (configured) return configured.replace(/\/$/, "");
+  const host = req.headers["x-forwarded-host"] || req.headers.host;
+  const proto = req.headers["x-forwarded-proto"] || "https";
+  return host ? `${proto}://${host}` : "";
+}
+
+async function sendPasswordEmail(req, email) {
+  const origin = siteOrigin(req);
+  const redirect = origin ? `${origin}/reset.html` : undefined;
+  const path = redirect ? `/auth/v1/recover?redirect_to=${encodeURIComponent(redirect)}` : "/auth/v1/recover";
+  const response = await supabaseFetch(path, {
+    method: "POST",
+    body: JSON.stringify({ email })
+  });
+  return response.ok;
+}
+
 export default async function handler(req, res) {
   if (!SUPABASE_URL || !SERVICE_KEY) {
     return send(res, 503, { error: "Falta configurar Supabase en el servidor." });
@@ -55,9 +84,13 @@ export default async function handler(req, res) {
 
   if (req.method === "POST") {
     const email = String(body.email || "").trim().toLowerCase();
-    const password = String(body.password || "");
     const fullName = String(body.fullName || "").trim();
     const role = ["admin", "auditor", "viewer"].includes(body.role) ? body.role : "viewer";
+    const phone = String(body.phone || "").trim();
+    const department = String(body.department || "").trim();
+    const autoPassword = !body.password;
+    const password = autoPassword ? generatePassword() : String(body.password);
+
     if (!email || !email.includes("@") || password.length < 8) {
       return send(res, 400, { error: "Escribe un correo válido y una contraseña de al menos 8 caracteres." });
     }
@@ -79,14 +112,77 @@ export default async function handler(req, res) {
     await new Promise((resolve) => setTimeout(resolve, 180));
     const profileResponse = await supabaseFetch(`/rest/v1/profiles?id=eq.${encodeURIComponent(created.id)}`, {
       method: "PATCH",
-      body: JSON.stringify({ full_name: fullName, role, active: body.active !== false })
+      body: JSON.stringify({ full_name: fullName, role, active: body.active !== false, phone, department })
     });
     if (!profileResponse.ok) {
       await supabaseFetch(`/auth/v1/admin/users/${created.id}`, { method: "DELETE" });
       return send(res, 500, { error: "La cuenta se creó, pero no fue posible preparar su perfil." });
     }
 
-    return send(res, 201, { user: { id: created.id, email, full_name: fullName, role } });
+    const emailSent = body.sendEmail !== false ? await sendPasswordEmail(req, email) : false;
+
+    return send(res, 201, {
+      user: { id: created.id, email, full_name: fullName, role },
+      tempPassword: password,
+      emailSent
+    });
+  }
+
+  if (req.method === "PATCH") {
+    const userId = String(body.userId || "");
+    if (!userId) return send(res, 400, { error: "Falta el usuario a modificar." });
+
+    const patch = {};
+    if (typeof body.fullName === "string") patch.full_name = body.fullName.trim();
+    if (["admin", "auditor", "viewer"].includes(body.role)) patch.role = body.role;
+    if (typeof body.active === "boolean") patch.active = body.active;
+    if (typeof body.phone === "string") patch.phone = body.phone.trim();
+    if (typeof body.department === "string") patch.department = body.department.trim();
+
+    if (userId === admin.id && (patch.role || typeof patch.active === "boolean")) {
+      return send(res, 400, { error: "No puedes cambiar tu propio rol o estado desde este panel." });
+    }
+
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    if (email) {
+      const emailUpdate = await supabaseFetch(`/auth/v1/admin/users/${encodeURIComponent(userId)}`, {
+        method: "PUT",
+        body: JSON.stringify({ email, email_confirm: true })
+      });
+      if (!emailUpdate.ok) {
+        const detail = await emailUpdate.json();
+        return send(res, emailUpdate.status, { error: detail.msg || detail.message || "No se pudo actualizar el correo." });
+      }
+      patch.email = email;
+    }
+
+    let tempPassword = null;
+    let emailSent = false;
+    if (body.resetPassword) {
+      tempPassword = generatePassword();
+      const passwordUpdate = await supabaseFetch(`/auth/v1/admin/users/${encodeURIComponent(userId)}`, {
+        method: "PUT",
+        body: JSON.stringify({ password: tempPassword })
+      });
+      if (!passwordUpdate.ok) {
+        const detail = await passwordUpdate.json();
+        return send(res, passwordUpdate.status, { error: detail.msg || detail.message || "No se pudo restablecer la contraseña." });
+      }
+      const targetEmail = email || String(body.currentEmail || "");
+      if (targetEmail) emailSent = await sendPasswordEmail(req, targetEmail);
+    }
+
+    if (Object.keys(patch).length) {
+      const profileUpdate = await supabaseFetch(`/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`, {
+        method: "PATCH",
+        body: JSON.stringify(patch)
+      });
+      if (!profileUpdate.ok) {
+        return send(res, 500, { error: "No se pudo actualizar el perfil." });
+      }
+    }
+
+    return send(res, 200, { updated: true, tempPassword, emailSent });
   }
 
   if (req.method === "DELETE") {
@@ -113,6 +209,6 @@ export default async function handler(req, res) {
     return send(res, 200, { deleted: true });
   }
 
-  res.setHeader("Allow", "POST, DELETE");
+  res.setHeader("Allow", "POST, PATCH, DELETE");
   return send(res, 405, { error: "Método no permitido." });
 }

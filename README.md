@@ -23,18 +23,18 @@ Aplicación web estática para auditorías ISO, con autenticación, datos y Stor
 
 ## Supabase conectado
 
-El cliente apunta al proyecto `tyxugmbnpszilcgguwlw`:
+El cliente apunta al proyecto `fexfgdttbowtjtppkmqj`:
 
-`https://tyxugmbnpszilcgguwlw.supabase.co`
+`https://fexfgdttbowtjtppkmqj.supabase.co`
 
-Ahí deben ejecutarse, en orden, las migraciones de `supabase/migrations/`. El repositorio contiene las migraciones, pero subir cambios a Git no las ejecuta automáticamente en Supabase.
+Las migraciones `001` a `011` ya quedaron aplicadas en ese proyecto. El repositorio conserva el historial para reproducir y revisar la configuración.
 
 ## Variables de Vercel
 
 Copia `.env.example` y agrega estas variables en el proyecto correcto de Vercel:
 
 ```text
-SUPABASE_URL=https://tyxugmbnpszilcgguwlw.supabase.co
+SUPABASE_URL=https://fexfgdttbowtjtppkmqj.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=la_service_role_key_del_mismo_proyecto
 GOOGLE_API_KEY=opcional_para_NORA
 GEMINI_MODEL=gemini-2.5-flash-lite

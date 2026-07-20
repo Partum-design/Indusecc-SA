@@ -5,6 +5,7 @@
   var LAST_ISO_KEY = 'sg_audit_last_iso_v1';
   var EVIDENCE_BUCKET = 'audit-evidence';
   var SIGNATURE_BUCKET = 'audit-signatures';
+  var EXPORTS_BUCKET = 'audit-exports';
   var ROUTES = getRoutes();
 
   var sb = null;
@@ -137,6 +138,52 @@
     startSplashSequence();
     applyRoleRestrictions();
     renderSessionInfo();
+    maybeShowProfileSetup();
+  }
+
+  function maybeShowProfileSetup() {
+    if (!currentProfile || currentProfile.onboarded_at || !dom.profileSetupModal) return;
+    if (dom.setupFullName) dom.setupFullName.value = currentProfile.full_name || '';
+    if (dom.setupPhone) dom.setupPhone.value = currentProfile.phone || '';
+    if (dom.setupDepartment) dom.setupDepartment.value = currentProfile.department || '';
+    dom.profileSetupModal.classList.remove('hidden');
+    dom.profileSetupModal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeProfileSetup() {
+    if (!dom.profileSetupModal) return;
+    dom.profileSetupModal.classList.add('hidden');
+    dom.profileSetupModal.setAttribute('aria-hidden', 'true');
+  }
+
+  async function onProfileSetupSubmit(event) {
+    event.preventDefault();
+    if (!sb || !currentUser) return;
+    var patch = {
+      full_name: String((dom.setupFullName && dom.setupFullName.value) || '').trim(),
+      phone: String((dom.setupPhone && dom.setupPhone.value) || '').trim(),
+      department: String((dom.setupDepartment && dom.setupDepartment.value) || '').trim(),
+      onboarded_at: new Date().toISOString()
+    };
+    if (!patch.full_name) {
+      if (dom.profileSetupFeedback) dom.profileSetupFeedback.textContent = 'Escribe tu nombre completo para continuar.';
+      return;
+    }
+    var result = await sb.from('profiles').update(patch).eq('id', currentUser.id);
+    if (result.error) {
+      if (dom.profileSetupFeedback) dom.profileSetupFeedback.textContent = 'No se pudo guardar. Intenta otra vez.';
+      return;
+    }
+    currentProfile = Object.assign({}, currentProfile, patch);
+    closeProfileSetup();
+    showToast('Datos guardados. ¡Bienvenido a INDUSECC!');
+  }
+
+  async function onProfileSetupSkip() {
+    if (!sb || !currentUser) return;
+    await sb.from('profiles').update({ onboarded_at: new Date().toISOString() }).eq('id', currentUser.id);
+    currentProfile = Object.assign({}, currentProfile, { onboarded_at: new Date().toISOString() });
+    closeProfileSetup();
   }
 
   function renderSessionInfo() {
@@ -269,6 +316,14 @@
     dom.sessionUser = document.getElementById('session-user');
     dom.logoutApp = document.getElementById('logout-app');
     dom.openAdminPanel = document.getElementById('open-admin-panel');
+
+    dom.profileSetupModal = document.getElementById('profile-setup-modal');
+    dom.profileSetupForm = document.getElementById('profile-setup-form');
+    dom.setupFullName = document.getElementById('setup-full-name');
+    dom.setupPhone = document.getElementById('setup-phone');
+    dom.setupDepartment = document.getElementById('setup-department');
+    dom.profileSetupFeedback = document.getElementById('profile-setup-feedback');
+    dom.profileSetupSkip = document.getElementById('profile-setup-skip');
   }
 
   function normalizeLibrary(list) {
@@ -576,6 +631,13 @@
 
     if (dom.logoutApp) {
       dom.logoutApp.addEventListener('click', logoutApp);
+    }
+
+    if (dom.profileSetupForm) {
+      dom.profileSetupForm.addEventListener('submit', onProfileSetupSubmit);
+    }
+    if (dom.profileSetupSkip) {
+      dom.profileSetupSkip.addEventListener('click', onProfileSetupSkip);
     }
   }
 
@@ -2072,7 +2134,7 @@
     return '';
   }
 
-  function exportReportPdf() {
+  async function exportReportPdf() {
     var iso = findIsoById(state.selectedIsoId);
     if (!iso) {
       showToast('Selecciona una norma primero.');
@@ -2146,8 +2208,32 @@
       doc.save(filename);
       logActivity('pdf_exported', { filename: filename, iso_code: iso.code });
       showToast('PDF exportado correctamente.');
+      uploadExportToVault(doc, filename, iso.code);
     } catch (err) {
       showToast('Error al exportar PDF.');
+    }
+  }
+
+  async function uploadExportToVault(doc, filename, isoCode) {
+    if (!sb || !currentUser) return;
+    try {
+      var blob = doc.output('blob');
+      var path = currentUser.id + '/' + Date.now() + '_' + filename;
+      var uploadResult = await sb.storage.from(EXPORTS_BUCKET).upload(path, blob, {
+        contentType: 'application/pdf',
+        upsert: false
+      });
+      if (uploadResult.error) return;
+      await sb.from('audit_exports').insert({
+        audit_id: currentAudit ? currentAudit.id : null,
+        actor_id: currentUser.id,
+        filename: filename,
+        storage_path: path,
+        iso_code: isoCode,
+        file_size: blob.size
+      });
+    } catch (err) {
+      // La bóveda es un respaldo adicional: si falla, la descarga local ya ocurrió.
     }
   }
 
