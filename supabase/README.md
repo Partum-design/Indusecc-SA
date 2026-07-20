@@ -2,6 +2,22 @@
 
 Proyecto: `tyxugmbnpszilcgguwlw` (https://tyxugmbnpszilcgguwlw.supabase.co)
 
+## Estado de la integración administrativa
+
+La migración `009_admin_observability.sql` agrega `last_login_at`, `last_seen_at` y la función segura
+`touch_presence()`. La interfaz usa esos datos para mostrar personas conectadas, último acceso y
+exportaciones PDF registradas en `audit_activity_log`.
+
+Para que el panel pueda crear y eliminar usuarios de Supabase Auth, configura en Vercel únicamente
+como variable privada del servidor:
+
+```text
+SUPABASE_SERVICE_ROLE_KEY=<service_role del proyecto tyxugmbnpszilcgguwlw>
+```
+
+Nunca pongas esa llave en `assets/js/supabase-config.js`, en el navegador o en Git. La ruta
+`/api/admin-users` rechaza las operaciones con `503` mientras esa variable no exista.
+
 ## Esquema
 
 - `profiles` — 1:1 con `auth.users`. Guarda `role` (`admin` | `auditor` | `viewer`) y `active`.
