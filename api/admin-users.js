@@ -58,15 +58,16 @@ function siteOrigin(req) {
   return host ? `${proto}://${host}` : "";
 }
 
-async function sendPasswordEmail(req, email) {
+function requestPasswordEmail(req, email) {
+  // Se dispara sin esperar la respuesta: el correo de Supabase puede tardar o fallar
+  // (sobre todo sin SMTP propio configurado) y nunca debe bloquear ni tumbar la petición.
   const origin = siteOrigin(req);
   const redirect = origin ? `${origin}/reset.html` : undefined;
   const path = redirect ? `/auth/v1/recover?redirect_to=${encodeURIComponent(redirect)}` : "/auth/v1/recover";
-  const response = await supabaseFetch(path, {
+  supabaseFetch(path, {
     method: "POST",
     body: JSON.stringify({ email })
-  });
-  return response.ok;
+  }).catch(() => {});
 }
 
 export default async function handler(req, res) {
@@ -121,12 +122,13 @@ export default async function handler(req, res) {
       return send(res, 500, { error: "La cuenta se creó, pero no fue posible preparar su perfil." });
     }
 
-    const emailSent = body.sendEmail !== false ? await sendPasswordEmail(req, email) : false;
+    const emailRequested = Boolean(body.sendEmail);
+    if (emailRequested) requestPasswordEmail(req, email);
 
     return send(res, 201, {
       user: { id: created.id, email, full_name: fullName, role },
       tempPassword: password,
-      emailSent
+      emailSent: emailRequested
     });
   }
 
@@ -171,7 +173,10 @@ export default async function handler(req, res) {
         return send(res, passwordUpdate.status, { error: detail.msg || detail.message || "No se pudo restablecer la contraseña." });
       }
       const targetEmail = email || String(body.currentEmail || "");
-      if (targetEmail) emailSent = await sendPasswordEmail(req, targetEmail);
+      if (targetEmail && body.sendEmail !== false) {
+        requestPasswordEmail(req, targetEmail);
+        emailSent = true;
+      }
     }
 
     if (Object.keys(patch).length) {

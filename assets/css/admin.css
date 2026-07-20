@@ -133,7 +133,10 @@ main { min-width: 0; padding: clamp(1.5rem, 4vw, 3.5rem); }
 .button:hover { transform: translateY(-1px); }
 .button.primary { color: #fff; background: var(--wine); box-shadow: 0 8px 20px rgba(125,38,15,.18); }
 .button.secondary { color: var(--ink); border-color: var(--line); background: #fff; }
+.button.danger { color: #fff; background: var(--danger); box-shadow: 0 8px 20px rgba(166,50,43,.22); }
+.button.danger:disabled { opacity: .55; cursor: not-allowed; transform: none; box-shadow: none; }
 .button.full { width: 100%; }
+.danger-text { color: var(--danger) !important; }
 
 .metric-grid {
   display: grid;
@@ -186,6 +189,8 @@ main { min-width: 0; padding: clamp(1.5rem, 4vw, 3.5rem); }
   background: #faf9f7;
 }
 .admin-search input { width: 100%; min-height: 40px; border: 0; outline: 0; background: transparent; color: var(--ink); }
+.vault-actions { display: flex; flex-wrap: wrap; gap: .6rem; padding: 0 1.4rem 1.1rem; }
+dialog label code { padding: .1rem .4rem; border-radius: 5px; background: #fdeceb; color: var(--danger); font-weight: 800; letter-spacing: .04em; }
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; min-width: 900px; }
 th, td { padding: .95rem 1.1rem; border-bottom: 1px solid #ece9e5; text-align: left; vertical-align: middle; }

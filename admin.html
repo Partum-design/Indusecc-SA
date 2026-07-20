@@ -121,6 +121,10 @@
             <input id="vault-search" type="search" placeholder="Buscar por archivo o persona">
           </label>
         </div>
+        <div class="vault-actions">
+          <button id="vault-backup-all" type="button" class="button secondary"><i class="fa-solid fa-cloud-arrow-down"></i> Respaldar todo</button>
+          <button id="vault-wipe-data" type="button" class="button danger"><i class="fa-solid fa-triangle-exclamation"></i> Borrar todos los datos y archivos</button>
+        </div>
         <div class="table-wrap">
           <table>
             <thead>
@@ -203,7 +207,7 @@
         </select>
       </label>
       <label class="switch-row"><span><b>Activar acceso</b><small>Puede iniciar sesión de inmediato</small></span><input name="active" type="checkbox" checked></label>
-      <label class="switch-row"><span><b>Enviar correo de acceso</b><small>Supabase le envía un enlace para crear su propia contraseña</small></span><input name="sendEmail" type="checkbox" checked></label>
+      <label class="switch-row"><span><b>Enviar correo de acceso</b><small>Supabase le envía un enlace para crear su propia contraseña (requiere SMTP configurado)</small></span><input name="sendEmail" type="checkbox"></label>
       <p id="create-user-feedback" class="form-feedback" aria-live="polite"></p>
       <button class="button primary full" type="submit">Crear acceso</button>
     </form>
@@ -230,6 +234,18 @@
       <button id="edit-user-reset-password" type="button" class="button secondary full"><i class="fa-solid fa-key"></i> Generar y enviar nueva contraseña</button>
       <p id="edit-user-feedback" class="form-feedback" aria-live="polite"></p>
       <button class="button primary full" type="submit">Guardar cambios</button>
+    </form>
+  </dialog>
+
+  <dialog id="wipe-data-dialog">
+    <form id="wipe-data-form" method="dialog">
+      <button class="dialog-close" type="button" data-close-dialog aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+      <p class="eyebrow danger-text">Acción irreversible</p>
+      <h2>Borrar todos los datos y archivos</h2>
+      <p class="dialog-intro">Esto elimina para siempre <strong>todas</strong> las auditorías, hallazgos, evidencias, firmas, PDFs de la bóveda, conexiones y la bitácora de actividad. <strong>No borra cuentas de usuario.</strong> No se puede deshacer.</p>
+      <label>Para confirmar, escribe <code>BORRAR TODO</code><input id="wipe-confirm-input" name="confirm" autocomplete="off" placeholder="BORRAR TODO"></label>
+      <p id="wipe-data-feedback" class="form-feedback" aria-live="polite"></p>
+      <button id="wipe-data-submit" class="button danger full" type="submit" disabled>Borrar todo permanentemente</button>
     </form>
   </dialog>
 

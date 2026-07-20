@@ -42,16 +42,25 @@
     window.setInterval(loadDashboard, 120000);
   }
 
+  function on(id, event, handler) {
+    var node = document.getElementById(id);
+    if (node) node.addEventListener(event, handler);
+    return node;
+  }
+
   function bindEvents() {
-    document.getElementById("admin-logout").addEventListener("click", async function () {
+    on("admin-logout", "click", async function () {
       await sb.auth.signOut();
       redirectToLogin();
     });
-    document.getElementById("refresh-admin").addEventListener("click", loadDashboard);
-    document.getElementById("open-create-user").addEventListener("click", function () {
-      document.getElementById("create-user-form").reset();
-      document.getElementById("create-user-feedback").textContent = "";
-      document.getElementById("create-user-dialog").showModal();
+    on("refresh-admin", "click", loadDashboard);
+    on("open-create-user", "click", function () {
+      var form = document.getElementById("create-user-form");
+      var feedback = document.getElementById("create-user-feedback");
+      var dialog = document.getElementById("create-user-dialog");
+      if (form) form.reset();
+      if (feedback) feedback.textContent = "";
+      if (dialog) dialog.showModal();
     });
 
     document.querySelectorAll("[data-close-dialog]").forEach(function (button) {
@@ -61,39 +70,48 @@
       });
     });
 
-    document.getElementById("create-user-form").addEventListener("submit", createUser);
-    document.getElementById("edit-user-form").addEventListener("submit", saveUserEdits);
-    document.getElementById("edit-user-reset-password").addEventListener("click", resetUserPassword);
+    on("create-user-form", "submit", createUser);
+    on("edit-user-form", "submit", saveUserEdits);
+    on("edit-user-reset-password", "click", resetUserPassword);
 
-    document.querySelector('[data-generate-password]').addEventListener("click", function () {
-      var form = document.getElementById("create-user-form");
-      form.querySelector('[name="password"]').value = generatePasswordClient();
-    });
+    var generateButton = document.querySelector('[data-generate-password]');
+    if (generateButton) {
+      generateButton.addEventListener("click", function () {
+        var form = document.getElementById("create-user-form");
+        var field = form && form.querySelector('[name="password"]');
+        if (field) field.value = generatePasswordClient();
+      });
+    }
 
-    document.getElementById("password-reveal-copy").addEventListener("click", function () {
-      var value = document.getElementById("password-reveal-value").textContent;
+    on("password-reveal-copy", "click", function () {
+      var valueNode = document.getElementById("password-reveal-value");
+      var value = valueNode ? valueNode.textContent : "";
       if (!value) return;
       navigator.clipboard.writeText(value).then(function () {
         showToast("Contraseña copiada.");
       });
     });
 
-    document.getElementById("user-search").addEventListener("input", function (event) {
+    on("user-search", "input", function (event) {
       searchQuery = event.target.value.trim().toLowerCase();
       renderUsers();
     });
-    document.getElementById("vault-search").addEventListener("input", function (event) {
+    on("vault-search", "input", function (event) {
       vaultQuery = event.target.value.trim().toLowerCase();
       renderVault();
     });
-    document.getElementById("connections-search").addEventListener("input", function (event) {
+    on("connections-search", "input", function (event) {
       connectionsQuery = event.target.value.trim().toLowerCase();
       renderConnections();
     });
 
-    document.getElementById("users-table-body").addEventListener("change", onUserTableChange);
-    document.getElementById("users-table-body").addEventListener("click", onUserTableClick);
-    document.getElementById("vault-table-body").addEventListener("click", onVaultTableClick);
+    on("users-table-body", "change", onUserTableChange);
+    on("users-table-body", "click", onUserTableClick);
+    on("vault-table-body", "click", onVaultTableClick);
+    on("vault-backup-all", "click", backupAllExports);
+    on("vault-wipe-data", "click", openWipeDialog);
+    on("wipe-data-form", "submit", submitWipeData);
+    on("wipe-confirm-input", "input", syncWipeConfirmState);
   }
 
   function generatePasswordClient() {
@@ -202,7 +220,10 @@
         + '<td>' + esc(item.iso_code || "—") + '</td>'
         + '<td>' + formatSize(item.file_size) + '</td>'
         + '<td>' + formatDate(item.created_at) + '</td>'
-        + '<td><div class="row-actions"><button class="icon-button" data-action="download" title="Descargar"><i class="fa-solid fa-download"></i></button></div></td></tr>';
+        + '<td><div class="row-actions">'
+        + '<button class="icon-button" data-action="download" title="Descargar"><i class="fa-solid fa-download"></i></button>'
+        + '<button class="icon-button" data-action="delete-export" title="Eliminar archivo"><i class="fa-solid fa-trash"></i></button>'
+        + '</div></td></tr>';
     }).join("");
   }
 
@@ -266,18 +287,88 @@
   }
 
   async function onVaultTableClick(event) {
-    var button = event.target.closest('[data-action="download"]');
-    if (!button) return;
+    var button = event.target.closest("[data-action]");
+    if (!button || button.tagName !== "BUTTON") return;
     var row = button.closest("[data-storage-path]");
-    var result = await sb.storage.from("audit-exports").createSignedUrl(row.dataset.storagePath, 300);
-    if (result.error || !result.data) return showToast("No se pudo generar el enlace de descarga.");
+    if (!row) return;
+
+    if (button.dataset.action === "download") {
+      await downloadExportFile(row.dataset.storagePath, row.dataset.filename);
+    }
+    if (button.dataset.action === "delete-export") {
+      if (!window.confirm("¿Eliminar este archivo de la bóveda? Esta acción no se puede deshacer.")) return;
+      var removeResult = await sb.storage.from("audit-exports").remove([row.dataset.storagePath]);
+      if (removeResult.error) return showToast("No se pudo eliminar el archivo.");
+      await sb.from("audit_exports").delete().eq("id", row.dataset.exportId);
+      showToast("Archivo eliminado de la bóveda.");
+      await loadDashboard();
+    }
+  }
+
+  async function downloadExportFile(storagePath, filename) {
+    var result = await sb.storage.from("audit-exports").createSignedUrl(storagePath, 300);
+    if (result.error || !result.data) {
+      showToast("No se pudo generar el enlace de descarga.");
+      return false;
+    }
     var link = document.createElement("a");
     link.href = result.data.signedUrl;
-    link.download = row.dataset.filename || "auditoria.pdf";
+    link.download = filename || "auditoria.pdf";
     link.rel = "noopener";
     document.body.appendChild(link);
     link.click();
     link.remove();
+    return true;
+  }
+
+  async function backupAllExports() {
+    if (!exports.length) return showToast("No hay archivos en la bóveda todavía.");
+    showToast("Preparando " + exports.length + " descarga(s)...");
+    var i;
+    for (i = 0; i < exports.length; i += 1) {
+      await downloadExportFile(exports[i].storage_path, exports[i].filename);
+      await new Promise(function (resolve) { window.setTimeout(resolve, 350); });
+    }
+  }
+
+  function openWipeDialog() {
+    var form = document.getElementById("wipe-data-form");
+    if (form) form.reset();
+    document.getElementById("wipe-data-feedback").textContent = "";
+    syncWipeConfirmState();
+    document.getElementById("wipe-data-dialog").showModal();
+  }
+
+  function syncWipeConfirmState() {
+    var input = document.getElementById("wipe-confirm-input");
+    var submit = document.getElementById("wipe-data-submit");
+    if (!input || !submit) return;
+    submit.disabled = input.value.trim() !== "BORRAR TODO";
+  }
+
+  async function submitWipeData(event) {
+    event.preventDefault();
+    var feedback = document.getElementById("wipe-data-feedback");
+    var submit = document.getElementById("wipe-data-submit");
+    var input = document.getElementById("wipe-confirm-input");
+    submit.disabled = true;
+    feedback.textContent = "Borrando todos los datos y archivos…";
+
+    var response = await fetch("/api/admin-wipe-data", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.access_token },
+      body: JSON.stringify({ confirm: input.value.trim() })
+    });
+    var result = await response.json();
+    if (!response.ok) {
+      feedback.textContent = result.error || "No se pudo completar el borrado.";
+      syncWipeConfirmState();
+      return;
+    }
+    feedback.textContent = "";
+    document.getElementById("wipe-data-dialog").close();
+    showToast("Todos los datos y archivos fueron eliminados.");
+    await loadDashboard();
   }
 
   function openEditDialog(profile) {
@@ -338,8 +429,8 @@
     showToast("Acceso creado correctamente.");
     if (result.tempPassword) {
       showPasswordReveal(result.tempPassword, result.emailSent
-        ? "Se envió un correo a " + values.get("email") + " para que configure su acceso. Esta es la contraseña temporal por si la necesitas."
-        : "No se pudo enviar el correo automático. Comparte esta contraseña temporal de forma segura.");
+        ? "Se está enviando un correo a " + values.get("email") + " para que configure su acceso. Esta es la contraseña temporal por si la necesitas."
+        : "No se envió correo automático (opción desactivada). Comparte esta contraseña temporal de forma segura.");
     }
     await loadDashboard();
   }
@@ -401,8 +492,8 @@
     }
     document.getElementById("edit-user-dialog").close();
     showPasswordReveal(result.tempPassword, result.emailSent
-      ? "Se envió un correo a " + email + " para que configure su nueva contraseña. Esta es la temporal por si la necesitas."
-      : "No se pudo enviar el correo automático. Comparte esta contraseña temporal de forma segura.");
+      ? "Se está enviando un correo a " + email + " para que configure su nueva contraseña. Esta es la temporal por si la necesitas."
+      : "Comparte esta contraseña temporal de forma segura.");
   }
 
   function showPasswordReveal(password, note) {
