@@ -1,13 +1,13 @@
 :root {
-  --ind-vino: #7D260F;
-  --ind-vino-deep: #4a160d;
-  --ind-vino-darker: #24100c;
-  --ind-gold: #b88743;
-  --ind-gold-soft: #d9b77f;
+  --ind-vino: #6f1627;
+  --ind-vino-deep: #4a0d1b;
+  --ind-vino-darker: #23080e;
+  --ind-gold: #d98e04;
+  --ind-gold-soft: #f2c46a;
   --ind-cream: #f7f4ef;
   --ind-cream-soft: rgba(247, 244, 239, 0.76);
-  --ind-border: rgba(125, 38, 15, 0.18);
-  --ind-shadow: 0 28px 90px rgba(37, 18, 12, 0.18);
+  --ind-border: rgba(111, 22, 39, 0.18);
+  --ind-shadow: 0 28px 90px rgba(23, 8, 12, 0.2);
 }
 
 html,
@@ -22,8 +22,8 @@ body {
   display: grid;
   place-items: center;
   background:
-    linear-gradient(rgba(125, 38, 15, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(125, 38, 15, 0.035) 1px, transparent 1px),
+    linear-gradient(rgba(111, 22, 39, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(111, 22, 39, 0.035) 1px, transparent 1px),
     #eeeae4;
   background-size: 32px 32px;
   color: #171a1f;
@@ -44,7 +44,7 @@ body::after {
 
 body::before {
   background:
-    radial-gradient(circle at 15% 10%, rgba(125, 38, 15, 0.09), transparent 28%),
+    radial-gradient(circle at 15% 10%, rgba(111, 22, 39, 0.09), transparent 28%),
     radial-gradient(circle at 88% 82%, rgba(184, 135, 67, 0.10), transparent 30%);
 }
 
@@ -134,10 +134,10 @@ form::before {
   margin: 2.5rem 0 0;
   display: grid;
   place-items: center;
-  background: #7D260F;
+  background: #6f1627;
   border: 2px solid #f1d6ad;
   border-radius: 50%;
-  box-shadow: 0 0 0 6px rgba(125,38,15,.10), 0 14px 28px rgba(57,20,11,.16);
+  box-shadow: 0 0 0 6px rgba(111,22,39,.10), 0 14px 28px rgba(57,20,11,.16);
   overflow: hidden;
 }
 
@@ -284,7 +284,7 @@ form input[type=url]:focus,
 form input[type=search]:focus,
 form input[type=password]:focus {
   outline: none;
-  box-shadow: 0 0 0 4px rgba(125, 38, 15, 0.11);
+  box-shadow: 0 0 0 4px rgba(111, 22, 39, 0.11);
   border: solid 1px var(--ind-vino);
   transform: translateY(-1px);
 }
@@ -301,7 +301,7 @@ form #login {
   border: none;
   border-radius: 10px;
   box-sizing: border-box;
-  box-shadow: 0 12px 26px rgba(125, 38, 15, 0.22);
+  box-shadow: 0 12px 26px rgba(111, 22, 39, 0.22);
   width: 100%;
   min-height: 62px;
   font-size: 1.02rem;
@@ -321,7 +321,7 @@ form #login:hover,
 form #login:active {
   transform: translateY(-2px);
   filter: brightness(1.08);
-  box-shadow: 0 16px 32px rgba(125, 38, 15, 0.3);
+  box-shadow: 0 16px 32px rgba(111, 22, 39, 0.3);
 }
 
 form #login:hover i {
@@ -362,7 +362,7 @@ form #login:hover::after {
   font-weight: 700;
   text-decoration: underline;
   text-underline-offset: 3px;
-  text-decoration-color: rgba(125, 38, 15, 0.35);
+  text-decoration-color: rgba(111, 22, 39, 0.35);
   cursor: pointer;
   transition: color 0.2s ease-out;
 }

@@ -1,6 +1,7 @@
 :root {
-  --wine: #7d260f;
-  --wine-dark: #4a160d;
+  --wine: #6f1627;
+  --wine-dark: #4a0d1b;
+  --gold: #d98e04;
   --ink: #171a1f;
   --muted: #687079;
   --paper: #f3f1ed;
@@ -73,7 +74,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 }
 .admin-logo-frame {
   width: 48px; height: 48px; display: grid; place-items: center;
-  background: #7d260f;
+  background: var(--wine);
   border: 1px solid rgba(255,255,255,.22);
 }
 .admin-logo-frame img { width: 76%; height: 76%; object-fit: contain; }
@@ -131,7 +132,7 @@ main { min-width: 0; padding: clamp(1.5rem, 4vw, 3.5rem); }
   transition: transform .18s, box-shadow .18s, background .18s;
 }
 .button:hover { transform: translateY(-1px); }
-.button.primary { color: #fff; background: var(--wine); box-shadow: 0 8px 20px rgba(125,38,15,.18); }
+.button.primary { color: #fff; background: var(--wine); box-shadow: 0 8px 20px rgba(111,22,39,.18); }
 .button.secondary { color: var(--ink); border-color: var(--line); background: #fff; }
 .button.danger { color: #fff; background: var(--danger); box-shadow: 0 8px 20px rgba(166,50,43,.22); }
 .button.danger:disabled { opacity: .55; cursor: not-allowed; transform: none; box-shadow: none; }
@@ -153,14 +154,27 @@ main { min-width: 0; padding: clamp(1.5rem, 4vw, 3.5rem); }
   border-radius: 12px;
   background: var(--surface);
   overflow: hidden;
+  animation: panelRise .5s cubic-bezier(.2,.8,.2,1) both;
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
 }
+.metric-card:nth-child(1) { animation-delay: .02s; }
+.metric-card:nth-child(2) { animation-delay: .08s; }
+.metric-card:nth-child(3) { animation-delay: .14s; }
+.metric-card:nth-child(4) { animation-delay: .2s; }
+.metric-card:hover { transform: translateY(-3px); border-color: rgba(111,22,39,.28); box-shadow: 0 14px 30px rgba(31,25,21,.1); }
 .metric-card > div { display: grid; gap: .45rem; }
 .metric-card span { color: var(--muted); font-size: .8rem; font-weight: 600; }
-.metric-card strong { font: 800 2rem/1 "Manrope"; }
+.metric-card strong { font: 800 2rem/1 "Manrope"; font-variant-numeric: tabular-nums; }
 .metric-card > i { position: absolute; top: 1.2rem; right: 1.2rem; color: #9ba0a5; }
 .metric-card small { position: absolute; left: 1.25rem; bottom: 1.15rem; color: var(--muted); }
-.metric-card.accent { color: #fff; background: var(--wine); border-color: var(--wine); }
+.metric-card.accent { color: #fff; background: linear-gradient(145deg, var(--wine), var(--wine-dark)); border-color: var(--wine); }
 .metric-card.accent span, .metric-card.accent small, .metric-card.accent > i { color: rgba(255,255,255,.7); }
+.metric-card.accent:hover { box-shadow: 0 16px 32px rgba(111,22,39,.28); }
+
+@keyframes panelRise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 .admin-panel {
   max-width: 1500px;
@@ -169,6 +183,8 @@ main { min-width: 0; padding: clamp(1.5rem, 4vw, 3.5rem); }
   border-radius: 12px;
   background: var(--surface);
   box-shadow: var(--shadow);
+  animation: panelRise .55s cubic-bezier(.2,.8,.2,1) both;
+  animation-delay: .1s;
 }
 .panel-title {
   display: flex;
@@ -197,6 +213,7 @@ th, td { padding: .95rem 1.1rem; border-bottom: 1px solid #ece9e5; text-align: l
 th { color: #747a80; font-size: .71rem; letter-spacing: .07em; text-transform: uppercase; }
 td { font-size: .86rem; }
 tbody tr:last-child td { border-bottom: 0; }
+tbody tr { transition: background .15s ease; }
 tbody tr:hover { background: #faf9f7; }
 .person-cell { display: flex; align-items: center; gap: .75rem; }
 .person-avatar { width: 36px; height: 36px; display: grid; place-items: center; color: #fff; background: var(--wine); border-radius: 50%; font-weight: 800; }
@@ -218,8 +235,9 @@ tbody tr:hover { background: #faf9f7; }
 .status-pill.inactive::before { background: var(--danger); }
 .role-select { border-radius: 7px; cursor: pointer; }
 .row-actions { display: flex; justify-content: flex-end; gap: .35rem; }
-.icon-button { width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: var(--muted); cursor: pointer; }
-.icon-button:hover { color: var(--wine); border-color: rgba(125,38,15,.35); }
+.icon-button { width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: var(--muted); cursor: pointer; transition: color .18s ease, border-color .18s ease, transform .18s ease, background .18s ease; }
+.icon-button:hover { color: var(--wine); border-color: rgba(111,22,39,.35); transform: translateY(-1px); }
+.icon-button:active { transform: translateY(0) scale(.94); }
 .empty-state { padding: 3rem; text-align: center; color: var(--muted); }
 
 .activity-panel { margin-top: 1rem; }
@@ -239,7 +257,7 @@ dialog h2 { margin: -.2rem 0 0; font: 800 1.65rem "Manrope"; }
 .dialog-intro { margin: -.4rem 0 .25rem; color: var(--muted); }
 dialog label { display: grid; gap: .45rem; color: #4c5258; font-size: .8rem; font-weight: 700; }
 dialog input, dialog select { width: 100%; min-height: 44px; padding: .7rem .8rem; border: 1px solid var(--line); border-radius: 8px; outline: 0; background: #faf9f7; }
-dialog input:focus, dialog select:focus { border-color: var(--wine); box-shadow: 0 0 0 3px rgba(125,38,15,.09); }
+dialog input:focus, dialog select:focus { border-color: var(--wine); box-shadow: 0 0 0 3px rgba(111,22,39,.09); }
 .dialog-close { position: absolute; top: 1rem; right: 1rem; width: 34px; height: 34px; border: 0; border-radius: 50%; background: #f2f0ec; cursor: pointer; }
 .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .switch-row span b, .switch-row span small { display: block; }
