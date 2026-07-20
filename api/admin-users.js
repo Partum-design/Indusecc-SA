@@ -1,3 +1,5 @@
+import { randomBytes } from "crypto";
+
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const PASSWORD_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%";
@@ -40,7 +42,7 @@ async function requireAdmin(req) {
 }
 
 function generatePassword() {
-  const bytes = require("crypto").randomBytes(16);
+  const bytes = randomBytes(16);
   let out = "";
   for (let i = 0; i < 14; i += 1) {
     out += PASSWORD_CHARS[bytes[i] % PASSWORD_CHARS.length];
