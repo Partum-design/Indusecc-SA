@@ -139,6 +139,22 @@
     applyRoleRestrictions();
     renderSessionInfo();
     maybeShowProfileSetup();
+    renderWatermark();
+    window.setInterval(renderWatermark, 60000);
+  }
+
+  function renderWatermark() {
+    var layer = document.getElementById('watermark-layer');
+    if (!layer || !currentProfile) return;
+    var stamp = new Intl.DateTimeFormat('es-MX', { dateStyle: 'short', timeStyle: 'short' }).format(new Date());
+    var label = (currentProfile.email || 'INDUSECC') + ' · ' + stamp;
+    var tileCount = 60;
+    var html = '';
+    var i;
+    for (i = 0; i < tileCount; i += 1) {
+      html += '<span>' + esc(label) + '</span>';
+    }
+    layer.innerHTML = html;
   }
 
   function maybeShowProfileSetup() {
