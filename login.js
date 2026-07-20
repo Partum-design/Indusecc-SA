@@ -40,6 +40,7 @@ var emailLabel = document.querySelector('#loginEmailLabel'),
     bodyBGchanged = document.querySelector('.bodyBGchanged'),
     loginForm = document.querySelector('#login-form'),
     loginButton = document.querySelector('#login'),
+    forgotPasswordButton = document.querySelector('#forgot-password'),
     loginFeedback = document.querySelector('#login-feedback');
 
 var activeElement, curEmailIndex, screenCenter, svgCoords, emailCoords, emailScrollMax, chinMin = .5, dFromC, mouthStatus = "small", blinking, eyeScale = 1, eyesCovered = false, showPasswordClicked = false;
@@ -365,6 +366,39 @@ async function fetchActiveProfile(userId) {
     return result.data;
 }
 
+function logLoginEvent(accessToken) {
+    try {
+        fetch("/api/log-login", {
+            method: "POST",
+            headers: { Authorization: "Bearer " + accessToken },
+            keepalive: true
+        });
+    } catch (error) {
+        // El registro de la conexión nunca debe bloquear el acceso.
+    }
+}
+
+async function onForgotPassword() {
+    if (!sb) return;
+    var userValue = String(email.value || "").trim().toLowerCase();
+    if (!userValue || userValue.indexOf("@") === -1) {
+        showFeedback("Escribe tu correo arriba y vuelve a pulsar el enlace.", true);
+        shakeLogin();
+        email.focus();
+        return;
+    }
+    if (forgotPasswordButton) forgotPasswordButton.disabled = true;
+    showFeedback("Enviando enlace de recuperación...", false);
+    var redirectTo = window.location.origin + "/reset.html";
+    var result = await sb.auth.resetPasswordForEmail(userValue, { redirectTo: redirectTo });
+    if (forgotPasswordButton) forgotPasswordButton.disabled = false;
+    if (result.error) {
+        showFeedback("No se pudo enviar el correo. Intenta otra vez.", true);
+        return;
+    }
+    showFeedback("Si el correo existe, te enviamos un enlace para restablecer tu contraseña.", false);
+}
+
 function showFeedback(message, isError) {
     if (!loginFeedback) return;
     loginFeedback.textContent = message || "";
@@ -428,7 +462,13 @@ function applyBrandPalette() {
 
 async function onLoginSubmit(event) {
     if (event) event.preventDefault();
-    if (!email || !password || !sb) return;
+    if (!email || !password) return;
+
+    if (!sb) {
+        showFeedback("El acceso no está configurado. Revisa la conexión con Supabase.", true);
+        shakeLogin();
+        return;
+    }
 
     var userValue = String(email.value || "").trim().toLowerCase();
     var passwordValue = String(password.value || "").trim();
@@ -457,7 +497,15 @@ async function onLoginSubmit(event) {
     if (loginButton) loginButton.disabled = true;
     showFeedback("Verificando acceso...", false);
 
-    var signInResult = await sb.auth.signInWithPassword({ email: userValue, password: passwordValue });
+    var signInResult;
+    try {
+        signInResult = await sb.auth.signInWithPassword({ email: userValue, password: passwordValue });
+    } catch (error) {
+        showFeedback("No se pudo conectar con el servicio de acceso. Intenta otra vez.", true);
+        shakeLogin();
+        if (loginButton) loginButton.disabled = false;
+        return;
+    }
 
     if (signInResult.error) {
         showFeedback(translateAuthError(signInResult.error.message), true);
@@ -482,6 +530,8 @@ async function onLoginSubmit(event) {
         last_seen_at: new Date().toISOString()
     }).eq("id", signInResult.data.user.id);
 
+    logLoginEvent(signInResult.data.session.access_token);
+
     showFeedback("Acceso concedido. Redirigiendo a selección de ISO...", false);
     window.setTimeout(function () {
         window.location.href = ROUTES.app;
@@ -489,6 +539,11 @@ async function onLoginSubmit(event) {
 }
 
 async function initLoginForm() {
+    if (!sb) {
+        showFeedback("El acceso no está configurado. Revisa Supabase antes de publicar.", true);
+        if (loginButton) loginButton.disabled = true;
+    }
+
     if (sb) {
         var sessionResult = await sb.auth.getSession();
         var session = sessionResult.data && sessionResult.data.session;
@@ -534,6 +589,9 @@ async function initLoginForm() {
     if (loginForm) {
         loginForm.addEventListener('submit', onLoginSubmit);
     }
+    if (forgotPasswordButton) {
+        forgotPasswordButton.addEventListener('click', onForgotPassword);
+    }
 
     // move arms to initial positions
     gsap.set(armL, { x: -93, y: 220, rotation: 105, transformOrigin: "top left" });
@@ -562,7 +620,8 @@ async function initLoginForm() {
 function getRoutes() {
     return {
         login: "login.html",
-        app: "index.html"
+        app: "index.html",
+        reset: "reset.html"
     };
 }
 

@@ -5,10 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Acceso Corporativo | INDUSECC</title>
+    <link rel="icon" href="assets/img/logo_indusecc.png" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="./login.css">
 </head>
 
@@ -194,24 +196,27 @@
         </div>
 
         <div class="inputGroup inputGroup1">
-            <label for="loginEmail" id="loginEmailLabel">Usuario o correo</label>
-            <input type="text" id="loginEmail" maxlength="254" autocomplete="username" />
-            <p class="helper helper1">acceso@indusecc.com</p>
+            <label for="loginEmail" id="loginEmailLabel"><i class="fa-solid fa-envelope"></i> Usuario o correo</label>
+            <input type="email" id="loginEmail" name="email" maxlength="254" autocomplete="username"
+                aria-describedby="loginEmailHint" required />
+            <p class="helper helper1" id="loginEmailHint">acceso@indusecc.com</p>
         </div>
         <div class="inputGroup inputGroup2">
-            <label for="loginPassword" id="loginPasswordLabel">Contraseña</label>
-            <input type="password" id="loginPassword" autocomplete="current-password" />
+            <label for="loginPassword" id="loginPasswordLabel"><i class="fa-solid fa-lock"></i> Contraseña</label>
+            <input type="password" id="loginPassword" name="password" autocomplete="current-password" required />
             <label id="showPasswordToggle" for="showPasswordCheck">Mostrar
                 <input id="showPasswordCheck" type="checkbox" />
                 <div class="indicator"></div>
             </label>
         </div>
         <div class="inputGroup inputGroup3">
-            <button id="login" type="submit">Ingresar a auditorías</button>
+            <button id="login" type="submit"><span>Ingresar a auditorías</span><i class="fa-solid fa-arrow-right-long"></i></button>
+            <button id="forgot-password" class="link-button" type="button">¿Olvidaste tu contraseña?</button>
         </div>
 
         <p id="login-feedback" class="login-feedback" aria-live="polite"></p>
-        <p class="login-note">Acceso protegido para personal autorizado de INDUSECC.</p>
+        <p class="login-note"><i class="fa-solid fa-shield-halved"></i> Acceso protegido y trazable · personal autorizado de INDUSECC.</p>
+        <p class="login-trust">ISO 9001 · ISO 14001 · ISO 45001 · ISO 27001</p>
     </form>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
