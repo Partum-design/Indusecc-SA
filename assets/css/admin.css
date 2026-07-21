@@ -47,11 +47,11 @@ button, a { -webkit-tap-highlight-color: transparent; }
 }
 .loading-screen p { color: var(--muted); font-weight: 600; }
 .loading-mark {
-  width: 64px; height: 64px; padding: 7px;
-  border: 2px solid var(--wine);
+  width: 64px; height: 64px; padding: 0;
+  border: 2px solid var(--wine); border-radius: 14px; overflow: hidden;
   animation: rotate 1.1s linear infinite;
 }
-.loading-mark span { display: block; width: 100%; height: 100%; background: var(--wine); }
+.loading-mark img { display: block; width: 100%; height: 100%; object-fit: cover; }
 @keyframes rotate { to { transform: rotate(90deg); } }
 
 .admin-app { min-height: 100vh; display: grid; grid-template-columns: 260px minmax(0, 1fr); }

@@ -449,7 +449,7 @@ function _buildAndPrintPDF() {
 
 <!-- ═══ ENCABEZADO ═══ -->
 <div style="background:#5a1111;color:#fff;padding:12px 20px;display:flex;align-items:center;gap:14px;">
-  <img src="logo_indusecc.png" alt="INDUSECC" style="height:52px;" onerror="this.style.display='none'">
+  <img src="../../Favicon-audtoria.png" alt="INDUSECC" style="height:52px;" onerror="this.style.display='none'">
   <div>
     <div style="font-size:1.05rem;font-weight:800;color:#D98E04;letter-spacing:-0.5px;">AUDITORÍA ISO 9001:2015</div>
     <div style="font-size:0.6rem;color:#ccc;letter-spacing:2px;text-transform:uppercase;margin-top:2px;">AUDITORÍAPP · INDUSECC</div>
