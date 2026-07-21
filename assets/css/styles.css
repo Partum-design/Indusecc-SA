@@ -1986,11 +1986,248 @@ h5 {
 }
 
 .tutorial-steps {
+  list-style: none;
   margin: 14px 0 4px;
-  padding-left: 18px;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  color: #4a2c33;
+  max-height: min(58vh, 520px);
+  overflow-y: auto;
+}
+
+.tutorial-steps li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px;
+  border: 1px solid #e7d4b1;
+  border-radius: 12px;
+  background: linear-gradient(160deg, #fffaf0, #fff3de);
+}
+
+.tutorial-step-icon {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--md-gold), var(--md-gold-deep));
+  color: #fff8ef;
+  font-size: 0.92rem;
+  box-shadow: 0 6px 14px rgba(186, 115, 0, 0.28);
+}
+
+.tutorial-steps li strong {
+  display: block;
+  color: #4a1622;
+  font-size: 0.92rem;
+  font-family: 'Sora', sans-serif;
+}
+
+.tutorial-steps li p {
+  margin: 3px 0 0;
+  color: #5b3a34;
+  font-size: 0.83rem;
+  line-height: 1.45;
+}
+
+.tutorial-steps li em {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--md-vino);
+}
+
+/* ---------- Panel "Mis exportaciones" ---------- */
+
+.exports-panel-card {
+  width: min(640px, 100%);
+  display: grid;
+  gap: 14px;
+}
+
+.exports-panel-summary {
+  display: grid;
+  gap: 6px;
+}
+
+.completion-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  padding: 7px 13px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.completion-badge.complete {
+  color: #0f6b46;
+  background: rgba(31, 157, 106, 0.14);
+  border: 1px solid rgba(31, 157, 106, 0.3);
+}
+
+.completion-badge.progress {
+  color: #8a5a10;
+  background: rgba(210, 141, 23, 0.14);
+  border: 1px solid rgba(210, 141, 23, 0.3);
+}
+
+.exports-progress-note {
+  margin: 0;
+  color: #6a4b37;
+  font-size: 0.82rem;
+}
+
+.exports-list {
+  display: grid;
+  gap: 10px;
+  max-height: min(46vh, 420px);
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.exports-loading {
+  padding: 24px;
+  text-align: center;
+  color: #6a4b37;
+  font-size: 0.86rem;
+}
+
+.export-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e7d4b1;
+  border-radius: 14px;
+  background: #fffefb;
+}
+
+.export-card-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: rgba(111, 22, 39, 0.1);
+  color: var(--md-vino);
+  font-size: 1.15rem;
+}
+
+.export-card-body {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.export-card-body strong {
+  font-size: 0.9rem;
+  color: #1f1b16;
+  word-break: break-word;
+}
+
+.export-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: var(--md-text-soft);
+}
+
+.export-card-meta span:not(:last-child)::after {
+  content: '•';
+  margin-left: 8px;
+  color: #d8c3a1;
+}
+
+.export-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.export-badge.complete {
+  color: #0f6b46;
+  background: rgba(31, 157, 106, 0.14);
+}
+
+.export-badge.partial {
+  color: #8a5a10;
+  background: rgba(210, 141, 23, 0.14);
+}
+
+.export-card-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px dashed #e7d4b1;
+}
+
+.export-expiry {
+  margin-right: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.74rem;
+  color: var(--md-text-soft);
+}
+
+.export-expiry.soon {
+  color: var(--md-warning);
+}
+
+.export-expiry.urgent {
+  color: var(--md-danger);
+  font-weight: 700;
+}
+
+.export-card-actions .btn {
+  padding: 7px 10px;
+  font-size: 0.74rem;
+}
+
+.exports-retention-note {
+  margin: 0;
+  padding-top: 10px;
+  border-top: 1px solid #efe0c4;
+  color: var(--md-text-soft);
+  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.exports-panel-card .empty-state {
+  padding: 34px 12px;
+  text-align: center;
+  color: var(--md-text-soft);
   display: grid;
   gap: 8px;
-  color: #4a2c33;
+  justify-items: center;
+}
+
+.exports-panel-card .empty-state i {
+  font-size: 1.6rem;
+  color: #d8c3a1;
+}
+
+.exports-panel-card .empty-state p {
+  margin: 0;
+  font-size: 0.86rem;
 }
 
 .profile-setup-card {

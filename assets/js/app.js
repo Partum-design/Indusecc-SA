@@ -322,6 +322,7 @@
     dom.mobileMenuGoMetrics = document.getElementById('mobile-menu-go-metrics');
     dom.mobileMenuGoChecklist = document.getElementById('mobile-menu-go-checklist');
     dom.mobileMenuExport = document.getElementById('mobile-menu-export');
+    dom.mobileMenuViewExports = document.getElementById('mobile-menu-view-exports');
     dom.mobileMenuClear = document.getElementById('mobile-menu-clear');
     dom.mobileMenuTutorial = document.getElementById('mobile-menu-tutorial');
     dom.mobileMenuChangeIso = document.getElementById('mobile-menu-change-iso');
@@ -347,6 +348,14 @@
     dom.setupDepartment = document.getElementById('setup-department');
     dom.profileSetupFeedback = document.getElementById('profile-setup-feedback');
     dom.profileSetupSkip = document.getElementById('profile-setup-skip');
+
+    dom.openExportsPanel = document.getElementById('open-exports-panel');
+    dom.exportsPanelModal = document.getElementById('exports-panel-modal');
+    dom.closeExportsPanel = document.getElementById('close-exports-panel');
+    dom.exportsCompletionBadge = document.getElementById('exports-completion-badge');
+    dom.exportsProgressNote = document.getElementById('exports-progress-note');
+    dom.exportsList = document.getElementById('exports-list');
+    dom.exportsEmpty = document.getElementById('exports-empty');
   }
 
   function normalizeLibrary(list) {
@@ -441,9 +450,7 @@
     }
 
     if (dom.navOpenReports) {
-      dom.navOpenReports.addEventListener('click', function () {
-        exportReportPdf();
-      });
+      dom.navOpenReports.addEventListener('click', openExportsPanel);
     }
 
     if (dom.mobileMenuExport) {
@@ -451,6 +458,31 @@
         closeMobileOffcanvas();
         exportReportPdf();
       });
+    }
+
+    if (dom.mobileMenuViewExports) {
+      dom.mobileMenuViewExports.addEventListener('click', function () {
+        closeMobileOffcanvas();
+        openExportsPanel();
+      });
+    }
+
+    if (dom.openExportsPanel) {
+      dom.openExportsPanel.addEventListener('click', openExportsPanel);
+    }
+
+    if (dom.closeExportsPanel) {
+      dom.closeExportsPanel.addEventListener('click', closeExportsPanel);
+    }
+
+    if (dom.exportsPanelModal) {
+      dom.exportsPanelModal.addEventListener('click', function (event) {
+        if (event.target === dom.exportsPanelModal) closeExportsPanel();
+      });
+    }
+
+    if (dom.exportsList) {
+      dom.exportsList.addEventListener('click', onExportsListClick);
     }
 
     if (dom.navOpenProfile) {
@@ -1014,6 +1046,7 @@
     renderChecklist(iso);
     renderMetrics(iso);
     renderSignaturePreview();
+    purgeExpiredExportsForCurrentUser();
   }
 
   function setActiveScreen(showElement, hideElement) {
@@ -2230,34 +2263,58 @@
       var filename = 'Auditoria_' + iso.code.replace(/[^a-zA-Z0-9]/g, '') + '_' + formatDateName(new Date()) + '.pdf';
       doc.save(filename);
       logActivity('pdf_exported', { filename: filename, iso_code: iso.code });
-      showToast('PDF exportado correctamente.');
-      uploadExportToVault(doc, filename, iso.code);
+
+      var saved = await uploadExportToVault(doc, filename, iso.code, summary.progress);
+      showToast(saved
+        ? 'PDF exportado y guardado en Mis exportaciones.'
+        : 'El PDF se descargó, pero no se pudo guardar en Mis exportaciones. Vuelve a intentarlo desde ahí.');
     } catch (err) {
       showToast('Error al exportar PDF.');
     }
   }
 
-  async function uploadExportToVault(doc, filename, isoCode) {
-    if (!sb || !currentUser) return;
+  async function uploadExportToVault(doc, filename, isoCode, progress) {
+    if (!sb || !currentUser) return false;
+
+    var blob;
     try {
-      var blob = doc.output('blob');
-      var path = currentUser.id + '/' + Date.now() + '_' + filename;
-      var uploadResult = await sb.storage.from(EXPORTS_BUCKET).upload(path, blob, {
-        contentType: 'application/pdf',
-        upsert: false
-      });
-      if (uploadResult.error) return;
-      await sb.from('audit_exports').insert({
-        audit_id: currentAudit ? currentAudit.id : null,
-        actor_id: currentUser.id,
-        filename: filename,
-        storage_path: path,
-        iso_code: isoCode,
-        file_size: blob.size
-      });
-    } catch (err) {
-      // La bóveda es un respaldo adicional: si falla, la descarga local ya ocurrió.
+      blob = new Blob([doc.output('arraybuffer')], { type: 'application/pdf' });
+    } catch (buildError) {
+      console.error('No se pudo preparar el PDF para la bóveda de exportaciones.', buildError);
+      return false;
     }
+
+    var path = currentUser.id + '/' + Date.now() + '_' + filename;
+    var attempt;
+    for (attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        var uploadResult = await sb.storage.from(EXPORTS_BUCKET).upload(path, blob, {
+          contentType: 'application/pdf',
+          upsert: true
+        });
+        if (uploadResult.error) throw uploadResult.error;
+
+        var insertResult = await sb.from('audit_exports').insert({
+          audit_id: currentAudit ? currentAudit.id : null,
+          actor_id: currentUser.id,
+          filename: filename,
+          storage_path: path,
+          iso_code: isoCode,
+          file_size: blob.size,
+          progress: progress
+        });
+        if (insertResult.error) throw insertResult.error;
+
+        if (dom.exportsPanelModal && !dom.exportsPanelModal.classList.contains('hidden')) loadMyExports();
+        return true;
+      } catch (err) {
+        console.error('No se pudo guardar la exportación en Mis exportaciones (intento ' + (attempt + 1) + ').', err);
+        if (attempt === 0) {
+          await new Promise(function (resolve) { window.setTimeout(resolve, 900); });
+        }
+      }
+    }
+    return false;
   }
 
   async function logActivity(action, detail) {
@@ -2589,6 +2646,190 @@
     dom.tutorialModal.classList.add('hidden');
     dom.tutorialModal.setAttribute('aria-hidden', 'true');
     writeLocal(TUTORIAL_KEY, '1');
+  }
+
+  // ---------------------------------------------------------------------
+  // Panel "Mis exportaciones": entregables guardados, con descarga y
+  // vencimiento automático a 7 días.
+  // ---------------------------------------------------------------------
+
+  function openExportsPanel() {
+    if (!dom.exportsPanelModal) return;
+    closeMobileOffcanvas();
+    dom.exportsPanelModal.classList.remove('hidden');
+    dom.exportsPanelModal.setAttribute('aria-hidden', 'false');
+    renderExportsSummary();
+    loadMyExports();
+  }
+
+  function closeExportsPanel() {
+    if (!dom.exportsPanelModal) return;
+    dom.exportsPanelModal.classList.add('hidden');
+    dom.exportsPanelModal.setAttribute('aria-hidden', 'true');
+  }
+
+  function renderExportsSummary() {
+    if (!dom.exportsCompletionBadge) return;
+    var iso = findIsoById(state.selectedIsoId);
+    if (!iso) return;
+
+    var summary = calculateMetrics(iso);
+    var complete = summary.total > 0 && summary.progress >= 100;
+
+    dom.exportsCompletionBadge.className = 'completion-badge ' + (complete ? 'complete' : 'progress');
+    dom.exportsCompletionBadge.innerHTML = '<i class="fa-solid ' + (complete ? 'fa-circle-check' : 'fa-hourglass-half') + '"></i> '
+      + (complete ? 'Auditoría completada' : 'En progreso — ' + summary.progress + '%');
+
+    if (dom.exportsProgressNote) {
+      dom.exportsProgressNote.textContent = summary.evaluated + ' de ' + summary.total + ' puntos evaluados en '
+        + (iso.code || '').toUpperCase() + '.';
+    }
+  }
+
+  async function loadMyExports() {
+    if (!sb || !currentUser || !dom.exportsList) return;
+
+    dom.exportsList.innerHTML = '<div class="exports-loading"><i class="fa-solid fa-circle-notch fa-spin"></i> Cargando tus exportaciones…</div>';
+    await purgeExpiredExportsForCurrentUser();
+
+    var result = await sb.from('audit_exports')
+      .select('id,filename,storage_path,iso_code,file_size,progress,created_at,expires_at')
+      .eq('actor_id', currentUser.id)
+      .order('created_at', { ascending: false });
+
+    if (result.error) {
+      dom.exportsList.innerHTML = '';
+      showToast('No se pudieron cargar tus exportaciones.');
+      return;
+    }
+
+    renderExportsList(result.data || []);
+  }
+
+  function renderExportsList(items) {
+    if (!dom.exportsList) return;
+    if (dom.exportsEmpty) dom.exportsEmpty.classList.toggle('hidden', Boolean(items.length));
+    dom.exportsList.innerHTML = items.map(exportCardHtml).join('');
+  }
+
+  function exportCardHtml(item) {
+    var hasProgress = typeof item.progress === 'number';
+    var complete = hasProgress && item.progress >= 100;
+    var badgeHtml = hasProgress
+      ? '<span class="export-badge ' + (complete ? 'complete' : 'partial') + '">'
+        + '<i class="fa-solid ' + (complete ? 'fa-circle-check' : 'fa-hourglass-half') + '"></i> '
+        + (complete ? 'Completada' : item.progress + '% avance') + '</span>'
+      : '';
+
+    var daysLeft = daysUntil(item.expires_at);
+    var expiryClass = daysLeft <= 1 ? 'export-expiry urgent' : (daysLeft <= 3 ? 'export-expiry soon' : 'export-expiry');
+
+    return ''
+      + '<article class="export-card" data-export-id="' + esc(item.id) + '" data-storage-path="' + esc(item.storage_path) + '" data-filename="' + esc(item.filename) + '">'
+      + '  <div class="export-card-icon"><i class="fa-solid fa-file-pdf"></i></div>'
+      + '  <div class="export-card-body">'
+      + '    <strong>' + esc(item.filename) + '</strong>'
+      + '    <div class="export-card-meta">'
+      + (item.iso_code ? '<span>' + esc(String(item.iso_code).toUpperCase()) + '</span>' : '')
+      + '<span>' + formatBytes(item.file_size || 0) + '</span>'
+      + '<span>' + formatExportDate(item.created_at) + '</span>'
+      + '    </div>'
+      + badgeHtml
+      + '  </div>'
+      + '  <div class="export-card-actions">'
+      + '    <span class="' + expiryClass + '"><i class="fa-solid fa-clock"></i> ' + expiryLabel(daysLeft) + '</span>'
+      + '    <button class="btn btn-secondary" type="button" data-action="download-export"><i class="fa-solid fa-download"></i> Descargar</button>'
+      + '    <button class="btn btn-danger" type="button" data-action="delete-export" title="Eliminar"><i class="fa-solid fa-trash"></i></button>'
+      + '  </div>'
+      + '</article>';
+  }
+
+  function daysUntil(isoDate) {
+    if (!isoDate) return 7;
+    var diffMs = new Date(isoDate).getTime() - Date.now();
+    return Math.max(0, Math.ceil(diffMs / 86400000));
+  }
+
+  function expiryLabel(daysLeft) {
+    if (daysLeft <= 0) return 'Se elimina hoy';
+    if (daysLeft === 1) return 'Se elimina mañana';
+    return 'Se elimina en ' + daysLeft + ' días';
+  }
+
+  function formatExportDate(value) {
+    if (!value) return 'Sin fecha';
+    try {
+      return new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+    } catch (err) {
+      return value;
+    }
+  }
+
+  async function onExportsListClick(event) {
+    var button = event.target.closest ? event.target.closest('button[data-action]') : null;
+    if (!button) return;
+    var card = button.closest('[data-export-id]');
+    if (!card) return;
+
+    var storagePath = card.getAttribute('data-storage-path');
+    var filename = card.getAttribute('data-filename');
+    var exportId = card.getAttribute('data-export-id');
+    var action = button.getAttribute('data-action');
+
+    if (action === 'download-export') {
+      await downloadExportFile(storagePath, filename);
+      return;
+    }
+
+    if (action === 'delete-export') {
+      if (!window.confirm('¿Eliminar esta exportación? Esta acción no se puede deshacer.')) return;
+      await deleteExportRecord(exportId, storagePath);
+      showToast('Exportación eliminada.');
+      loadMyExports();
+    }
+  }
+
+  async function downloadExportFile(path, filename) {
+    if (!path || !sb) return;
+    var result = await sb.storage.from(EXPORTS_BUCKET).createSignedUrl(path, 300);
+    if (result.error || !result.data) {
+      showToast('No se pudo generar el enlace de descarga.');
+      return;
+    }
+    var link = document.createElement('a');
+    link.href = result.data.signedUrl;
+    link.download = filename || 'auditoria.pdf';
+    link.rel = 'noopener';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+
+  async function deleteExportRecord(id, storagePath) {
+    if (!sb) return;
+    if (storagePath) await sb.storage.from(EXPORTS_BUCKET).remove([storagePath]);
+    await sb.from('audit_exports').delete().eq('id', id);
+  }
+
+  async function purgeExpiredExportsForCurrentUser() {
+    if (!sb || !currentUser) return;
+    try {
+      var result = await sb.from('audit_exports')
+        .select('id,storage_path')
+        .eq('actor_id', currentUser.id)
+        .lt('expires_at', new Date().toISOString());
+
+      if (result.error || !result.data || !result.data.length) return;
+
+      var i;
+      for (i = 0; i < result.data.length; i += 1) {
+        var row = result.data[i];
+        if (row.storage_path) await sb.storage.from(EXPORTS_BUCKET).remove([row.storage_path]);
+        await sb.from('audit_exports').delete().eq('id', row.id);
+      }
+    } catch (err) {
+      // Mejor esfuerzo: si falla, se reintenta la próxima vez que se abra el panel.
+    }
   }
 
   // ---------------------------------------------------------------------

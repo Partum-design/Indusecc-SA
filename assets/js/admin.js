@@ -149,7 +149,7 @@
       sb.from("profiles").select("*").order("created_at", { ascending: false }),
       sb.from("audits").select("id,created_by,auditor_id,status,created_at"),
       sb.from("audit_activity_log").select("id,actor_id,audit_id,action,detail,created_at").order("created_at", { ascending: false }).limit(250),
-      sb.from("audit_exports").select("id,audit_id,actor_id,filename,storage_path,iso_code,file_size,created_at").order("created_at", { ascending: false }).limit(200),
+      sb.from("audit_exports").select("id,audit_id,actor_id,filename,storage_path,iso_code,file_size,progress,created_at,expires_at").order("created_at", { ascending: false }).limit(200),
       sb.from("login_events").select("id,user_id,email,ip,user_agent,created_at").order("created_at", { ascending: false }).limit(200)
     ]);
     setSyncing(false);
@@ -165,6 +165,22 @@
     exports = results[3].data || [];
     connections = results[4].data || [];
     renderAll();
+    purgeExpiredExports();
+  }
+
+  async function purgeExpiredExports() {
+    var nowIso = new Date().toISOString();
+    var expired = exports.filter(function (item) { return item.expires_at && item.expires_at < nowIso; });
+    if (!expired.length) return;
+
+    var i;
+    for (i = 0; i < expired.length; i += 1) {
+      var item = expired[i];
+      if (item.storage_path) await sb.storage.from("audit-exports").remove([item.storage_path]);
+      await sb.from("audit_exports").delete().eq("id", item.id);
+    }
+    exports = exports.filter(function (item) { return !expired.some(function (gone) { return gone.id === item.id; }); });
+    renderVault();
   }
 
   function renderAll() {
@@ -229,12 +245,17 @@
     document.getElementById("vault-empty").classList.toggle("hidden", Boolean(visible.length));
     tbody.innerHTML = visible.map(function (item) {
       var profile = profiles.find(function (candidate) { return candidate.id === item.actor_id; });
+      var progressBadge = typeof item.progress === "number"
+        ? '<span class="status-pill' + (item.progress >= 100 ? " online" : "") + '">' + (item.progress >= 100 ? "Completada" : item.progress + "%") + '</span>'
+        : "—";
       return '<tr data-export-id="' + esc(item.id) + '" data-storage-path="' + esc(item.storage_path) + '" data-filename="' + esc(item.filename) + '">'
         + '<td><i class="fa-solid fa-file-pdf" style="color:#a6322b;margin-right:.5rem"></i>' + esc(item.filename) + '</td>'
         + '<td>' + esc(profile ? (profile.full_name || profile.email) : "—") + '</td>'
         + '<td>' + esc(item.iso_code || "—") + '</td>'
+        + '<td>' + progressBadge + '</td>'
         + '<td>' + formatSize(item.file_size) + '</td>'
         + '<td>' + formatDate(item.created_at) + '</td>'
+        + '<td>' + formatExpiry(item.expires_at) + '</td>'
         + '<td><div class="row-actions">'
         + '<button class="icon-button" data-action="download" title="Descargar"><i class="fa-solid fa-download"></i></button>'
         + '<button class="icon-button" data-action="delete-export" title="Eliminar archivo"><i class="fa-solid fa-trash"></i></button>'
@@ -540,6 +561,13 @@
   function formatDate(value) {
     if (!value) return "Sin registro";
     return new Intl.DateTimeFormat("es-MX", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+  }
+  function formatExpiry(value) {
+    if (!value) return "—";
+    var daysLeft = Math.max(0, Math.ceil((new Date(value).getTime() - Date.now()) / 86400000));
+    if (daysLeft <= 0) return '<span class="danger-text">Hoy</span>';
+    if (daysLeft === 1) return '<span class="danger-text">Mañana</span>';
+    return daysLeft + " días";
   }
   function formatSize(bytes) {
     if (!bytes) return "—";

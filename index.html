@@ -109,6 +109,7 @@
         <button id="mobile-menu-go-metrics" type="button"><i class="fa-solid fa-gauge-high"></i> Indicadores</button>
         <button id="mobile-menu-go-checklist" type="button"><i class="fa-solid fa-list-check"></i> Checklist</button>
         <button id="mobile-menu-export" type="button"><i class="fa-solid fa-file-export"></i> Exportar</button>
+        <button id="mobile-menu-view-exports" type="button"><i class="fa-solid fa-box-archive"></i> Mis exportaciones</button>
         <button id="mobile-menu-clear" type="button"><i class="fa-solid fa-trash-can"></i> Borrar Todo</button>
       </div>
       <div class="mobile-offcanvas-actions">
@@ -190,6 +191,7 @@
           <button id="open-tutorial-app" class="btn btn-secondary"><i class="fa-solid fa-book-open"></i> Tutorial</button>
           <button id="change-iso" class="btn btn-secondary"><i class="fa-solid fa-repeat"></i> Cambiar ISO</button>
           <button id="open-nora-panel" class="btn btn-secondary"><i class="fa-solid fa-robot"></i> Abrir chat NORA</button>
+          <button id="open-exports-panel" class="btn btn-secondary"><i class="fa-solid fa-box-archive"></i> Mis exportaciones</button>
           <span id="session-user" class="session-user"></span>
           <a id="open-admin-panel" class="btn btn-secondary hidden" href="admin.html"><i class="fa-solid fa-user-shield"></i> Panel administrador</a>
           <button id="logout-app" class="btn btn-secondary"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</button>
@@ -322,17 +324,65 @@
   <section id="tutorial-modal" class="tutorial-modal hidden" aria-hidden="true">
     <div class="tutorial-card">
       <div class="tutorial-header">
-        <h3><i class="fa-solid fa-graduation-cap"></i> Mini tutorial de uso</h3>
+        <h3><i class="fa-solid fa-graduation-cap"></i> Tutorial paso a paso</h3>
         <button id="close-tutorial" class="btn btn-secondary"><i class="fa-solid fa-xmark"></i> Cerrar</button>
       </div>
       <ol class="tutorial-steps">
-        <li><strong>Selecciona una ISO:</strong> elige la norma y presiona <em>Iniciar auditor&iacute;a</em>.</li>
-        <li><strong>Completa datos generales:</strong> proyecto, auditor, fecha, versi&oacute;n y control de cambios.</li>
-        <li><strong>Revisa cada punto:</strong> para cada cl&aacute;usula marca conformidad, riesgo, hallazgo y acci&oacute;n.</li>
-        <li><strong>Adjunta evidencia por punto:</strong> en cada cl&aacute;usula sube archivos y deja trazabilidad.</li>
-        <li><strong>Navega por pesta&ntilde;as y buscador:</strong> ubica r&aacute;pido cada requisito de la norma.</li>
-        <li><strong>Exporta reporte:</strong> genera PDF con logo INDUSECC, resultados y evidencias por cl&aacute;usula.</li>
+        <li>
+          <span class="tutorial-step-icon"><i class="fa-solid fa-list-check"></i></span>
+          <div><strong>1. Selecciona una ISO</strong><p>Elige la norma que vas a auditar y presiona <em>Iniciar auditor&iacute;a</em>.</p></div>
+        </li>
+        <li>
+          <span class="tutorial-step-icon"><i class="fa-solid fa-building"></i></span>
+          <div><strong>2. Completa los datos generales</strong><p>Proyecto, auditor, fecha, versi&oacute;n del documento y control de cambios.</p></div>
+        </li>
+        <li>
+          <span class="tutorial-step-icon"><i class="fa-solid fa-magnifying-glass-chart"></i></span>
+          <div><strong>3. Revisa cada punto del checklist</strong><p>Marca conformidad, nivel de riesgo, hallazgo y acci&oacute;n para cada cl&aacute;usula.</p></div>
+        </li>
+        <li>
+          <span class="tutorial-step-icon"><i class="fa-solid fa-paperclip"></i></span>
+          <div><strong>4. Adjunta evidencia</strong><p>Sube archivos o fotos por cada punto para dejar trazabilidad de la auditor&iacute;a.</p></div>
+        </li>
+        <li>
+          <span class="tutorial-step-icon"><i class="fa-solid fa-signature"></i></span>
+          <div><strong>5. Firma el reporte</strong><p>Dibuja tu firma en el lienzo o sube un archivo de firma oficial antes de exportar.</p></div>
+        </li>
+        <li>
+          <span class="tutorial-step-icon"><i class="fa-solid fa-file-export"></i></span>
+          <div><strong>6. Exporta tu PDF</strong><p>Pulsa <em>Exportar PDF</em>: se descarga a tu equipo y, autom&aacute;ticamente, se guarda una copia en <em>Mis exportaciones</em>.</p></div>
+        </li>
+        <li>
+          <span class="tutorial-step-icon"><i class="fa-solid fa-box-archive"></i></span>
+          <div><strong>7. Consulta y descarga cuando quieras</strong><p>Abre <em>Mis exportaciones</em> (barra lateral o men&uacute; m&oacute;vil) para ver el avance de la auditor&iacute;a y volver a descargar tus PDFs.</p></div>
+        </li>
+        <li>
+          <span class="tutorial-step-icon"><i class="fa-solid fa-clock-rotate-left"></i></span>
+          <div><strong>8. Ojo con el vencimiento</strong><p>Cada archivo guardado se elimina autom&aacute;ticamente 7 d&iacute;as despu&eacute;s de generarse: descarga a tiempo lo que necesites conservar.</p></div>
+        </li>
       </ol>
+    </div>
+  </section>
+
+  <section id="exports-panel-modal" class="tutorial-modal hidden" aria-hidden="true">
+    <div class="tutorial-card exports-panel-card">
+      <div class="tutorial-header">
+        <h3><i class="fa-solid fa-box-archive"></i> Mis exportaciones</h3>
+        <button id="close-exports-panel" class="btn btn-secondary"><i class="fa-solid fa-xmark"></i> Cerrar</button>
+      </div>
+
+      <div class="exports-panel-summary">
+        <span id="exports-completion-badge" class="completion-badge"></span>
+        <p id="exports-progress-note" class="exports-progress-note"></p>
+      </div>
+
+      <div id="exports-list" class="exports-list"></div>
+      <div id="exports-empty" class="empty-state hidden">
+        <i class="fa-solid fa-inbox"></i>
+        <p>A&uacute;n no tienes exportaciones guardadas. Exporta un PDF para verlo aqu&iacute;.</p>
+      </div>
+
+      <p class="exports-retention-note"><i class="fa-solid fa-clock-rotate-left"></i> Por seguridad, cada archivo se elimina autom&aacute;ticamente 7 d&iacute;as despu&eacute;s de guardarse.</p>
     </div>
   </section>
 
