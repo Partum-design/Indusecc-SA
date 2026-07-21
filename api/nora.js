@@ -115,15 +115,16 @@ function buildContents(conversation, question) {
 
 function buildSystemPrompt(payload) {
   var lines = [
-    'Eres NORA, una asistente amable, clara y muy práctica para auditorías, normas ISO y control documental para INDUSECC.',
+    'Eres NORA, copiloto profesional de auditorías ISO para INDUSECC.',
     'Responde siempre en español.',
-    'Usa un tono cercano, simple y útil.',
-    'No copies la norma literal ni redactes respuestas excesivamente largas.',
-    'Prioriza pasos concretos, evidencia objetiva y recomendaciones aplicables.',
-    'Si falta información, dilo de forma directa y pide el dato mínimo necesario.',
+    'Tu trabajo es ayudar a tomar la siguiente decisión, no dar teoría genérica.',
+    'Usa lenguaje claro, directo y profesional; evita introducciones, elogios, relleno y frases de asistente artificial.',
+    'No inventes evidencia ni afirmes cumplimiento sin datos del auditor.',
+    'Prioriza hechos verificables, trazabilidad, riesgos y acciones aplicables.',
+    'Si falta información, identifica exactamente qué dato falta y formula una sola pregunta útil.',
     'Cuando el usuario pida llenar un punto, ayuda a completar Conformidad, Hallazgo/observación, Acción o plan de mejora y Evidencia sugerida.',
-    'Para llenado de puntos, incluye un borrador breve y editable; no lo presentes como verdad final si falta evidencia.',
-    'Formato recomendado: respuesta breve, amigable y de 2 a 4 viñetas cuando aplique.'
+    'Para llenado de puntos, incluye un borrador breve y editable claramente marcado como borrador; no lo presentes como hecho si falta evidencia.',
+    'Usa encabezados cortos y máximo 5 viñetas. Mantén la respuesta debajo de 220 palabras salvo que el usuario pida más detalle.'
   ];
 
   if (payload && payload.intent === 'fill') {
@@ -148,6 +149,12 @@ function buildSystemPrompt(payload) {
     lines.push('Riesgo: ' + safeText(payload.finding.risk || 'Sin registrar') + '.');
     if (payload.finding.note) lines.push('Hallazgo: ' + safeText(payload.finding.note) + '.');
     if (payload.finding.action) lines.push('Acción: ' + safeText(payload.finding.action) + '.');
+  }
+
+  if (payload && payload.auditSummary) {
+    lines.push('Avance: ' + safeText(payload.auditSummary.progress || 0) + '%; ' + safeText(payload.auditSummary.evaluated || 0) + ' de ' + safeText(payload.auditSummary.total || 0) + ' requisitos evaluados.');
+    lines.push('Pendientes: ' + safeText(payload.auditSummary.remaining || 0) + '; cumplen: ' + safeText(payload.auditSummary.ok || 0) + '; parciales: ' + safeText(payload.auditSummary.partial || 0) + '; no cumplen: ' + safeText(payload.auditSummary.bad || 0) + '; evidencias: ' + safeText(payload.auditSummary.evidenceTotal || 0) + '.');
+    if (payload.auditSummary.nextClauseId) lines.push('Siguiente requisito pendiente: ' + safeText(payload.auditSummary.nextClauseId) + ' - ' + safeText(payload.auditSummary.nextClauseTitle || '') + '.');
   }
 
   if (payload && payload.project) {
@@ -191,7 +198,7 @@ function extractGeminiError(data) {
 }
 
 function normalizeText(value) {
-  return String(value || '').replace(/\s+/g, ' ').trim();
+  return String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
 }
 
 function safeText(value) {

@@ -211,7 +211,12 @@
 
   function renderSessionInfo() {
     if (dom.sessionUser && currentProfile) {
-      dom.sessionUser.textContent = currentProfile.email + ' · ' + roleLabel(currentProfile.role);
+      var displayName = currentProfile.full_name || currentProfile.email || 'Usuario INDUSECC';
+      dom.sessionUser.textContent = displayName + ' · ' + roleLabel(currentProfile.role);
+      dom.sessionUser.title = currentProfile.email || displayName;
+    }
+    if (dom.mobileOpenProfile && currentProfile) {
+      dom.mobileOpenProfile.textContent = getInitials(currentProfile.full_name || currentProfile.email || 'IU');
     }
     if (dom.openAdminPanel && currentProfile && currentProfile.role === 'admin') {
       dom.openAdminPanel.classList.remove('hidden');
@@ -227,6 +232,13 @@
     if (role === 'admin') return 'Administrador';
     if (role === 'auditor') return 'Auditor';
     return 'Solo lectura';
+  }
+
+  function getInitials(value) {
+    var parts = String(value || '').replace(/@.*$/, '').trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return 'IU';
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
   }
 
   function applyRoleRestrictions() {
@@ -270,6 +282,12 @@
     dom.frameworkTabs = document.getElementById('framework-tabs');
     dom.startAudit = document.getElementById('start-audit');
     dom.app = document.getElementById('app');
+    dom.commandIsoLabel = document.getElementById('command-iso-label');
+    dom.commandProgressRing = document.getElementById('command-progress-ring');
+    dom.commandProgressValue = document.getElementById('command-progress-value');
+    dom.commandProgressCopy = document.getElementById('command-progress-copy');
+    dom.commandNextStep = document.getElementById('command-next-step');
+    dom.commandContinue = document.getElementById('command-continue');
 
     dom.activeIso = document.getElementById('active-iso');
     dom.changeIso = document.getElementById('change-iso');
@@ -284,6 +302,8 @@
     dom.clauseSearch = document.getElementById('clause-search');
     dom.statusFilter = document.getElementById('status-filter');
     dom.riskFilter = document.getElementById('risk-filter');
+    dom.clearChecklistFilters = document.getElementById('clear-checklist-filters');
+    dom.filterResultCount = document.getElementById('filter-result-count');
     dom.sectionTabs = document.getElementById('section-tabs');
     dom.isoQuickSelect = document.getElementById('iso-quick-select');
     dom.isoDetailCard = document.getElementById('iso-detail-card');
@@ -335,6 +355,7 @@
     dom.noraForm = document.getElementById('nora-form');
     dom.noraInput = document.getElementById('nora-input');
     dom.noraSend = document.getElementById('nora-send');
+    dom.noraContext = document.getElementById('nora-context');
     dom.toast = document.getElementById('toast');
     dom.headerLogo = document.querySelector('.project-panel .brand-logo') || document.querySelector('.hero-logo');
     dom.sessionUser = document.getElementById('session-user');
@@ -420,6 +441,12 @@
       dom.startAudit.addEventListener('click', function () {
         applyDefaultIso();
         openAuditWorkspace();
+      });
+    }
+
+    if (dom.commandContinue) {
+      dom.commandContinue.addEventListener('click', function () {
+        scrollToNextPendingClause();
       });
     }
 
@@ -604,6 +631,21 @@
         uiFilters.risk = String(dom.riskFilter.value || 'all');
         var activeIso = findIsoById(state.selectedIsoId);
         if (activeIso) renderChecklist(activeIso);
+      });
+    }
+
+    if (dom.clearChecklistFilters) {
+      dom.clearChecklistFilters.addEventListener('click', function () {
+        uiFilters.query = '';
+        uiFilters.sectionId = 'all';
+        uiFilters.status = 'all';
+        uiFilters.risk = 'all';
+        if (dom.clauseSearch) dom.clauseSearch.value = '';
+        syncFilterControls();
+        var activeIso = findIsoById(state.selectedIsoId);
+        if (!activeIso) return;
+        renderSectionTabs(activeIso);
+        renderChecklist(activeIso);
       });
     }
 
@@ -895,12 +937,19 @@
       html += ''
         + '<button type="button" class="iso-option' + activeClass + '" data-iso="' + esc(iso.id) + '" aria-pressed="' + pressed + '" style="--iso-order:' + i + '">'
         + '  <div class="iso-option-head">'
-        + '    <h4><i class="' + esc(icon) + '"></i> ' + esc(iso.code) + ' <small>(' + esc(iso.version || '') + ')</small></h4>'
+        + '    <span class="iso-option-icon"><i class="' + esc(icon) + '"></i></span>'
         +      selectedBadge
         + '  </div>'
-        + '  <p>' + esc(textEs(iso.focus || '')) + '</p>'
-        + '  <p>' + esc(textEs(iso.summary || '')) + '</p>'
-        + '  <p class="iso-tag">' + esc(String(countClauses(iso))) + ' puntos auditables</p>'
+        + '  <div class="iso-option-copy">'
+        + '    <span class="iso-option-version">Edici&oacute;n ' + esc(iso.version || 'vigente') + '</span>'
+        + '    <h4>' + esc(iso.code) + '</h4>'
+        + '    <p>' + esc(textEs(iso.focus || iso.summary || '')) + '</p>'
+        + '  </div>'
+        + '  <div class="iso-option-foot">'
+        + '    <span><strong>' + esc(String(countClauses(iso))) + '</strong> requisitos</span>'
+        + '    <span><strong>' + esc(String(iso.sections ? iso.sections.length : 0)) + '</strong> secciones</span>'
+        + '    <i class="fa-solid fa-arrow-right"></i>'
+        + '  </div>'
         + '</button>';
     }
 
@@ -954,12 +1003,15 @@
     var icon = iso.icon || 'fa-solid fa-shield-halved';
 
     return ''
-      + '<h4><i class="' + esc(icon) + '"></i> ' + esc(iso.code) + ' <small>(' + esc(iso.version || 'N/D') + ')</small></h4>'
-      + '<p>' + esc(textEs(iso.summary || '')) + '</p>'
-      + '<p>' + esc(textEs(iso.focus || '')) + '</p>'
+      + '<div class="iso-detail-title">'
+      + '  <span><i class="' + esc(icon) + '"></i></span>'
+      + '  <div><small>Edici&oacute;n ' + esc(iso.version || 'N/D') + '</small><h4>' + esc(iso.code) + '</h4></div>'
+      + '</div>'
+      + '<p class="iso-detail-focus">' + esc(textEs(iso.focus || '')) + '</p>'
+      + '<p class="iso-detail-summary">' + esc(textEs(iso.summary || '')) + '</p>'
       + '<div class="iso-detail-meta">'
-      + '  <span class="iso-detail-badge">' + esc(String(totalClauses)) + ' puntos auditables</span>'
-      + '  <span class="iso-detail-badge">' + esc(String(sections)) + ' secciones</span>'
+      + '  <span class="iso-detail-badge"><strong>' + esc(String(totalClauses)) + '</strong> requisitos</span>'
+      + '  <span class="iso-detail-badge"><strong>' + esc(String(sections)) + '</strong> secciones</span>'
       + '</div>';
   }
 
@@ -978,6 +1030,9 @@
 
     if (dom.activeIso) {
       dom.activeIso.textContent = iso.code + ' ' + (iso.version || '');
+    }
+    if (dom.commandIsoLabel) {
+      dom.commandIsoLabel.textContent = iso.code + ' · ' + (iso.version || 'Edición vigente');
     }
   }
 
@@ -1088,6 +1143,40 @@
     element.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+  function scrollToNextPendingClause() {
+    var iso = getActiveIso();
+    if (!iso) return;
+    var summary = calculateMetrics(iso);
+    var targetId = summary.nextClauseId;
+    if (!targetId) {
+      scrollToPanel('#signature-panel');
+      showToast('Todos los requisitos están evaluados. Revisa la firma y genera el informe.');
+      return;
+    }
+
+    uiFilters.query = '';
+    uiFilters.sectionId = 'all';
+    uiFilters.status = 'all';
+    uiFilters.risk = 'all';
+    if (dom.clauseSearch) dom.clauseSearch.value = '';
+    syncFilterControls();
+    renderSectionTabs(iso);
+    renderChecklist(iso);
+
+    window.requestAnimationFrame(function () {
+      var target = document.querySelector('.finding-card[data-clause-id="' + cssEscape(targetId) + '"]');
+      if (!target || typeof target.scrollIntoView !== 'function') return;
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      target.classList.add('is-next');
+      window.setTimeout(function () { target.classList.remove('is-next'); }, 1800);
+    });
+  }
+
+  function cssEscape(value) {
+    if (window.CSS && typeof window.CSS.escape === 'function') return window.CSS.escape(String(value || ''));
+    return String(value || '').replace(/[^a-zA-Z0-9_-]/g, '\\$&');
+  }
+
   function startSplashSequence() {
     if (!dom.splash) return;
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -1141,13 +1230,13 @@
   function renderSectionTabs(iso) {
     if (!dom.sectionTabs) return;
 
-    var html = '<button type="button" class="' + (uiFilters.sectionId === 'all' ? 'active' : '') + '" data-tab="all"><i class="fa-solid fa-table-cells"></i>Todas</button>';
+    var html = '<button type="button" class="' + (uiFilters.sectionId === 'all' ? 'active' : '') + '" data-tab="all"><i class="fa-solid fa-table-cells"></i>Todas <span>' + countClauses(iso) + '</span></button>';
     var i;
     for (i = 0; i < iso.sections.length; i += 1) {
       var section = iso.sections[i];
       var activeClass = uiFilters.sectionId === section.id ? 'active' : '';
       var icon = section.icon || 'fa-solid fa-layer-group';
-      html += '<button type="button" class="' + activeClass + '" data-tab="' + esc(section.id) + '"><i class="' + esc(icon) + '"></i>' + esc(textEs(section.title)) + '</button>';
+      html += '<button type="button" class="' + activeClass + '" data-tab="' + esc(section.id) + '"><i class="' + esc(icon) + '"></i>' + esc(textEs(section.title)) + '<span>' + section.clauses.length + '</span></button>';
     }
 
     dom.sectionTabs.innerHTML = html;
@@ -1238,6 +1327,7 @@
 
     var html = '';
     var visibleSections = 0;
+    var visibleClauses = 0;
     var s;
 
     for (s = 0; s < iso.sections.length; s += 1) {
@@ -1253,6 +1343,7 @@
       if (!filteredClauses.length) continue;
 
       visibleSections += 1;
+      visibleClauses += filteredClauses.length;
       html += renderSection(section, filteredClauses);
     }
 
@@ -1261,6 +1352,14 @@
     }
 
     dom.checklistRoot.innerHTML = html;
+    if (dom.filterResultCount) {
+      var totalClauses = countClauses(iso);
+      var filterActive = Boolean(uiFilters.query || uiFilters.sectionId !== 'all' || uiFilters.status !== 'all' || uiFilters.risk !== 'all');
+      dom.filterResultCount.textContent = filterActive
+        ? visibleClauses + ' de ' + totalClauses + ' requisitos coinciden'
+        : totalClauses + ' requisitos organizados por sección';
+      if (dom.clearChecklistFilters) dom.clearChecklistFilters.classList.toggle('is-active', filterActive);
+    }
   }
 
   function clauseMatchesFilter(clause) {
@@ -1328,10 +1427,10 @@
   function buildNoraWelcomeMessage() {
     var iso = getActiveIso();
     var intro = isNoraRemoteConfigured()
-      ? 'Hola, soy NORA. Puedo ayudarte a entender y llenar cada punto de la norma.'
-      : 'Hola, soy NORA. Puedo ayudarte con esta norma, sus puntos y las evidencias.';
+      ? 'Soy NORA, tu asistente de auditoría. Puedo revisar pendientes, explicar requisitos y ayudarte a redactar hallazgos basados en la evidencia que registres.'
+      : 'Soy NORA. Puedo orientarte con la norma, los requisitos, la evidencia y el llenado de cada punto.';
     if (!iso) return intro;
-    return intro + '\n\nAhora mismo estás trabajando con ' + iso.code + ' (' + (iso.version || 'N/D') + '): ' + textEs(iso.summary || iso.focus || 'marco normativo activo') + '.';
+    return intro + '\n\nAuditoría activa: ' + iso.code + ' (' + (iso.version || 'N/D') + ').\nPuedes empezar por “Qué sigue” para recibir una recomendación basada en tu avance.';
   }
 
   function getActiveIso() {
@@ -1346,6 +1445,9 @@
     if (dom.noraMode) {
       dom.noraMode.textContent = getNoraModeLabel();
     }
+
+    var activeIso = getActiveIso();
+    if (activeIso) updateNoraContext(calculateMetrics(activeIso), activeIso);
 
     dom.noraMessages.innerHTML = renderNoraMessagesHtml();
     if (dom.noraPanel.classList.contains('hidden')) {
@@ -1387,9 +1489,17 @@
 
   function getNoraModeLabel() {
     if (isNoraRemoteConfigured()) {
-      return 'Conectada a Gemini y lista para ayudarte.';
+      return 'Conectada · usa el contexto de tu auditoría';
     }
-    return 'Modo local de apoyo con la guía normativa INDUSECC.';
+    return 'Guía normativa disponible';
+  }
+
+  function updateNoraContext(summary, iso) {
+    if (!dom.noraContext || !summary || !iso) return;
+    var message = summary.nextClauseId
+      ? summary.progress + '% completado · ' + summary.remaining + ' pendientes · siguiente ' + summary.nextClauseId
+      : '100% evaluado · lista para revisar el cierre y generar el informe';
+    dom.noraContext.innerHTML = '<i class="fa-solid fa-chart-line"></i><span><strong>' + esc(iso.code) + '</strong><small>' + esc(message) + '</small></span>';
   }
 
   function isNoraRemoteConfigured() {
@@ -1543,6 +1653,7 @@
     var intent = inferNoraIntent(question, options || {});
     var clause = (options && options.clause) || findClauseById(options && options.clauseId) || findRelevantClause(question, iso);
     var finding = clause ? (state.findings[clause.id] || newEmptyFinding()) : null;
+    var auditSummary = iso ? calculateMetrics(iso) : null;
     var conversation = normalizeNoraHistory(state.noraHistory).slice(-12).map(function (item) {
       return {
         role: item.role,
@@ -1570,6 +1681,7 @@
         evidence: clause.evidence || []
       } : null,
       finding: finding,
+      auditSummary: auditSummary,
       project: state.project,
       conversation: conversation
     };
@@ -1593,7 +1705,11 @@
     var intent = inferNoraIntent(question, options || {});
     var answer = '';
 
-    if (intent === 'fill' && clause) {
+    if (intent === 'progress') {
+      answer = buildAuditProgressAnswer(iso);
+    } else if (intent === 'gaps') {
+      answer = buildAuditGapsAnswer(iso);
+    } else if (intent === 'fill' && clause) {
       answer = buildClauseGuidance(clause, 'fill');
     } else if (intent === 'explain' && clause) {
       answer = buildClauseGuidance(clause, 'explain');
@@ -1710,9 +1826,47 @@
       + '- ¿Qué evidencia debería adjuntar?';
   }
 
+  function buildAuditProgressAnswer(iso) {
+    if (!iso) return 'Selecciona una norma para que pueda revisar tu avance y recomendarte el siguiente paso.';
+    var summary = calculateMetrics(iso);
+    var lines = [
+      'Tu auditoría va en ' + summary.progress + '%: has evaluado ' + summary.evaluated + ' de ' + summary.total + ' requisitos.',
+      'Cumplen: ' + summary.ok + ' · Parciales: ' + summary.partial + ' · No cumplen: ' + summary.bad + ' · Riesgo alto o crítico: ' + summary.highRisk + '.',
+      'Evidencias adjuntas: ' + summary.evidenceTotal + '.'
+    ];
+    if (summary.nextClauseId) {
+      lines.push('Siguiente acción recomendada: revisa ' + summary.nextClauseId + ' — ' + summary.nextClauseTitle + '.');
+      lines.push('Primero confirma la evidencia; después registra conformidad, riesgo y el hallazgo observable.');
+    } else {
+      lines.push('Todos los requisitos están evaluados. Revisa los puntos parciales o no conformes, confirma la firma y genera el informe PDF.');
+    }
+    return lines.join('\n\n');
+  }
+
+  function buildAuditGapsAnswer(iso) {
+    if (!iso) return 'Selecciona una norma para detectar qué información falta.';
+    var summary = calculateMetrics(iso);
+    var missingProject = [];
+    if (!state.project.name) missingProject.push('nombre del proyecto o empresa');
+    if (!state.project.auditor) missingProject.push('nombre del auditor');
+    if (!state.project.site) missingProject.push('sitio auditado');
+    if (!state.project.date) missingProject.push('fecha de auditoría');
+    if (!state.project.scope) missingProject.push('alcance');
+
+    var lines = [];
+    if (missingProject.length) lines.push('Completa la ficha: ' + missingProject.join(', ') + '.');
+    if (summary.remaining) lines.push('Faltan ' + summary.remaining + ' requisitos por evaluar. El siguiente es ' + summary.nextClauseId + '.');
+    if (summary.evaluated && summary.evidenceTotal === 0) lines.push('Ya evaluaste puntos, pero todavía no hay evidencia adjunta. Confirma qué documentos o registros respaldan cada resultado.');
+    if (summary.partial || summary.bad) lines.push('Revisa ' + (summary.partial + summary.bad) + ' requisitos parciales o no conformes y asegúrate de registrar una acción concreta.');
+    if (!lines.length) lines.push('La información principal está completa. Haz una revisión final de evidencia, acciones, firma e informe.');
+    return 'Revisión de pendientes\n\n' + lines.join('\n\n');
+  }
+
   function inferNoraIntent(question, options) {
     if (options && options.intent) return options.intent;
     var normalized = normalizeSearchText(question || '');
+    if (normalized.indexOf('avance') !== -1 || normalized.indexOf('que sigue') !== -1 || normalized.indexOf('porcentaje') !== -1 || normalized.indexOf('como voy') !== -1) return 'progress';
+    if (normalized.indexOf('pendiente') !== -1 || normalized.indexOf('que falta') !== -1 || normalized.indexOf('informacion falta') !== -1 || normalized.indexOf('revisar falt') !== -1) return 'gaps';
     if (
       normalized.indexOf('llenar') !== -1 ||
       normalized.indexOf('lleno') !== -1 ||
@@ -1804,9 +1958,13 @@
   function renderSection(section, clauses) {
     var html = '';
     var icon = section.icon || 'fa-solid fa-layer-group';
+    var sectionSummary = calculateSectionMetrics(section);
 
-    html += '<section class="section-block">';
-    html += '<header class="section-head"><h4><i class="' + esc(icon) + '"></i> ' + esc(textEs(section.title)) + '</h4></header>';
+    html += '<section class="section-block" data-section-id="' + esc(section.id) + '">';
+    html += '<header class="section-head">';
+    html += '  <div><span class="section-head-icon"><i class="' + esc(icon) + '"></i></span><div><small>Secci&oacute;n de la norma</small><h4>' + esc(textEs(section.title)) + '</h4></div></div>';
+    html += '  <div class="section-progress"><strong>' + sectionSummary.progress + '%</strong><span>' + sectionSummary.evaluated + ' de ' + sectionSummary.total + ' evaluados</span></div>';
+    html += '</header>';
     html += '<div class="findings-list">';
 
     var i;
@@ -1823,53 +1981,58 @@
     var finding = state.findings[clause.id] || newEmptyFinding();
     finding.risk = normalizeRiskValue(finding.risk);
     var statusClass = getStatusClass(finding.status);
+    var completedClass = finding.status ? ' is-evaluated' : ' is-pending';
 
     var html = '';
-    html += '<article class="finding-card" data-clause-id="' + esc(clause.id) + '">';
+    html += '<article class="finding-card' + completedClass + '" data-clause-id="' + esc(clause.id) + '">';
     html += '  <div class="finding-head">';
-    html += '    <div>';
-    html += '      <h5>' + esc(clause.id) + ' - ' + esc(textEs(clause.title)) + '</h5>';
-    html += '      <p>' + esc(textEs(clause.question)) + '</p>';
+    html += '    <div class="finding-title">';
+    html += '      <span class="clause-id">' + esc(clause.id) + '</span>';
+    html += '      <div><small>Requisito a evaluar</small><h5>' + esc(textEs(clause.title)) + '</h5></div>';
     html += '    </div>';
     html += '    <div class="finding-head-tags">';
     html += '      <span class="badge-status ' + esc(statusClass) + '">' + esc(finding.status || 'Sin evaluar') + '</span>';
     html += renderRiskPill(finding.risk);
     html += '    </div>';
     html += '  </div>';
-
-    html += '  <p class="clause-definition"><strong>Definición del punto:</strong> ' + esc(textEs(clause.definition)) + '</p>';
-    html += renderEvidenceGuide(clause.evidence);
+    html += '  <p class="audit-question"><i class="fa-solid fa-circle-question"></i><span><strong>Pregunta de auditor&iacute;a</strong>' + esc(textEs(clause.question)) + '</span></p>';
+    html += '  <details class="clause-brief">';
+    html += '    <summary><span><i class="fa-solid fa-book-open"></i> Qu&eacute; debes comprobar</span><i class="fa-solid fa-chevron-down"></i></summary>';
+    html += '    <div class="clause-brief-content"><p class="clause-definition">' + esc(textEs(clause.definition)) + '</p>' + renderEvidenceGuide(clause.evidence) + '</div>';
+    html += '  </details>';
     html += '  <div class="nora-clause-tools">';
-    html += '    <button type="button" class="btn btn-secondary btn-nora-inline" data-action="nora-explain-clause" data-clause-id="' + esc(clause.id) + '"><i class="fa-solid fa-robot"></i> NORA explica este punto</button>';
-    html += '    <button type="button" class="btn btn-secondary btn-nora-inline" data-action="nora-fill-clause" data-clause-id="' + esc(clause.id) + '"><i class="fa-solid fa-wand-magic-sparkles"></i> NORA cómo llenarlo</button>';
+    html += '    <span><i class="fa-solid fa-sparkles"></i> Ayuda contextual</span>';
+    html += '    <button type="button" class="btn-nora-inline" data-action="nora-explain-clause" data-clause-id="' + esc(clause.id) + '">Expl&iacute;came el requisito</button>';
+    html += '    <button type="button" class="btn-nora-inline primary" data-action="nora-fill-clause" data-clause-id="' + esc(clause.id) + '">Ay&uacute;dame a documentarlo</button>';
     html += '  </div>';
     html += '  <div class="nora-clause-response hidden" data-nora-response="true" aria-live="polite"></div>';
 
+    html += '  <div class="finding-entry-heading"><div><span>Registro del auditor</span><strong>Documenta solo lo que puedas comprobar</strong></div><small>Los cambios se guardan autom&aacute;ticamente</small></div>';
     html += '  <div class="finding-grid">';
-    html += '    <label>Conformidad';
+    html += '    <label><span>Resultado de conformidad</span>';
     html += '      <select data-field="status" data-clause-id="' + esc(clause.id) + '">';
     html += renderSelectOptions(['', 'Cumple', 'Parcial', 'No cumple', 'N/A'], finding.status);
     html += '      </select>';
     html += '    </label>';
 
-    html += '    <label>Riesgo';
+    html += '    <label><span>Nivel de riesgo</span>';
     html += '      <select data-field="risk" data-clause-id="' + esc(clause.id) + '">';
     html += renderSelectOptions(['', 'Bajo', 'Medio', 'Alto', 'Crítico'], finding.risk);
     html += '      </select>';
     html += '    </label>';
 
-    html += '    <label class="wide">Hallazgo/observación';
-    html += '      <textarea rows="2" data-field="note" data-clause-id="' + esc(clause.id) + '" placeholder="¿Qué se encontró en este punto?">' + esc(finding.note || '') + '</textarea>';
+    html += '    <label class="wide"><span>Hallazgo u observaci&oacute;n</span><small>Describe el hecho, la evidencia revisada y la brecha detectada.</small>';
+    html += '      <textarea rows="3" data-field="note" data-clause-id="' + esc(clause.id) + '" placeholder="Ej. Se revisó el procedimiento vigente y se observó que…">' + esc(finding.note || '') + '</textarea>';
     html += '    </label>';
 
-    html += '    <label class="wide">Acción o plan de mejora';
-    html += '      <textarea rows="2" data-field="action" data-clause-id="' + esc(clause.id) + '" placeholder="¿Qué acción correctiva/recomendación se propone?">' + esc(finding.action || '') + '</textarea>';
+    html += '    <label class="wide"><span>Acci&oacute;n o plan de mejora</span><small>Indica qu&eacute; debe hacerse; agrega responsable y fecha cuando los conozcas.</small>';
+    html += '      <textarea rows="3" data-field="action" data-clause-id="' + esc(clause.id) + '" placeholder="Ej. Actualizar el procedimiento, asignar responsable y verificar antes de…">' + esc(finding.action || '') + '</textarea>';
     html += '    </label>';
     html += '  </div>';
 
-    html += '  <div class="evidence-tools">';
+    html += '  <div class="evidence-tools"><div><strong>Evidencia del requisito</strong><span>Adjunta documentos, registros o fotograf&iacute;as verificables.</span></div>';
     html += '    <label class="upload-label">';
-    html += '      <i class="fa-solid fa-paperclip"></i> Agregar archivo para este punto';
+    html += '      <i class="fa-solid fa-paperclip"></i> Adjuntar evidencia';
     html += '      <input type="file" multiple data-field="attachment" data-clause-id="' + esc(clause.id) + '" />';
     html += '    </label>';
     html += '  </div>';
@@ -1883,15 +2046,15 @@
 
   function renderEvidenceGuide(evidenceItems) {
     if (!evidenceItems || !evidenceItems.length) {
-      return '<ul class="clause-guide"><li>Captura evidencia del cumplimiento de este punto.</li></ul>';
+      return '<div class="clause-guide"><strong>Evidencia esperada</strong><span>Registros o documentos que prueben el cumplimiento de este requisito.</span></div>';
     }
 
-    var html = '<ul class="clause-guide">';
+    var html = '<div class="clause-guide"><strong>Evidencia esperada</strong><div>';
     var i;
     for (i = 0; i < evidenceItems.length; i += 1) {
-      html += '<li><strong>Evidencia sugerida:</strong> ' + esc(textEs(evidenceItems[i])) + '</li>';
+      html += '<span><i class="fa-solid fa-check"></i>' + esc(textEs(evidenceItems[i])) + '</span>';
     }
-    html += '</ul>';
+    html += '</div></div>';
     return html;
   }
 
@@ -1952,6 +2115,8 @@
     if (field === 'status') {
       var card = target.closest ? target.closest('.finding-card') : null;
       if (card) {
+        card.classList.toggle('is-evaluated', Boolean(target.value));
+        card.classList.toggle('is-pending', !target.value);
         var badge = card.querySelector('.badge-status');
         if (badge) {
           badge.className = 'badge-status ' + getStatusClass(target.value);
@@ -1974,7 +2139,24 @@
     }
 
     var iso = findIsoById(state.selectedIsoId);
-    if (iso) renderMetrics(iso);
+    if (iso) {
+      renderMetrics(iso);
+      if (field === 'status') updateChecklistProgressVisuals(iso);
+    }
+  }
+
+  function updateChecklistProgressVisuals(iso) {
+    if (!iso) return;
+    var i;
+    for (i = 0; i < iso.sections.length; i += 1) {
+      var section = iso.sections[i];
+      var block = document.querySelector('.section-block[data-section-id="' + cssEscape(section.id) + '"]');
+      if (!block) continue;
+      var progress = block.querySelector('.section-progress');
+      if (!progress) continue;
+      var summary = calculateSectionMetrics(section);
+      progress.innerHTML = '<strong>' + summary.progress + '%</strong><span>' + summary.evaluated + ' de ' + summary.total + ' evaluados</span>';
+    }
   }
 
   function onChecklistClick(event) {
@@ -2114,17 +2296,29 @@
 
     var summary = calculateMetrics(iso);
     dom.metrics.innerHTML = ''
-      + metricCard(summary.progress + '%', 'avance')
-      + metricCard(String(summary.ok), 'cumple')
-      + metricCard(String(summary.partial), 'parcial')
-      + metricCard(String(summary.bad), 'no cumple')
-      + metricCard(String(summary.evidenceTotal), 'archivos')
-      + metricCard(String(summary.total), 'puntos ISO');
+      + metricCard(String(summary.remaining), 'Pendientes', 'fa-regular fa-circle', summary.remaining ? 'attention' : 'success', 'de ' + summary.total + ' requisitos')
+      + metricCard(String(summary.ok), 'Cumplen', 'fa-solid fa-check', 'success', summary.evaluated ? Math.round((summary.ok / summary.evaluated) * 100) + '% de lo evaluado' : 'Aún sin evaluar')
+      + metricCard(String(summary.partial + summary.bad), 'Requieren atención', 'fa-solid fa-triangle-exclamation', summary.partial + summary.bad ? 'danger' : 'neutral', summary.bad + ' no cumplen')
+      + metricCard(String(summary.evidenceTotal), 'Evidencias', 'fa-solid fa-paperclip', 'neutral', 'archivos adjuntos');
 
     if (dom.globalProgressFill) dom.globalProgressFill.style.width = summary.progress + '%';
-    if (dom.globalProgressLabel) dom.globalProgressLabel.textContent = summary.progress + '% completado (' + summary.evaluated + '/' + summary.total + ' puntos)';
+    if (dom.globalProgressLabel) dom.globalProgressLabel.textContent = summary.progress + '% completado · faltan ' + summary.remaining + ' requisitos';
     if (dom.floatingProgressValue) dom.floatingProgressValue.textContent = summary.progress + '%';
     if (dom.floatingProgressBubble) dom.floatingProgressBubble.style.setProperty('--floating-progress', String(summary.progress));
+    if (dom.commandProgressRing) dom.commandProgressRing.style.setProperty('--command-progress', String(summary.progress));
+    if (dom.commandProgressValue) dom.commandProgressValue.textContent = summary.progress + '%';
+    if (dom.commandProgressCopy) dom.commandProgressCopy.textContent = summary.evaluated + ' de ' + summary.total + ' requisitos evaluados';
+    if (dom.commandNextStep) {
+      dom.commandNextStep.textContent = summary.nextClauseId
+        ? 'Siguiente: ' + summary.nextClauseId + ' · ' + summary.nextClauseTitle
+        : 'Evaluación completa · revisa firma e informe';
+    }
+    if (dom.commandContinue) {
+      dom.commandContinue.innerHTML = summary.nextClauseId
+        ? 'Continuar auditoría <i class="fa-solid fa-arrow-down"></i>'
+        : 'Revisar cierre <i class="fa-solid fa-arrow-down"></i>';
+    }
+    updateNoraContext(summary, iso);
   }
 
   function calculateMetrics(iso) {
@@ -2136,6 +2330,10 @@
       partial: 0,
       bad: 0,
       evidenceTotal: 0,
+      highRisk: 0,
+      remaining: 0,
+      nextClauseId: '',
+      nextClauseTitle: '',
       progress: 0
     };
 
@@ -2148,15 +2346,41 @@
       if (status === 'Cumple') summary.ok += 1;
       if (status === 'Parcial') summary.partial += 1;
       if (status === 'No cumple') summary.bad += 1;
+      var risk = normalizeRiskValue(finding.risk);
+      if (risk === 'Alto' || risk === 'Crítico') summary.highRisk += 1;
       summary.evidenceTotal += (finding.attachments || []).length;
+      if (!status && !summary.nextClauseId) {
+        summary.nextClauseId = clauses[i].id;
+        summary.nextClauseTitle = textEs(clauses[i].title || 'Requisito pendiente');
+      }
     }
 
+    summary.remaining = Math.max(0, summary.total - summary.evaluated);
     summary.progress = summary.total > 0 ? Math.round((summary.evaluated / summary.total) * 100) : 0;
     return summary;
   }
 
-  function metricCard(value, label) {
-    return '<article class="metric"><strong>' + esc(value) + '</strong><span>' + esc(label) + '</span></article>';
+  function calculateSectionMetrics(section) {
+    var clauses = section && section.clauses ? section.clauses : [];
+    var evaluated = 0;
+    var i;
+    for (i = 0; i < clauses.length; i += 1) {
+      var finding = state.findings[clauses[i].id] || newEmptyFinding();
+      if (finding.status) evaluated += 1;
+    }
+    return {
+      total: clauses.length,
+      evaluated: evaluated,
+      progress: clauses.length ? Math.round((evaluated / clauses.length) * 100) : 0
+    };
+  }
+
+  function metricCard(value, label, icon, tone, detail) {
+    return ''
+      + '<article class="metric ' + esc(tone || 'neutral') + '">'
+      + '  <span class="metric-icon"><i class="' + esc(icon || 'fa-solid fa-chart-simple') + '"></i></span>'
+      + '  <div><strong>' + esc(value) + '</strong><span>' + esc(label) + '</span><small>' + esc(detail || '') + '</small></div>'
+      + '</article>';
   }
 
   function flattenClauses(iso) {

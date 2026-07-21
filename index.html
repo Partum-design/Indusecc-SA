@@ -39,9 +39,16 @@
           <div class="hero-brand">
             <img src="Favicon-audtoria.png" alt="Logo INDUSECC" class="hero-logo" />
           </div>
-          <p class="eyebrow">INDUSECC</p>
-          <h1>Plataforma de Gesti&oacute;n de Auditor&iacute;as</h1>
-          <p class="subtitle">Elige primero el marco normativo y despu&eacute;s arrancamos la auditor&iacute;a completa.</p>
+          <div class="onboarding-title-copy">
+            <p class="eyebrow">INDUSECC · ESPACIO DE AUDITOR&Iacute;A</p>
+            <h1>Elige el marco. Nosotros ordenamos el trabajo.</h1>
+            <p class="subtitle">Comienza con la norma correcta y avanza punto por punto con evidencia, trazabilidad y orientaci&oacute;n clara.</p>
+          </div>
+        </div>
+        <div class="onboarding-steps" aria-label="Flujo de auditoría">
+          <span class="active"><b>1</b> Selecciona la norma</span>
+          <span><b>2</b> Documenta evidencia</span>
+          <span><b>3</b> Exporta el informe</span>
         </div>
       </div>
 
@@ -56,13 +63,16 @@
         </div>
 
         <aside class="onboarding-preview">
-          <p class="preview-kicker">Norma Seleccionada</p>
+          <p class="preview-kicker">Tu auditor&iacute;a</p>
           <article id="onboarding-iso-detail" class="iso-detail-card iso-detail-card-onboarding"></article>
-          <p class="preview-note">Selecciona la norma que vas a trabajar y luego pulsa <strong>Iniciar auditor&iacute;a</strong> para entrar al panel completo.</p>
+          <div class="onboarding-ready-note">
+            <i class="fa-solid fa-shield-check"></i>
+            <p><strong>Todo queda guardado.</strong><span>Podr&aacute;s continuar donde te quedaste, adjuntar evidencia y medir el avance en tiempo real.</span></p>
+          </div>
           <div class="onboarding-preview-actions">
             <button id="start-audit" class="fab-start" type="button" disabled>
-              <i class="fa-solid fa-play"></i>
-              Iniciar auditor&iacute;a
+              Comenzar auditor&iacute;a
+              <i class="fa-solid fa-arrow-right"></i>
             </button>
           </div>
         </aside>
@@ -87,12 +97,12 @@
         <i class="fa-solid fa-bars"></i>
       </button>
       <div class="mobile-appbar-title">
-        <span>Indusecc SO</span>
-        <strong>Mi Panel</strong>
+        <span>INDUSECC</span>
+        <strong>Auditor&iacute;a activa</strong>
       </div>
       <div class="mobile-appbar-actions">
-        <button id="mobile-open-tutorial" class="mobile-appbar-btn" type="button" aria-label="Abrir tutorial">
-          <i class="fa-regular fa-bell"></i>
+        <button id="mobile-open-tutorial" class="mobile-appbar-btn" type="button" aria-label="Abrir guía de uso">
+          <i class="fa-regular fa-circle-question"></i>
         </button>
         <button id="mobile-open-profile" class="mobile-avatar-btn" type="button" aria-label="Perfil">
           CP
@@ -119,7 +129,31 @@
     </aside>
     <div id="mobile-offcanvas-overlay" class="mobile-offcanvas-overlay hidden" aria-hidden="true"></div>
 
+    <section class="audit-command-bar" aria-label="Estado de la auditoría">
+      <div class="command-context">
+        <span class="command-eyebrow">Auditor&iacute;a activa</span>
+        <strong id="command-iso-label">ISO seleccionada</strong>
+      </div>
+      <div class="command-progress" aria-live="polite">
+        <div class="command-progress-ring" id="command-progress-ring"><strong id="command-progress-value">0%</strong></div>
+        <div>
+          <span id="command-progress-copy">0 de 0 puntos evaluados</span>
+          <strong id="command-next-step">Comienza por el primer requisito</strong>
+        </div>
+      </div>
+      <button id="command-continue" class="btn btn-primary command-continue" type="button">
+        Continuar auditor&iacute;a <i class="fa-solid fa-arrow-down"></i>
+      </button>
+    </section>
+
     <section class="panel audit-meta-panel">
+      <div class="panel-section-heading">
+        <div>
+          <span class="section-kicker">Identificaci&oacute;n del expediente</span>
+          <h2>Datos de la auditor&iacute;a</h2>
+        </div>
+        <p>Esta informaci&oacute;n aparecer&aacute; en el informe final.</p>
+      </div>
       <div class="audit-meta-grid">
         <label>NOMBRE DEL PROYECTO / EMPRESA
           <input type="text" id="project-name" placeholder="Ej. Haften S.A. de C.V." />
@@ -183,21 +217,33 @@
           <img src="Favicon-audtoria.png" alt="Logo INDUSECC" class="brand-logo" />
           <div>
             <p class="eyebrow">INDUSECC</p>
-            <h2>Centro de Gesti&oacute;n</h2>
+            <h2>Panel de auditor&iacute;a</h2>
             <span id="active-iso" class="iso-chip">ISO 9001</span>
           </div>
         </div>
+
         <div class="sidebar-actions">
-          <button id="open-tutorial-app" class="btn btn-secondary"><i class="fa-solid fa-book-open"></i> Tutorial</button>
-          <button id="change-iso" class="btn btn-secondary"><i class="fa-solid fa-repeat"></i> Cambiar ISO</button>
-          <button id="open-nora-panel" class="btn btn-secondary"><i class="fa-solid fa-robot"></i> Abrir chat NORA</button>
-          <button id="open-exports-panel" class="btn btn-secondary"><i class="fa-solid fa-box-archive"></i> Mis exportaciones</button>
-          <span id="session-user" class="session-user"></span>
-          <a id="open-admin-panel" class="btn btn-secondary hidden" href="admin.html"><i class="fa-solid fa-user-shield"></i> Panel administrador</a>
-          <button id="logout-app" class="btn btn-secondary"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</button>
+          <button id="open-nora-panel" class="sidebar-action-featured"><i class="fa-solid fa-sparkles"></i><span><strong>Consultar a NORA</strong><small>Orientaci&oacute;n sobre el punto actual</small></span></button>
+          <button id="open-exports-panel" class="sidebar-action"><i class="fa-solid fa-box-archive"></i><span>Informes guardados</span></button>
+          <button id="open-tutorial-app" class="sidebar-action"><i class="fa-solid fa-compass"></i><span>Gu&iacute;a de uso</span></button>
+          <button id="change-iso" class="sidebar-action"><i class="fa-solid fa-repeat"></i><span>Cambiar norma</span></button>
         </div>
 
-        <h3>Ficha Operativa</h3>
+        <div class="user-account-card">
+          <span class="user-avatar"><i class="fa-solid fa-user"></i></span>
+          <div><small>Sesi&oacute;n activa</small><span id="session-user" class="session-user"></span></div>
+          <div class="user-account-actions">
+            <a id="open-admin-panel" class="hidden" href="admin.html"><i class="fa-solid fa-user-shield"></i> Administrar</a>
+            <button id="logout-app" type="button"><i class="fa-solid fa-arrow-right-from-bracket"></i> Salir</button>
+          </div>
+        </div>
+
+        <div class="panel-section-heading compact">
+          <div>
+            <span class="section-kicker">Contexto de trabajo</span>
+            <h3>Ficha operativa</h3>
+          </div>
+        </div>
         <div class="form-grid">
           <label>Sitio auditado
             <input type="text" id="audit-site" placeholder="Planta, sede o unidad" />
@@ -213,14 +259,17 @@
         <div class="metrics" id="metrics"></div>
 
         <div class="panel-actions">
-          <button id="export-pdf" class="btn btn-primary"><i class="fa-solid fa-file-pdf"></i> Exportar PDF</button>
-          <button id="clear-project" class="btn btn-danger"><i class="fa-solid fa-trash"></i> Limpiar proyecto</button>
+          <button id="export-pdf" class="btn btn-primary"><i class="fa-solid fa-file-arrow-down"></i> Generar informe PDF</button>
+          <button id="clear-project" class="btn btn-danger btn-quiet"><i class="fa-solid fa-box-archive"></i> Cerrar y crear otra auditor&iacute;a</button>
         </div>
       </aside>
 
       <section class="panel checklist-panel">
         <div class="panel-head">
-          <h3>Checklist de auditor&iacute;a</h3>
+          <div>
+            <span class="section-kicker">Mesa de trabajo</span>
+            <h3>Revisi&oacute;n de requisitos</h3>
+          </div>
           <p id="iso-updated-note" class="muted"></p>
         </div>
 
@@ -233,9 +282,16 @@
         </section>
 
         <div class="panel-tools">
+          <div class="filter-heading">
+            <div>
+              <strong>Encuentra el siguiente punto</strong>
+              <span id="filter-result-count" aria-live="polite">Mostrando todos los requisitos</span>
+            </div>
+            <button id="clear-checklist-filters" type="button"><i class="fa-solid fa-rotate-left"></i> Limpiar filtros</button>
+          </div>
           <label class="search-box">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input id="clause-search" type="text" placeholder="Buscar punto, cl&aacute;usula o palabra clave..." />
+            <input id="clause-search" type="search" placeholder="Buscar por requisito, evidencia o palabra clave" />
           </label>
           <div class="quick-filters" aria-label="Filtros de checklist">
             <label class="quick-filter-field" for="status-filter">
@@ -412,34 +468,48 @@
   </section>
 
   <button id="nora-toggle" class="nora-toggle" type="button" aria-haspopup="dialog" aria-expanded="false">
-    <span class="nora-toggle-mark">N</span>
-    <span>NORA</span>
+    <span class="nora-toggle-mark"><i class="fa-solid fa-sparkles"></i></span>
+    <span><strong>NORA</strong><small>Asistente de auditor&iacute;a</small></span>
   </button>
 
   <aside id="nora-panel" class="nora-panel hidden" aria-hidden="true" aria-label="Asistente NORA">
     <div class="nora-panel-head">
-      <div>
-        <h3>NORA</h3>
+      <div class="nora-identity">
+        <span class="nora-avatar"><i class="fa-solid fa-sparkles"></i></span>
+        <div>
+          <h3>NORA</h3>
+          <p id="nora-mode" class="nora-mode">Asistente de auditor&iacute;a</p>
+        </div>
       </div>
-      <button id="close-nora-panel" class="btn btn-secondary" type="button"><i class="fa-solid fa-xmark"></i> Cerrar</button>
+      <button id="close-nora-panel" class="nora-close" type="button" aria-label="Cerrar NORA"><i class="fa-solid fa-xmark"></i></button>
     </div>
 
+    <div id="nora-context" class="nora-context"><i class="fa-solid fa-chart-line"></i><span>Preparando el contexto de tu auditor&iacute;a…</span></div>
+
     <div class="nora-quick-prompts" aria-label="Sugerencias de NORA">
-      <button type="button" class="nora-prompt-chip" data-nora-prompt="¿A qué se refiere esta norma?">¿Qué significa?</button>
-      <button type="button" class="nora-prompt-chip" data-nora-prompt="Ayúdame a llenar el punto 4.1 de la norma activa.">Llenar punto</button>
-      <button type="button" class="nora-prompt-chip" data-nora-prompt="¿Qué evidencia debería adjuntar en esta auditoría?">¿Qué evidencia uso?</button>
+      <button type="button" class="nora-prompt-chip" data-nora-prompt="Resume mi avance y dime qué debería atender ahora."><i class="fa-solid fa-route"></i> Qu&eacute; sigue</button>
+      <button type="button" class="nora-prompt-chip" data-nora-prompt="Detecta qué información o evidencia me falta en la auditoría."><i class="fa-solid fa-magnifying-glass-chart"></i> Revisar pendientes</button>
+      <button type="button" class="nora-prompt-chip" data-nora-prompt="Ayúdame a redactar un hallazgo claro para el requisito que estoy revisando."><i class="fa-solid fa-pen-nib"></i> Redactar hallazgo</button>
     </div>
 
     <div id="nora-messages" class="nora-messages" aria-live="polite"></div>
 
     <form id="nora-form" class="nora-form" novalidate>
-      <label class="nora-form-label" for="nora-input">Haz tu pregunta a NORA</label>
-      <textarea id="nora-input" rows="3" placeholder="Ej. Ayúdame a llenar el punto 4.1"></textarea>
+      <label class="nora-form-label" for="nora-input">¿Qu&eacute; necesitas resolver?</label>
+      <div class="nora-composer">
+        <textarea id="nora-input" rows="3" placeholder="Ej. Revisa el punto 4.1 y ayúdame a redactar el hallazgo"></textarea>
+        <span>NORA usa la norma, el requisito y tu avance como contexto.</span>
+      </div>
       <div class="nora-form-actions">
-        <button id="nora-send" class="btn btn-primary" type="submit"><i class="fa-solid fa-paper-plane"></i> Preguntar</button>
+        <button id="nora-send" class="btn btn-primary" type="submit">Enviar a NORA <i class="fa-solid fa-arrow-up"></i></button>
       </div>
     </form>
   </aside>
+
+  <a class="whatsapp-help" href="https://wa.me/525576290915?text=Hola%2C%20necesito%20ayuda%20con%20la%20plataforma%20de%20auditor%C3%ADas%20INDUSECC." target="_blank" rel="noopener noreferrer" aria-label="Solicitar ayuda por WhatsApp">
+    <i class="fa-brands fa-whatsapp"></i>
+    <span><strong>¿Necesitas ayuda?</strong><small>Escr&iacute;benos por WhatsApp</small></span>
+  </a>
 
   <div id="toast" class="toast"></div>
 
