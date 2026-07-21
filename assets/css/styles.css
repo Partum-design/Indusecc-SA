@@ -667,6 +667,7 @@ h5 {
   margin: 0 auto;
   padding: 16px 12px calc(124px + env(safe-area-inset-bottom, 0px));
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   opacity: 0;
   transform: translateY(14px) scale(0.995);
@@ -879,6 +880,7 @@ h5 {
 }
 
 .audit-meta-panel {
+  min-width: 0;
   padding: clamp(14px, 1.6vw, 26px);
 }
 
@@ -1014,11 +1016,12 @@ h5 {
 
 .workspace {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
 }
 
 .project-panel {
+  min-width: 0;
   padding: clamp(14px, 1.7vw, 24px);
   display: grid;
   gap: 16px;
@@ -1120,6 +1123,7 @@ h5 {
 }
 
 .checklist-panel {
+  min-width: 0;
   padding: clamp(14px, 1.7vw, 26px);
   display: grid;
   gap: 16px;
@@ -1200,6 +1204,7 @@ h5 {
 }
 
 .panel-tools {
+  min-width: 0;
   display: grid;
   gap: 10px;
 }
@@ -1292,6 +1297,7 @@ h5 {
 }
 
 .section-tabs {
+  min-width: 0;
   display: flex;
   gap: 8px;
   overflow-x: auto;
@@ -2199,21 +2205,6 @@ h5 {
   .app {
     padding-top: calc(76px + env(safe-area-inset-top, 0px));
   }
-
-  .floating-audit-tools {
-    right: 10px;
-    left: 10px;
-    justify-items: stretch;
-  }
-
-  .floating-action {
-    min-width: 0;
-    width: 100%;
-  }
-
-  .floating-progress-bubble {
-    justify-self: end;
-  }
 }
 
 @media (min-width: 1080px) {
@@ -2240,9 +2231,12 @@ h5 {
     gap: 20px;
   }
 
-  .floating-audit-tools {
-    right: 24px;
-    bottom: 24px;
+  /* La barra lateral ya queda fija en pantalla (sticky) con Exportar PDF,
+     Limpiar proyecto y el % de avance, así que estos flotantes quedan
+     redundantes y, en monitores anchos, lejos del panel al que pertenecen. */
+  .floating-audit-tools,
+  .floating-progress-bubble {
+    display: none;
   }
 
   .audit-meta-grid {
