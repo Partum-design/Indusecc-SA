@@ -145,7 +145,7 @@ h5 {
   border-radius: 0;
   border: 0;
   padding: 0;
-  background: #730e0e;
+  background: transparent;
   box-shadow: none;
   animation: none;
   display: block;
@@ -339,7 +339,7 @@ h5 {
   height: auto;
   border-radius: 0;
   border: 0;
-  background: #730e0e;
+  background: transparent;
   box-shadow: none;
   padding: 0;
   object-fit: contain;
@@ -1040,7 +1040,7 @@ h5 {
   object-fit: contain;
   border-radius: 0;
   border: 0;
-  background: #730e0e;
+  background: transparent;
   padding: 0;
   box-shadow: none;
   animation: none;

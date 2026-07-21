@@ -82,7 +82,8 @@ body {
 
 .app-header .brand img {
     height: 42px;
-    filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.3));
+    background: transparent;
+    filter: none;
 }
 
 .app-header .brand h1 {
