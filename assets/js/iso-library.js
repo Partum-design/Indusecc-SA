@@ -261,6 +261,274 @@
           clause('50001-10.1', 'Mejora continua', 'Mejora sostenida del desempeno energetico.', 'Se demuestra reduccion de consumo o mejora EnPI?', ['Historico de EnPI', 'Proyectos de mejora'])
         ])
       ]
+    },
+    {
+      id: 'iso27701',
+      code: 'ISO/IEC 27701',
+      version: '2019',
+      focus: 'Sistema de gestion de la informacion de privacidad',
+      summary: 'Extension de ISO 27001 para proteccion de datos personales (PIMS).',
+      icon: 'fa-solid fa-user-shield',
+      updatedNote: 'Referencia operacional actualizada al 20 de mayo de 2026.',
+      sections: [
+        section('27701-4-6', '4-6 Contexto, liderazgo y planificacion PIMS', 'fa-solid fa-user-lock', [
+          clause('27701-4.1', 'Contexto PIMS', 'Se entiende el contexto de privacidad de la organizacion.', 'El contexto identifica roles de controlador y/o encargado?', ['Analisis de contexto', 'Mapa de tratamientos']) ,
+          clause('27701-4.4', 'Alcance del PIMS', 'Se define alcance considerando el SGSI base.', 'El alcance especifica que datos y procesos cubre?', ['Documento de alcance', 'Inventario de datos']) ,
+          clause('27701-5.2', 'Politica de privacidad', 'Politica de privacidad alineada a la de seguridad.', 'La politica cubre derechos de titulares y bases legales?', ['Politica de privacidad', 'Comunicacion interna']) ,
+          clause('27701-6.1', 'Riesgos de privacidad', 'Evaluacion de riesgos de privacidad (PIA/DPIA).', 'Se ejecutan evaluaciones de impacto cuando aplica?', ['DPIA', 'Registro de riesgos de privacidad'])
+        ]),
+        section('27701-7-8', '7-8 Controles de controlador y encargado', 'fa-solid fa-address-card', [
+          clause('27701-7.2', 'Condiciones de recoleccion', 'Base legal y consentimiento para tratar datos.', 'Se documenta base legal y consentimiento informado?', ['Registro de consentimientos', 'Avisos de privacidad']) ,
+          clause('27701-7.3', 'Obligaciones con titulares', 'Derechos ARCO/portabilidad atendidos.', 'Existe procedimiento para atender solicitudes de titulares?', ['Procedimiento ARCO', 'Bitacora de solicitudes']) ,
+          clause('27701-7.4', 'Privacidad por diseno', 'Minimizacion y proteccion desde el diseno.', 'Los nuevos proyectos incluyen privacidad por diseno?', ['Checklist privacy by design', 'Revisiones de proyecto']) ,
+          clause('27701-8.2', 'Transferencias de datos', 'Control de transferencias a terceros/paises.', 'Las transferencias tienen contrato o mecanismo valido?', ['Contratos de encargo', 'Clausulas de transferencia']) ,
+          clause('27701-8.5', 'Gestion de incidentes de privacidad', 'Deteccion y notificacion de brechas de datos.', 'Existe protocolo de notificacion de brechas y plazos?', ['Plan de respuesta a brechas', 'Registro de incidentes'])
+        ]),
+        section('27701-9-10', '9-10 Evaluacion y mejora PIMS', 'fa-solid fa-magnifying-glass-chart', [
+          clause('27701-9.2', 'Auditoria interna PIMS', 'Auditoria periodica del sistema de privacidad.', 'Se auditan tratamientos de alto riesgo?', ['Programa de auditoria', 'Hallazgos y cierre']) ,
+          clause('27701-9.3', 'Revision por direccion', 'Direccion revisa desempeno de privacidad.', 'Se deciden acciones sobre riesgos residuales?', ['Acta de revision', 'Plan de accion']) ,
+          clause('27701-10.1', 'Mejora continua PIMS', 'Mejora del sistema de privacidad.', 'Se incorporan lecciones de incidentes y auditorias?', ['Backlog de mejora', 'Seguimiento'])
+        ])
+      ]
+    },
+    {
+      id: 'iso20000',
+      code: 'ISO/IEC 20000-1',
+      version: '2018',
+      focus: 'Sistema de gestion de servicios de TI',
+      summary: 'Diseno, transicion, entrega y mejora de servicios de TI (SMS).',
+      icon: 'fa-solid fa-server',
+      updatedNote: 'Referencia operacional actualizada al 20 de mayo de 2026.',
+      sections: [
+        section('20000-4-6', '4-6 Contexto, liderazgo y planificacion SMS', 'fa-solid fa-sitemap', [
+          clause('20000-4.1', 'Contexto del SMS', 'Factores internos/externos que afectan el servicio.', 'El contexto identifica clientes, partes interesadas y riesgos del servicio?', ['Analisis de contexto', 'Catalogo de servicios']) ,
+          clause('20000-5.1', 'Liderazgo y compromiso', 'Direccion respalda el SMS y la orientacion al cliente.', 'Direccion asigna recursos y revisa el desempeno del servicio?', ['Actas directivas', 'Plan de recursos']) ,
+          clause('20000-6.1', 'Acciones frente a riesgos', 'Riesgos y oportunidades del servicio gestionados.', 'Existe matriz de riesgos de servicio actualizada?', ['Matriz de riesgos de TI', 'Plan de tratamiento']) ,
+          clause('20000-6.2', 'Objetivos del servicio', 'Objetivos de calidad de servicio medibles (SLA).', 'Los SLA se monitorean y reportan periodicamente?', ['SLA vigentes', 'Reportes de cumplimiento'])
+        ]),
+        section('20000-8', '8. Operacion del servicio', 'fa-solid fa-headset', [
+          clause('20000-8.2', 'Catalogo y gestion de la demanda', 'Catalogo de servicios definido y capacidad planificada.', 'El catalogo esta vigente y se planifica capacidad?', ['Catalogo de servicios', 'Plan de capacidad']) ,
+          clause('20000-8.3', 'Gestion de configuracion', 'Activos y configuraciones de TI controlados (CMDB).', 'La CMDB refleja el estado real de la infraestructura?', ['CMDB', 'Auditorias de configuracion']) ,
+          clause('20000-8.5', 'Gestion de incidentes y peticiones', 'Incidentes resueltos dentro de tiempos acordados.', 'Se cumplen los tiempos de resolucion segun SLA?', ['Sistema de tickets', 'Reportes de incidentes']) ,
+          clause('20000-8.6', 'Gestion de problemas', 'Causa raiz de incidentes recurrentes investigada.', 'Existe registro y cierre de problemas con causa raiz?', ['Registro de problemas', 'Analisis de causa raiz']) ,
+          clause('20000-8.7', 'Gestion de cambios', 'Cambios al servicio evaluados y autorizados.', 'Los cambios pasan por comite/aprobacion formal?', ['CAB / bitacora de cambios', 'Plan de rollback']) ,
+          clause('20000-8.9', 'Continuidad y disponibilidad', 'Planes de continuidad y disponibilidad del servicio.', 'Se prueban planes de continuidad de TI periodicamente?', ['Plan de continuidad de TI', 'Pruebas de disponibilidad'])
+        ]),
+        section('20000-9-10', '9-10 Evaluacion y mejora del servicio', 'fa-solid fa-chart-line', [
+          clause('20000-9.1', 'Monitoreo y medicion', 'Desempeno del servicio medido contra SLA.', 'Se reportan tendencias de disponibilidad y satisfaccion?', ['Dashboard de servicio', 'Encuestas de satisfaccion']) ,
+          clause('20000-9.2', 'Auditoria interna SMS', 'Auditoria periodica del sistema de gestion de servicios.', 'Se cierran hallazgos de auditoria a tiempo?', ['Programa de auditoria', 'Plan de accion']) ,
+          clause('20000-10.1', 'Mejora continua del servicio', 'Mejora continua (CSI) del servicio de TI.', 'Existe registro formal de iniciativas de mejora?', ['Registro CSI', 'Proyectos de mejora'])
+        ])
+      ]
+    },
+    {
+      id: 'iso22301',
+      code: 'ISO 22301',
+      version: '2019',
+      focus: 'Sistema de gestion de continuidad de negocio',
+      summary: 'Preparacion, respuesta y recuperacion ante interrupciones.',
+      icon: 'fa-solid fa-tower-broadcast',
+      updatedNote: 'Referencia operacional actualizada al 20 de mayo de 2026.',
+      sections: [
+        section('22301-4-6', '4-6 Contexto, liderazgo y planificacion BCMS', 'fa-solid fa-building-shield', [
+          clause('22301-4.1', 'Contexto de continuidad', 'Factores que afectan la continuidad del negocio.', 'El contexto identifica procesos criticos y dependencias?', ['Analisis de contexto', 'Mapa de procesos criticos']) ,
+          clause('22301-4.2', 'Partes interesadas', 'Requisitos legales y de clientes sobre continuidad.', 'Se documentan requisitos contractuales de continuidad?', ['Matriz de requisitos', 'Contratos con clausulas de continuidad']) ,
+          clause('22301-5.1', 'Liderazgo y compromiso', 'Direccion lidera el BCMS y asigna recursos.', 'Direccion participa en ejercicios y revision del BCMS?', ['Actas de direccion', 'Presupuesto de continuidad']) ,
+          clause('22301-6.1', 'Riesgos y objetivos de continuidad', 'Objetivos de continuidad medibles y con plazos.', 'Cada objetivo tiene RTO/RPO definido?', ['Objetivos de continuidad', 'RTO/RPO por proceso'])
+        ]),
+        section('22301-8', '8. Operacion: BIA, estrategias y planes', 'fa-solid fa-triangle-exclamation', [
+          clause('22301-8.2', 'Analisis de impacto (BIA)', 'BIA identifica procesos criticos, RTO y recursos minimos.', 'El BIA esta vigente y cubre todos los procesos criticos?', ['BIA actualizado', 'Matriz de impacto']) ,
+          clause('22301-8.3', 'Estrategias de continuidad', 'Estrategias de recuperacion seleccionadas y justificadas.', 'Las estrategias cubren personas, instalaciones y TI?', ['Documento de estrategia', 'Analisis costo-beneficio']) ,
+          clause('22301-8.4', 'Planes de continuidad', 'Planes de respuesta a incidentes y recuperacion documentados.', 'Los planes tienen roles, contactos y procedimientos claros?', ['Plan de continuidad (BCP)', 'Arbol de llamadas']) ,
+          clause('22301-8.5', 'Ejercicios y pruebas', 'Programa de pruebas y simulacros del BCP.', 'Se ejecutan simulacros periodicos con resultados documentados?', ['Programa de ejercicios', 'Informes de simulacro'])
+        ]),
+        section('22301-9-10', '9-10 Evaluacion y mejora BCMS', 'fa-solid fa-magnifying-glass-chart', [
+          clause('22301-9.1', 'Monitoreo y medicion', 'Desempeno del BCMS medido con indicadores.', 'Existen KPI de continuidad (tiempos de respuesta, cobertura)?', ['Indicadores BCMS', 'Reportes periodicos']) ,
+          clause('22301-9.2', 'Auditoria interna BCMS', 'Auditoria del sistema de continuidad.', 'Se auditan procesos criticos y planes vigentes?', ['Programa de auditoria', 'Cierre de hallazgos']) ,
+          clause('22301-9.3', 'Revision por direccion', 'Direccion revisa el BCMS y decide mejoras.', 'La revision cubre resultados de ejercicios y cambios de riesgo?', ['Acta de revision', 'Plan de mejora']) ,
+          clause('22301-10.1', 'No conformidad y mejora', 'Correccion de fallas detectadas en ejercicios/incidentes.', 'Se corrigen brechas detectadas en simulacros reales?', ['Registro de no conformidad', 'Verificacion de eficacia'])
+        ])
+      ]
+    },
+    {
+      id: 'iso13485',
+      code: 'ISO 13485',
+      version: '2016',
+      focus: 'Sistema de gestion de calidad para dispositivos medicos',
+      summary: 'Regulatorio y de calidad para el ciclo de vida de dispositivos medicos.',
+      icon: 'fa-solid fa-kit-medical',
+      updatedNote: 'Referencia operacional actualizada al 20 de mayo de 2026.',
+      sections: [
+        section('13485-4-6', '4-6 SGC, direccion y recursos', 'fa-solid fa-briefcase-medical', [
+          clause('13485-4.1', 'Requisitos generales del SGC', 'SGC documentado conforme a requisitos regulatorios.', 'El SGC identifica requisitos regulatorios aplicables por mercado?', ['Matriz regulatoria', 'Manual de calidad']) ,
+          clause('13485-4.2', 'Documentacion y expediente', 'Control documental y expediente de dispositivo medico.', 'Existe expediente tecnico/DMR por producto?', ['Device Master Record', 'Lista maestra de documentos']) ,
+          clause('13485-5.1', 'Compromiso de la direccion', 'Direccion respalda cumplimiento regulatorio y calidad.', 'Direccion revisa cumplimiento regulatorio periodicamente?', ['Actas de revision', 'Plan regulatorio']) ,
+          clause('13485-6.2', 'Recursos humanos', 'Competencia del personal que afecta la calidad del producto.', 'Se capacita y evalua competencia critica para calidad?', ['Matriz de competencias', 'Registros de capacitacion'])
+        ]),
+        section('13485-7', '7. Realizacion del producto', 'fa-solid fa-syringe', [
+          clause('13485-7.1', 'Planificacion de la realizacion', 'Planificacion de procesos de manufactura y control.', 'Existen planes de calidad por linea/producto?', ['Plan de calidad', 'Especificaciones de producto']) ,
+          clause('13485-7.3', 'Diseno y desarrollo', 'Control de diseno con verificacion y validacion clinica si aplica.', 'El diseno tiene revisiones, V&V y control de cambios documentados?', ['Expediente de diseno', 'Reportes de V&V']) ,
+          clause('13485-7.4', 'Compras', 'Proveedores criticos evaluados y controlados.', 'Se evaluan proveedores segun riesgo del producto?', ['Evaluacion de proveedores', 'Acuerdos de calidad']) ,
+          clause('13485-7.5', 'Produccion y prestacion del servicio', 'Trazabilidad y condiciones controladas de produccion.', 'Existe trazabilidad completa por lote/dispositivo?', ['Registros de lote (DHR)', 'Trazabilidad UDI']) ,
+          clause('13485-7.6', 'Control de equipos de medicion', 'Calibracion de equipos de medicion y monitoreo.', 'Los equipos criticos tienen calibracion vigente?', ['Programa de calibracion', 'Certificados de calibracion'])
+        ]),
+        section('13485-8', '8. Medicion, analisis y mejora', 'fa-solid fa-notes-medical', [
+          clause('13485-8.2', 'Vigilancia postmercado', 'Retroalimentacion y quejas de producto en mercado.', 'Existe sistema de vigilancia postmercado y quejas?', ['Sistema de quejas', 'Reportes de vigilancia']) ,
+          clause('13485-8.3', 'Control de producto no conforme', 'Producto no conforme identificado y controlado.', 'Se documenta disposicion de producto no conforme?', ['Registro de no conformes', 'Decisiones de disposicion']) ,
+          clause('13485-8.5', 'Accion correctiva y preventiva (CAPA)', 'Sistema CAPA para causa raiz y prevencion.', 'El CAPA valida eficacia de acciones implementadas?', ['Registros CAPA', 'Verificacion de eficacia'])
+        ])
+      ]
+    },
+    {
+      id: 'iso55001',
+      code: 'ISO 55001',
+      version: '2014',
+      focus: 'Sistema de gestion de activos',
+      summary: 'Gestion optima del ciclo de vida de activos fisicos e infraestructura.',
+      icon: 'fa-solid fa-industry',
+      updatedNote: 'Referencia operacional actualizada al 20 de mayo de 2026.',
+      sections: [
+        section('55001-main', '4-10 Requisitos clave de gestion de activos', 'fa-solid fa-warehouse', [
+          clause('55001-4.1', 'Contexto de gestion de activos', 'Factores que afectan la gestion de activos.', 'El contexto vincula activos con objetivos organizacionales?', ['Analisis de contexto', 'Politica de activos']) ,
+          clause('55001-4.3', 'Alcance del SAM', 'Alcance del sistema de gestion de activos definido.', 'El alcance identifica portafolio de activos cubierto?', ['Documento de alcance', 'Inventario de activos']) ,
+          clause('55001-5.2', 'Politica de gestion de activos', 'Politica alineada al plan estrategico de activos (SAMP).', 'Existe SAMP aprobado y vigente?', ['SAMP', 'Politica de activos']) ,
+          clause('55001-6.2', 'Objetivos de gestion de activos', 'Objetivos medibles alineados al SAMP.', 'Los objetivos de activos tienen plan e indicadores?', ['Objetivos SAM', 'KPI de activos']) ,
+          clause('55001-7.2', 'Competencia', 'Personal competente para gestion del ciclo de vida.', 'Se capacita en mantenimiento, confiabilidad y riesgo de activos?', ['Plan de capacitacion', 'Evaluaciones de competencia']) ,
+          clause('55001-8.1', 'Planificacion y control operacional', 'Planes de mantenimiento y control de activos criticos.', 'Existen planes de mantenimiento preventivo/predictivo?', ['Plan de mantenimiento', 'Ordenes de trabajo']) ,
+          clause('55001-8.2', 'Gestion del cambio', 'Cambios que afectan activos evaluados por riesgo.', 'Los cambios a activos criticos se evaluan antes de ejecutarse?', ['Gestion del cambio (MOC)', 'Analisis de riesgo']) ,
+          clause('55001-9.1', 'Evaluacion del desempeno de activos', 'Desempeno, condicion y confiabilidad monitoreados.', 'Se mide disponibilidad, confiabilidad y costo del ciclo de vida?', ['Indicadores de confiabilidad', 'Reportes de condicion']) ,
+          clause('55001-9.2', 'Auditoria interna SAM', 'Auditoria del sistema de gestion de activos.', 'Se auditan procesos criticos de mantenimiento y activos?', ['Programa de auditoria', 'Cierre de hallazgos']) ,
+          clause('55001-9.3', 'Revision por direccion', 'Direccion revisa desempeno de activos y SAMP.', 'La revision decide inversiones y prioridades de activos?', ['Acta de revision', 'Plan de inversion']) ,
+          clause('55001-10.2', 'No conformidad y mejora', 'Fallas de activos investigadas y corregidas.', 'Se investiga causa raiz de fallas criticas de activos?', ['RCA de fallas', 'Plan de mejora'])
+        ])
+      ]
+    },
+    {
+      id: 'iso37301',
+      code: 'ISO 37301',
+      version: '2021',
+      focus: 'Sistema de gestion de compliance',
+      summary: 'Cumplimiento normativo integral, mas alla del antisoborno.',
+      icon: 'fa-solid fa-clipboard-check',
+      updatedNote: 'Referencia operacional actualizada al 20 de mayo de 2026.',
+      sections: [
+        section('37301-4-6', '4-6 Contexto, liderazgo y planificacion', 'fa-solid fa-landmark', [
+          clause('37301-4.1', 'Contexto de compliance', 'Factores y obligaciones de cumplimiento identificados.', 'Se mantiene un mapa vigente de obligaciones de cumplimiento?', ['Mapa de obligaciones', 'Analisis de contexto']) ,
+          clause('37301-4.6', 'Evaluacion de riesgos de compliance', 'Riesgos de incumplimiento evaluados por area/proceso.', 'La metodologia cubre riesgo regulatorio, contractual y etico?', ['Matriz de riesgo de compliance', 'Mapa de riesgos por area']) ,
+          clause('37301-5.1', 'Liderazgo y cultura de cumplimiento', 'Direccion promueve cultura de cumplimiento (tone at the top).', 'Direccion comunica activamente la importancia del cumplimiento?', ['Mensajes de liderazgo', 'Actas de comite de compliance']) ,
+          clause('37301-5.3', 'Funcion de compliance', 'Funcion de compliance independiente y con autoridad.', 'La funcion tiene acceso directo al organo de gobierno?', ['Nombramiento del oficial de compliance', 'Reportes al consejo']) ,
+          clause('37301-6.2', 'Objetivos de compliance', 'Objetivos medibles de cumplimiento normativo.', 'Los objetivos de compliance se revisan periodicamente?', ['Objetivos de compliance', 'Tablero de seguimiento'])
+        ]),
+        section('37301-7-8', '7-8 Soporte y operacion', 'fa-solid fa-user-check', [
+          clause('37301-7.2', 'Competencia', 'Formacion en cumplimiento por rol y riesgo.', 'Existe plan de capacitacion de compliance diferenciado por riesgo?', ['Plan de capacitacion', 'Registros de asistencia']) ,
+          clause('37301-7.3', 'Sensibilizacion', 'Cultura de cumplimiento comunicada a toda la organizacion.', 'El personal conoce el codigo de conducta y como reportar?', ['Codigo de conducta', 'Campanas de comunicacion']) ,
+          clause('37301-8.2', 'Controles y procedimientos', 'Controles de cumplimiento implementados por riesgo.', 'Los controles clave estan documentados y operando?', ['Matriz de controles', 'Evidencia de operacion']) ,
+          clause('37301-8.3', 'Canal de denuncias', 'Canal confidencial para reportar incumplimientos.', 'El canal protege confidencialidad y prohibe represalias?', ['Canal de denuncias', 'Politica de no represalia']) ,
+          clause('37301-8.4', 'Investigacion de incumplimientos', 'Casos investigados con debido proceso.', 'Las investigaciones documentan hallazgos y acciones disciplinarias?', ['Expedientes de investigacion', 'Registro de sanciones'])
+        ]),
+        section('37301-9-10', '9-10 Evaluacion y mejora', 'fa-solid fa-scale-balanced', [
+          clause('37301-9.1', 'Seguimiento y medicion', 'Indicadores de eficacia del sistema de compliance.', 'Se miden incidentes, tiempos de resolucion y capacitacion completada?', ['Dashboard de compliance', 'Reportes periodicos']) ,
+          clause('37301-9.2', 'Auditoria interna de compliance', 'Auditoria del sistema de gestion de compliance.', 'Se auditan areas de mayor riesgo de incumplimiento?', ['Programa de auditoria', 'Cierre de hallazgos']) ,
+          clause('37301-9.3', 'Revision por el organo de gobierno', 'Alta direccion y consejo revisan el desempeno de compliance.', 'El consejo recibe reporte formal de compliance?', ['Acta de consejo', 'Informe anual de compliance']) ,
+          clause('37301-10.1', 'No conformidad y accion correctiva', 'Incumplimientos corregidos con causa raiz.', 'Se verifica la eficacia de las acciones correctivas?', ['Registro de no conformidad', 'Verificacion de eficacia'])
+        ])
+      ]
+    },
+    {
+      id: 'iso21001',
+      code: 'ISO 21001',
+      version: '2018',
+      focus: 'Sistema de gestion para organizaciones educativas',
+      summary: 'Gestion educativa centrada en el aprendiz y sus resultados.',
+      icon: 'fa-solid fa-graduation-cap',
+      updatedNote: 'Referencia operacional actualizada al 20 de mayo de 2026.',
+      sections: [
+        section('21001-main', '4-10 Requisitos clave EOMS', 'fa-solid fa-chalkboard-user', [
+          clause('21001-4.1', 'Contexto de la organizacion educativa', 'Factores que afectan el servicio educativo.', 'El contexto considera necesidades de aprendices y sociedad?', ['Analisis de contexto', 'Estudio de necesidades educativas']) ,
+          clause('21001-4.2', 'Partes interesadas educativas', 'Necesidades de aprendices, familias y empleadores.', 'Se identifican requisitos de todos los grupos de interes?', ['Matriz de partes interesadas', 'Encuestas a familias/empleadores']) ,
+          clause('21001-5.1', 'Liderazgo centrado en el aprendiz', 'Direccion promueve enfoque en el aprendiz y etica.', 'La direccion demuestra compromiso con inclusion y equidad?', ['Politica de inclusion', 'Actas directivas']) ,
+          clause('21001-6.2', 'Objetivos educativos', 'Objetivos de aprendizaje medibles y con seguimiento.', 'Los objetivos educativos tienen indicadores de logro?', ['Objetivos EOMS', 'Indicadores de aprendizaje']) ,
+          clause('21001-7.2', 'Competencia docente', 'Personal docente competente y en desarrollo continuo.', 'Se evalua y desarrolla la competencia del personal docente?', ['Plan de desarrollo docente', 'Evaluaciones docentes']) ,
+          clause('21001-8.1', 'Diseno curricular y prestacion', 'Diseno, entrega y evaluacion del servicio educativo.', 'El curriculo se revisa segun resultados de aprendizaje?', ['Plan curricular', 'Resultados de evaluacion']) ,
+          clause('21001-8.2', 'Admision y apoyo al aprendiz', 'Procesos de admision y apoyo transparentes.', 'Existen criterios claros de admision y apoyo academico?', ['Politica de admision', 'Programas de apoyo']) ,
+          clause('21001-9.1', 'Seguimiento de resultados', 'Resultados de aprendizaje y satisfaccion medidos.', 'Se analizan tasas de desercion, logro y satisfaccion?', ['Indicadores educativos', 'Encuestas de satisfaccion']) ,
+          clause('21001-9.2', 'Auditoria interna EOMS', 'Auditoria del sistema de gestion educativa.', 'Se auditan procesos academicos y administrativos clave?', ['Programa de auditoria', 'Cierre de hallazgos']) ,
+          clause('21001-9.3', 'Revision por direccion', 'Direccion revisa desempeno educativo y decide mejoras.', 'La revision incluye retroalimentacion de aprendices y docentes?', ['Acta de revision', 'Plan de mejora educativa']) ,
+          clause('21001-10.2', 'No conformidad y mejora', 'Desviaciones del servicio educativo corregidas.', 'Se da seguimiento a quejas academicas hasta su cierre?', ['Registro de quejas', 'Acciones correctivas'])
+        ])
+      ]
+    },
+    {
+      id: 'iso44001',
+      code: 'ISO 44001',
+      version: '2017',
+      focus: 'Gestion de relaciones de negocio colaborativas',
+      summary: 'Marco para alianzas y relaciones colaborativas de alto valor.',
+      icon: 'fa-solid fa-handshake',
+      updatedNote: 'Referencia operacional actualizada al 20 de mayo de 2026.',
+      sections: [
+        section('44001-main', '4-10 Requisitos clave de colaboracion', 'fa-solid fa-people-arrows', [
+          clause('44001-4.1', 'Contexto de la relacion colaborativa', 'Factores que afectan alianzas de negocio.', 'Se identifican relaciones estrategicas clave a gestionar?', ['Mapa de relaciones estrategicas', 'Analisis de contexto']) ,
+          clause('44001-5.1', 'Liderazgo y compromiso colaborativo', 'Direccion respalda la estrategia de colaboracion.', 'Existe patrocinio directivo para alianzas estrategicas?', ['Actas de patrocinio', 'Estrategia de colaboracion']) ,
+          clause('44001-6.1', 'Conciencia de valor y riesgo', 'Riesgos y valor esperado de la relacion evaluados.', 'Se evalua el valor conjunto y riesgo antes de formalizar la alianza?', ['Caso de negocio conjunto', 'Analisis de riesgo de la relacion']) ,
+          clause('44001-7.2', 'Competencia relacional', 'Personal con habilidades de gestion de relaciones.', 'Se capacita en gestion de conflictos y colaboracion?', ['Plan de capacitacion', 'Evaluacion de competencias']) ,
+          clause('44001-8.2', 'Seleccion de socios', 'Socios evaluados y seleccionados con criterios claros.', 'Existen criterios documentados de seleccion de socios?', ['Criterios de seleccion', 'Evaluacion de candidatos']) ,
+          clause('44001-8.4', 'Gobernanza de la relacion', 'Acuerdo de colaboracion y gobernanza conjunta definidos.', 'Existe acuerdo formal con roles, gobierno y metricas conjuntas?', ['Acuerdo de colaboracion', 'Comite conjunto de gobernanza']) ,
+          clause('44001-8.7', 'Creacion de valor conjunto', 'Valor y beneficios compartidos monitoreados.', 'Se miden beneficios conjuntos frente al caso de negocio?', ['Indicadores de valor conjunto', 'Reportes de la alianza']) ,
+          clause('44001-8.8', 'Salida o terminacion', 'Estrategia de salida planificada desde el inicio.', 'Existe plan de salida/terminacion de la relacion?', ['Plan de salida', 'Clausulas de terminacion']) ,
+          clause('44001-9.1', 'Monitoreo de la relacion', 'Desempeno de la relacion medido periodicamente.', 'Se revisan indicadores de la relacion con el socio?', ['Tablero de la relacion', 'Reportes periodicos']) ,
+          clause('44001-9.3', 'Revision por direccion', 'Direccion revisa cartera de relaciones estrategicas.', 'La revision decide continuar, ajustar o terminar relaciones?', ['Acta de revision', 'Plan de accion']) ,
+          clause('44001-10.1', 'Mejora continua de la relacion', 'Lecciones aprendidas aplicadas a futuras alianzas.', 'Se documentan lecciones aprendidas de cada relacion?', ['Registro de lecciones aprendidas', 'Plan de mejora'])
+        ])
+      ]
+    },
+    {
+      id: 'iso28000',
+      code: 'ISO 28000',
+      version: '2022',
+      focus: 'Sistema de gestion de seguridad en la cadena de suministro',
+      summary: 'Seguridad, resiliencia y proteccion de la cadena de suministro.',
+      icon: 'fa-solid fa-truck-fast',
+      updatedNote: 'Referencia operacional actualizada al 20 de mayo de 2026.',
+      sections: [
+        section('28000-main', '4-10 Requisitos clave de seguridad SCM', 'fa-solid fa-boxes-packing', [
+          clause('28000-4.1', 'Contexto de seguridad de la cadena', 'Amenazas y vulnerabilidades de la cadena de suministro.', 'Se identifican amenazas relevantes (robo, fraude, terrorismo)?', ['Analisis de amenazas', 'Mapa de la cadena de suministro']) ,
+          clause('28000-4.3', 'Alcance del SGS', 'Alcance del sistema de seguridad definido.', 'El alcance cubre nodos criticos (transporte, almacenes, proveedores)?', ['Documento de alcance', 'Mapa de nodos criticos']) ,
+          clause('28000-5.1', 'Liderazgo en seguridad', 'Direccion respalda la seguridad de la cadena de suministro.', 'Direccion asigna recursos para seguridad logistica?', ['Actas directivas', 'Presupuesto de seguridad']) ,
+          clause('28000-6.1', 'Evaluacion de riesgos de seguridad', 'Riesgos de seguridad de la cadena evaluados y tratados.', 'La evaluacion cubre proveedores, transporte y almacenamiento?', ['Matriz de riesgos de seguridad', 'Plan de tratamiento']) ,
+          clause('28000-7.2', 'Competencia en seguridad', 'Personal capacitado en procedimientos de seguridad.', 'Se capacita a personal logistico en seguridad y deteccion de anomalias?', ['Plan de capacitacion', 'Evaluaciones']) ,
+          clause('28000-8.1', 'Control operacional de seguridad', 'Controles fisicos y de proceso en la cadena.', 'Existen controles de acceso, sellos y verificacion de carga?', ['Procedimientos de seguridad', 'Registros de sellado/verificacion']) ,
+          clause('28000-8.4', 'Gestion de incidentes de seguridad', 'Incidentes de seguridad detectados y gestionados.', 'Existe protocolo de respuesta a robo, contrabando o intrusion?', ['Plan de respuesta a incidentes', 'Bitacora de incidentes']) ,
+          clause('28000-8.5', 'Continuidad de la cadena', 'Planes de continuidad ante interrupciones de suministro.', 'Existen planes ante interrupcion de proveedores criticos?', ['Plan de continuidad de suministro', 'Proveedores alternos']) ,
+          clause('28000-9.1', 'Monitoreo y medicion', 'Indicadores de seguridad de la cadena monitoreados.', 'Se miden incidentes de seguridad y tiempos de respuesta?', ['Indicadores de seguridad', 'Reportes periodicos']) ,
+          clause('28000-9.2', 'Auditoria interna SGS', 'Auditoria del sistema de seguridad de la cadena.', 'Se auditan proveedores y nodos criticos?', ['Programa de auditoria', 'Cierre de hallazgos']) ,
+          clause('28000-10.2', 'No conformidad y mejora', 'Brechas de seguridad corregidas con causa raiz.', 'Se investigan y corrigen brechas de seguridad detectadas?', ['Registro de no conformidad', 'Verificacion de eficacia'])
+        ])
+      ]
+    },
+    {
+      id: 'iso39001',
+      code: 'ISO 39001',
+      version: '2012',
+      focus: 'Sistema de gestion de seguridad vial',
+      summary: 'Reduccion de muertes y lesiones graves por siniestros viales.',
+      icon: 'fa-solid fa-car-burst',
+      updatedNote: 'Referencia operacional actualizada al 20 de mayo de 2026.',
+      sections: [
+        section('39001-main', '4-10 Requisitos clave RTS', 'fa-solid fa-road',[
+          clause('39001-4.1', 'Contexto de seguridad vial', 'Factores de riesgo vial de la organizacion.', 'Se identifican rutas, vehiculos y conductores de mayor riesgo?', ['Analisis de contexto vial', 'Mapa de rutas criticas']) ,
+          clause('39001-4.4', 'Alcance del RTS', 'Alcance del sistema de seguridad vial definido.', 'El alcance cubre flota propia y de terceros/contratistas?', ['Documento de alcance', 'Inventario de flota']) ,
+          clause('39001-5.1', 'Liderazgo en seguridad vial', 'Direccion promueve cultura de conduccion segura.', 'Direccion participa en campañas y revision de siniestros?', ['Actas directivas', 'Politica de seguridad vial']) ,
+          clause('39001-6.2', 'Objetivos y factores de desempeno vial', 'Objetivos medibles sobre los factores de resultado de seguridad vial.', 'Los objetivos cubren velocidad, fatiga, cinturon y alcohol/drogas?', ['Objetivos RTS', 'Indicadores por factor de riesgo']) ,
+          clause('39001-7.2', 'Competencia de conductores', 'Conductores evaluados, capacitados y aptos.', 'Se evalua aptitud y se capacita a conductores periodicamente?', ['Licencias y evaluaciones', 'Plan de capacitacion vial']) ,
+          clause('39001-8.1', 'Control operacional de flota', 'Vehiculos mantenidos y rutas planificadas de forma segura.', 'Existe mantenimiento preventivo y planificacion segura de rutas?', ['Programa de mantenimiento', 'Planificacion de rutas']) ,
+          clause('39001-8.2', 'Preparacion ante emergencias viales', 'Respuesta ante siniestros y emergencias en ruta.', 'Existe protocolo de respuesta ante siniestros con lesionados?', ['Protocolo de emergencia vial', 'Kit de respuesta en vehiculos']) ,
+          clause('39001-9.1', 'Seguimiento del desempeno vial', 'Indicadores de siniestralidad monitoreados.', 'Se analizan tasas de siniestralidad, casi-incidentes y causas?', ['Indicadores de siniestralidad', 'Reportes de casi-incidentes']) ,
+          clause('39001-9.2', 'Auditoria interna RTS', 'Auditoria del sistema de seguridad vial.', 'Se auditan conductores, flota y rutas de mayor riesgo?', ['Programa de auditoria', 'Cierre de hallazgos']) ,
+          clause('39001-9.3', 'Revision por direccion', 'Direccion revisa desempeno vial y decide acciones.', 'La revision define inversiones en seguridad vial?', ['Acta de revision', 'Plan de accion']) ,
+          clause('39001-10.2', 'Investigacion de siniestros', 'Siniestros investigados con causa raiz y accion correctiva.', 'Se investiga causa raiz de cada siniestro con lesion?', ['Investigacion de siniestros', 'Acciones correctivas'])
+        ])
+      ]
     }
   ];
 

@@ -3,6 +3,7 @@
 
   var TUTORIAL_KEY = 'sg_audit_tutorial_seen_v1';
   var LAST_ISO_KEY = 'sg_audit_last_iso_v1';
+  var PANEL_COLLAPSED_KEY = 'sg_audit_panel_collapsed_v1';
   var EVIDENCE_BUCKET = 'audit-evidence';
   var SIGNATURE_BUCKET = 'audit-signatures';
   var EXPORTS_BUCKET = 'audit-exports';
@@ -144,6 +145,7 @@
 
     applyDefaultIso();
     bindEvents();
+    setProjectPanelCollapsed(window.localStorage.getItem(PANEL_COLLAPSED_KEY) === '1');
     setupSignatureCanvas();
     renderFrameworkTabs();
     syncFilterControls();
@@ -286,6 +288,12 @@
       dom.signatureCanvas.style.pointerEvents = 'none';
     }
 
+    document.querySelectorAll('#export-pdf, #floating-export, #mobile-menu-export').forEach(function (button) {
+      button.disabled = true;
+      button.title = 'Modo solo lectura: no puedes exportar informes.';
+      button.classList.add('is-readonly-disabled');
+    });
+
     showToast('Tu cuenta es de solo lectura: puedes ver la auditoría pero no editarla.');
   }
 
@@ -293,6 +301,16 @@
     if (!sb) return;
     await sb.auth.signOut();
     window.location.replace(ROUTES.login);
+  }
+
+  function setProjectPanelCollapsed(collapsed) {
+    if (!dom.projectPanel) return;
+    dom.projectPanel.classList.toggle('is-collapsed', collapsed);
+    if (dom.toggleProjectPanel) {
+      dom.toggleProjectPanel.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      dom.toggleProjectPanel.title = collapsed ? 'Mostrar ficha operativa' : 'Ocultar ficha operativa';
+    }
+    try { window.localStorage.setItem(PANEL_COLLAPSED_KEY, collapsed ? '1' : '0'); } catch (err) { /* almacenamiento no disponible */ }
   }
 
   function cacheDom() {
@@ -314,6 +332,8 @@
 
     dom.activeIso = document.getElementById('active-iso');
     dom.changeIso = document.getElementById('change-iso');
+    dom.projectPanel = document.getElementById('project-panel');
+    dom.toggleProjectPanel = document.getElementById('toggle-project-panel');
     dom.openTutorialOnboarding = document.getElementById('open-tutorial-onboarding');
     dom.openTutorialApp = document.getElementById('open-tutorial-app');
     dom.closeTutorial = document.getElementById('close-tutorial');
@@ -475,6 +495,12 @@
 
     if (dom.changeIso) {
       dom.changeIso.addEventListener('click', showOnboarding);
+    }
+
+    if (dom.toggleProjectPanel) {
+      dom.toggleProjectPanel.addEventListener('click', function () {
+        setProjectPanelCollapsed(!dom.projectPanel.classList.contains('is-collapsed'));
+      });
     }
 
     if (dom.navGoFrameworks) {
@@ -2010,9 +2036,11 @@
     finding.risk = normalizeRiskValue(finding.risk);
     var statusClass = getStatusClass(finding.status);
     var completedClass = finding.status ? ' is-evaluated' : ' is-pending';
+    var readOnly = isReadOnlyUser();
+    var ro = readOnly ? ' disabled' : '';
 
     var html = '';
-    html += '<article class="finding-card' + completedClass + '" data-clause-id="' + esc(clause.id) + '">';
+    html += '<article class="finding-card' + completedClass + (readOnly ? ' is-readonly' : '') + '" data-clause-id="' + esc(clause.id) + '">';
     html += '  <div class="finding-head">';
     html += '    <div class="finding-title">';
     html += '      <span class="clause-id">' + esc(clause.id) + '</span>';
@@ -2038,40 +2066,42 @@
     html += '  <div class="finding-entry-heading"><div><span>Registro del auditor</span><strong>Documenta solo lo que puedas comprobar</strong></div><small>Los cambios se guardan autom&aacute;ticamente</small></div>';
     html += '  <div class="finding-grid">';
     html += '    <label><span>Resultado de conformidad</span>';
-    html += '      <select data-field="status" data-clause-id="' + esc(clause.id) + '">';
+    html += '      <select data-field="status" data-clause-id="' + esc(clause.id) + '"' + ro + '>';
     html += renderSelectOptions(['', 'Cumple', 'Parcial', 'No cumple', 'N/A'], finding.status);
     html += '      </select>';
     html += '    </label>';
 
     html += '    <label><span>Nivel de riesgo</span>';
-    html += '      <select data-field="risk" data-clause-id="' + esc(clause.id) + '">';
+    html += '      <select data-field="risk" data-clause-id="' + esc(clause.id) + '"' + ro + '>';
     html += renderSelectOptions(['', 'Bajo', 'Medio', 'Alto', 'Crítico'], finding.risk);
     html += '      </select>';
     html += '    </label>';
 
     html += '    <label class="wide"><span>Hallazgo u observaci&oacute;n</span><small>Describe el hecho, la evidencia revisada y la brecha detectada.</small>';
-    html += '      <textarea rows="3" data-field="note" data-clause-id="' + esc(clause.id) + '" placeholder="Ej. Se revisó el procedimiento vigente y se observó que…">' + esc(finding.note || '') + '</textarea>';
+    html += '      <textarea rows="3" data-field="note" data-clause-id="' + esc(clause.id) + '" placeholder="Ej. Se revisó el procedimiento vigente y se observó que…"' + ro + '>' + esc(finding.note || '') + '</textarea>';
     html += '    </label>';
 
     html += '    <label class="wide"><span>Acci&oacute;n o plan de mejora</span><small>Indica qu&eacute; debe hacerse; agrega responsable y fecha cuando los conozcas.</small>';
-    html += '      <textarea rows="3" data-field="action" data-clause-id="' + esc(clause.id) + '" placeholder="Ej. Actualizar el procedimiento, asignar responsable y verificar antes de…">' + esc(finding.action || '') + '</textarea>';
+    html += '      <textarea rows="3" data-field="action" data-clause-id="' + esc(clause.id) + '" placeholder="Ej. Actualizar el procedimiento, asignar responsable y verificar antes de…"' + ro + '>' + esc(finding.action || '') + '</textarea>';
     html += '    </label>';
     html += '  </div>';
 
-    html += '  <div class="evidence-tools"><div><strong>Evidencia del requisito</strong><span>Adjunta documentos, fotograf&iacute;as o un enlace verificable (m&aacute;x. ' + EVIDENCE_MAX_PER_FINDING + ' por punto).</span></div>';
-    html += '    <div class="evidence-actions">';
-    html += '      <label class="upload-label">';
-    html += '        <i class="fa-solid fa-paperclip"></i> Adjuntar archivo';
-    html += '        <input type="file" multiple accept="' + esc(EVIDENCE_ACCEPT) + '" data-field="attachment" data-clause-id="' + esc(clause.id) + '" />';
-    html += '      </label>';
-    html += '      <form class="link-form" data-link-form data-clause-id="' + esc(clause.id) + '">';
-    html += '        <input type="url" inputmode="url" placeholder="Pega un enlace (https://...)" data-link-input />';
-    html += '        <button type="submit" title="Agregar enlace como evidencia"><i class="fa-solid fa-link"></i></button>';
-    html += '      </form>';
-    html += '    </div>';
+    html += '  <div class="evidence-tools"><div><strong>Evidencia del requisito</strong><span>' + (readOnly ? 'Modo solo lectura: no puedes agregar evidencia.' : ('Adjunta documentos, fotograf&iacute;as o un enlace verificable (m&aacute;x. ' + EVIDENCE_MAX_PER_FINDING + ' por punto).')) + '</span></div>';
+    if (!readOnly) {
+      html += '    <div class="evidence-actions">';
+      html += '      <label class="upload-label">';
+      html += '        <i class="fa-solid fa-paperclip"></i> Adjuntar archivo';
+      html += '        <input type="file" multiple accept="' + esc(EVIDENCE_ACCEPT) + '" data-field="attachment" data-clause-id="' + esc(clause.id) + '" />';
+      html += '      </label>';
+      html += '      <form class="link-form" data-link-form data-clause-id="' + esc(clause.id) + '">';
+      html += '        <input type="url" inputmode="url" placeholder="Pega un enlace (https://...)" data-link-input />';
+      html += '        <button type="submit" title="Agregar enlace como evidencia"><i class="fa-solid fa-link"></i></button>';
+      html += '      </form>';
+      html += '    </div>';
+    }
     html += '  </div>';
 
-    html += '  <div class="evidence-list">';
+    html += '  <div class="evidence-list" data-evidence-list="' + esc(clause.id) + '">';
     html += renderAttachments(finding.attachments, clause.id);
     html += '  </div>';
     html += '</article>';
@@ -2148,6 +2178,7 @@
   }
 
   function onChecklistInput(event) {
+    if (isReadOnlyUser()) return;
     var target = event.target;
     var field = target.getAttribute('data-field');
     var clauseId = target.getAttribute('data-clause-id');
@@ -2167,6 +2198,7 @@
       state.findings[clauseId][field] = target.value;
     }
     saveState();
+    if (field === 'status' || field === 'risk') pulseFindingCard(clauseId);
 
     if (field === 'status') {
       var card = target.closest ? target.closest('.finding-card') : null;
@@ -2199,6 +2231,21 @@
       renderMetrics(iso);
       if (field === 'status') updateChecklistProgressVisuals(iso);
     }
+  }
+
+  function updateEvidenceListDom(clauseId, attachments) {
+    var container = document.querySelector('[data-evidence-list="' + cssEscape(clauseId) + '"]');
+    if (container) container.innerHTML = renderAttachments(attachments, clauseId);
+    pulseFindingCard(clauseId);
+  }
+
+  function pulseFindingCard(clauseId) {
+    var card = document.querySelector('.finding-card[data-clause-id="' + cssEscape(clauseId) + '"]');
+    if (!card) return;
+    card.classList.remove('just-updated');
+    void card.offsetWidth;
+    card.classList.add('just-updated');
+    window.setTimeout(function () { card.classList.remove('just-updated'); }, 900);
   }
 
   function updateChecklistProgressVisuals(iso) {
@@ -2377,7 +2424,7 @@
 
     state.findings[clauseId] = finding;
 
-    renderChecklist(iso);
+    updateEvidenceListDom(clauseId, finding.attachments);
     renderMetrics(iso);
     showToast('Archivo(s) agregado(s) al punto ' + clauseId + '.');
   }
@@ -2429,7 +2476,7 @@
     });
     state.findings[clauseId] = finding;
 
-    renderChecklist(iso);
+    updateEvidenceListDom(clauseId, finding.attachments);
     renderMetrics(iso);
     showToast('Enlace agregado al punto ' + clauseId + '.');
   }
@@ -2460,7 +2507,7 @@
 
     var iso = findIsoById(state.selectedIsoId);
     if (iso) {
-      renderChecklist(iso);
+      updateEvidenceListDom(clauseId, finding.attachments);
       renderMetrics(iso);
     }
   }
@@ -2589,6 +2636,11 @@
   }
 
   async function exportReportPdf() {
+    if (isReadOnlyUser()) {
+      showToast('Modo solo lectura: no puedes exportar informes.');
+      return;
+    }
+
     var iso = findIsoById(state.selectedIsoId);
     if (!iso) {
       showToast('Selecciona una norma primero.');
@@ -2598,6 +2650,19 @@
     if (!window.jspdf || !window.jspdf.jsPDF) {
       showToast('No se pudo cargar el motor PDF.');
       return;
+    }
+
+    if (sb) {
+      var limitResult = await sb.rpc('register_pdf_export');
+      var limitRow = limitResult.data && limitResult.data[0];
+      if (limitResult.error) {
+        showToast('No se pudo verificar el límite de exportaciones. Intenta de nuevo.');
+        return;
+      }
+      if (limitRow && !limitRow.allowed) {
+        showToast('Alcanzaste el límite de 15 exportaciones hoy. Vuelve a intentarlo mañana.');
+        return;
+      }
     }
 
     try {

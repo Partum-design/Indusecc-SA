@@ -212,7 +212,7 @@
     </section>
 
     <section class="workspace">
-      <aside class="panel project-panel">
+      <aside class="panel project-panel" id="project-panel">
         <div class="sidebar-brand">
           <img src="Favicon-auditoria.png" alt="Logo INDUSECC" class="brand-logo" />
           <div>
@@ -220,7 +220,10 @@
             <h2>Panel de auditor&iacute;a</h2>
             <span id="active-iso" class="iso-chip">ISO 9001</span>
           </div>
+          <button id="toggle-project-panel" type="button" class="panel-collapse-toggle" aria-expanded="true" aria-controls="project-panel-body" title="Ocultar panel"><i class="fa-solid fa-chevron-left"></i></button>
         </div>
+
+        <div id="project-panel-body" class="project-panel-body">
 
         <div class="sidebar-actions">
           <button id="open-nora-panel" class="sidebar-action-featured"><i class="fa-solid fa-sparkles"></i><span><strong>Consultar a NORA</strong><small>Orientaci&oacute;n sobre el punto actual</small></span></button>
@@ -261,6 +264,7 @@
         <div class="panel-actions">
           <button id="export-pdf" class="btn btn-primary"><i class="fa-solid fa-file-arrow-down"></i> Generar informe PDF</button>
           <button id="clear-project" class="btn btn-danger btn-quiet"><i class="fa-solid fa-box-archive"></i> Cerrar y crear otra auditor&iacute;a</button>
+        </div>
         </div>
       </aside>
 

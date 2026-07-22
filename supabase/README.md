@@ -121,12 +121,17 @@ user" con la marca de INDUSECC.
 
 | Rol      | Puede |
 |----------|-------|
-| `admin`  | Todo: gestionar usuarios/roles, ver y editar cualquier auditoría, borrar (con rastro). |
-| `auditor`| Crear auditorías propias, editar hallazgos/evidencia/firma de las auditorías que creó o le asignaron. |
-| `viewer` | Solo lectura de todas las auditorías (pensado para gerencia / revisión). |
+| `admin`  | Todo: gestionar usuarios/roles/empresas, ver y editar cualquier auditoría, borrar (con rastro), exportar PDF sin límite. |
+| `auditor`| Crear auditorías propias, editar hallazgos/evidencia/firma de las que creó o le asignaron, exportar PDF (tope de 15/día). |
+| `viewer` | Solo lectura: ve todo pero no puede editar hallazgos/evidencia/firma ni exportar PDF (bloqueado en cliente y RLS). |
 
 Si se necesitan más roles o permisos distintos (ej. "viewer" limitado a su propia sucursal),
 son cambios de una sola política RLS en `003_rls_policies.sql`.
+
+`public.register_pdf_export()` (invocada por el cliente antes de generar cada PDF) cuenta las
+exportaciones del día por persona en `pdf_export_daily` y limita a 15/día solo para `auditor`;
+`admin` siempre pasa sin contarse. Vive en `public` (no `private`) a propósito, igual que
+`touch_presence()`, porque el cliente la llama directo vía `sb.rpc()` sin backend intermedio.
 
 ## Empresas y revocación de acceso por organización
 

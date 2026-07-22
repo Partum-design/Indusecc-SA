@@ -239,7 +239,39 @@ tbody tr:hover { background: #faf9f7; }
 .icon-button { width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: var(--muted); cursor: pointer; transition: color .18s ease, border-color .18s ease, transform .18s ease, background .18s ease; }
 .icon-button:hover { color: var(--wine); border-color: rgba(111,22,39,.35); transform: translateY(-1px); }
 .icon-button:active { transform: translateY(0) scale(.94); }
+.icon-button:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+.icon-button.warning:hover { color: var(--amber); border-color: rgba(173,107,23,.4); background: #fdf6ec; }
+.icon-button.danger:hover { color: var(--danger); border-color: rgba(166,50,43,.4); background: #fff6f5; }
 .empty-state { padding: 3rem; text-align: center; color: var(--muted); }
+
+.member-count-toggle {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .3rem .55rem;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background .16s ease, border-color .16s ease;
+}
+.member-count-toggle:hover:not(:disabled) { background: #f4f1ec; border-color: var(--line); }
+.member-count-toggle:disabled { cursor: default; color: var(--muted); }
+.member-count-toggle i { font-size: .68rem; color: var(--muted); }
+tr.is-expanded { background: #faf9f7; }
+tr.org-members-row td { padding: 0 1.1rem 1.1rem; border-bottom: 1px solid #ece9e5; background: #faf9f7; }
+.member-chip-list { display: flex; flex-wrap: wrap; gap: .55rem; }
+.member-chip {
+  display: inline-flex; align-items: center; gap: .55rem;
+  padding: .5rem .75rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  animation: panelRise .35s cubic-bezier(.2,.8,.2,1) both;
+}
+.member-chip .status-pill { width: 9px; height: 9px; padding: 0; border: 0; }
+.member-chip .status-pill::before { margin: 0; }
+.member-chip strong { display: block; font-size: .8rem; }
+.member-chip small { display: block; color: var(--muted); font-size: .72rem; margin-top: .1rem; }
 
 .activity-panel { margin-top: 1rem; }
 .retention-note { color: var(--green); font-size: .8rem; font-weight: 700; }

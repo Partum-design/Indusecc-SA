@@ -17,6 +17,7 @@
   var connectionsQuery = "";
   var orgSearchQuery = "";
   var userOrgFilter = "";
+  var expandedOrgIds = {};
   var toastTimer;
 
   document.addEventListener("DOMContentLoaded", init);
@@ -306,17 +307,34 @@
       var status = org.active
         ? '<span class="status-pill online">Activa</span>'
         : '<span class="status-pill inactive">Archivada</span>';
-      return '<tr data-org-id="' + esc(org.id) + '">'
+      var expanded = Boolean(expandedOrgIds[org.id]);
+      var rows = '<tr data-org-id="' + esc(org.id) + '" class="' + (expanded ? "is-expanded" : "") + '">'
         + '<td><strong>' + esc(org.name) + '</strong>' + (org.notes ? '<br><small>' + esc(org.notes) + '</small>' : '') + '</td>'
         + '<td>' + status + '</td>'
-        + '<td><strong>' + members.length + '</strong></td>'
+        + '<td><button type="button" class="member-count-toggle" data-action="toggle-members" ' + (members.length ? "" : "disabled") + '><strong>' + members.length + '</strong> <i class="fa-solid fa-chevron-' + (expanded ? "up" : "down") + '"></i></button></td>'
         + '<td><strong>' + activeMembers.length + '</strong></td>'
         + '<td><div class="row-actions">'
         + '<button class="icon-button" data-action="edit" title="Editar empresa"><i class="fa-solid fa-pen"></i></button>'
-        + '<button class="icon-button" data-action="revoke-all" title="' + (activeMembers.length ? "Revocar acceso a todas sus personas" : "No hay accesos activos que revocar") + '" ' + (activeMembers.length ? "" : "disabled") + '><i class="fa-solid fa-user-slash"></i></button>'
-        + '<button class="icon-button" data-action="delete" title="' + (members.length ? "Reasigna o quita a las personas de esta empresa antes de eliminarla" : "Eliminar empresa") + '" ' + (members.length ? "disabled" : "") + '><i class="fa-solid fa-trash"></i></button>'
+        + '<button class="icon-button warning" data-action="revoke-all" title="' + (activeMembers.length ? "Revocar acceso a todas sus personas" : "No hay accesos activos que revocar") + '" ' + (activeMembers.length ? "" : "disabled") + '><i class="fa-solid fa-user-slash"></i></button>'
+        + '<button class="icon-button danger" data-action="delete" title="' + (members.length ? "Reasigna o quita a las personas de esta empresa antes de eliminarla" : "Eliminar empresa") + '" ' + (members.length ? "disabled" : "") + '><i class="fa-solid fa-trash"></i></button>'
         + '</div></td></tr>';
+
+      if (expanded && members.length) {
+        rows += '<tr class="org-members-row"><td colspan="5"><div class="member-chip-list">'
+          + members.map(function (member) {
+            var dotClass = member.active ? "online" : "inactive";
+            return '<span class="member-chip"><span class="status-pill ' + dotClass + '"></span><span><strong>' + esc(member.full_name || member.email) + '</strong><small>' + esc(member.email) + ' &middot; ' + esc(roleLabelEs(member.role)) + '</small></span></span>';
+          }).join("")
+          + '</div></td></tr>';
+      }
+      return rows;
     }).join("");
+  }
+
+  function roleLabelEs(role) {
+    if (role === "admin") return "Administrador";
+    if (role === "auditor") return "Auditor";
+    return "Solo lectura";
   }
 
   function renderVault() {
@@ -731,6 +749,10 @@
     }
     if (button.dataset.action === "delete") {
       await deleteOrganization(org);
+    }
+    if (button.dataset.action === "toggle-members") {
+      expandedOrgIds[org.id] = !expandedOrgIds[org.id];
+      renderOrganizations();
     }
   }
 
