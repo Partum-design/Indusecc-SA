@@ -41,9 +41,23 @@ Nunca pongas esa llave en `assets/js/supabase-config.js`, en el navegador o en G
   `/api/log-login` con la `service_role` key; nadie puede insertarla desde el navegador.
 - `audit_exports` — bóveda: metadato de cada PDF exportado (quién, cuándo, norma, tamaño). El
   binario vive en el bucket privado `audit-exports`.
+- `organizations` — empresas/clientes. Permite agrupar personas por empresa desde el panel
+  administrativo (`/administracion` → Empresas) y revocar el acceso de una organización completa
+  de un solo movimiento (desactiva en bloque los `profiles` con ese `organization_id`).
 
-`profiles` también incluye `phone`, `department` y `onboarded_at` (se llena la primera vez que la
-persona guarda sus datos de contacto desde el modal de bienvenida en `index.html`).
+`profiles` también incluye `phone`, `department`, `onboarded_at` (se llena la primera vez que la
+persona guarda sus datos de contacto desde el modal de bienvenida en `index.html`) y
+`organization_id` (empresa asignada; `NULL` = sin asignar). Una persona no-admin no puede
+reasignarse su propia `organization_id` (política `profiles_update_own_or_admin`, igual que ya
+ocurría con `role`/`active`); solo un `admin` la cambia, desde el selector de "Empresa" en el
+directorio de Personas y accesos o al crear/editar una cuenta.
+
+`audit_evidence` admite dos tipos (`evidence_type`): `file` (binario en el bucket `audit-evidence`,
+como antes) o `link` (una URL http(s) externa en `external_url`, sin binario). Para evitar abuso de
+carga: el bucket `audit-evidence` solo acepta imágenes, PDF, Office (Word/Excel) y texto/CSV
+(antes aceptaba cualquier tipo), y un trigger (`private.enforce_evidence_limits`) bloquea más de 15
+evidencias por punto/hallazgo y más de 60 por persona cada 24 horas, sin importar qué cliente llame
+a la API — el límite vive en la base, no solo en el frontend.
 
 Todo tiene Row Level Security activo. Nadie borra físicamente auditorías o hallazgos salvo `admin`
 (se prefiere `deleted_at` para borrado lógico).
@@ -113,6 +127,22 @@ user" con la marca de INDUSECC.
 
 Si se necesitan más roles o permisos distintos (ej. "viewer" limitado a su propia sucursal),
 son cambios de una sola política RLS en `003_rls_policies.sql`.
+
+## Empresas y revocación de acceso por organización
+
+Desde `/administracion` → Empresas, un `admin` puede:
+
+1. Dar de alta empresas (`organizations`: nombre, notas, activa/archivada).
+2. Asignar cada persona a una empresa desde el selector "Empresa" en el directorio de Personas y
+   accesos (o al crear/editar una cuenta) y filtrar el directorio por empresa.
+3. Quitar el acceso de una sola persona (botón existente en su fila) o de **toda la organización**
+   con un clic ("Revocar acceso a todas sus personas"): desactiva en bloque (`active = false`) a
+   todas las personas activas de esa empresa. Es reversible por persona desde su propia fila.
+4. Eliminar una empresa solo si ya no tiene personas asignadas (evita huérfanos accidentales;
+   `profiles.organization_id` de todas formas usa `on delete set null` como respaldo).
+
+Todo esto corre con la sesión del propio admin vía RLS (`organizations_admin_write`,
+`profiles_update_own_or_admin`), sin pasar por `service_role`.
 
 ## Cifrado
 

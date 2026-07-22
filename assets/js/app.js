@@ -8,6 +8,23 @@
   var EXPORTS_BUCKET = 'audit-exports';
   var ROUTES = getRoutes();
 
+  // Debe reflejar allowed_mime_types del bucket audit-evidence
+  // (supabase/migrations/018_evidence_links_and_upload_limits.sql): validar aquí
+  // solo mejora el mensaje de error; el límite real y obligatorio vive en la base.
+  var EVIDENCE_ALLOWED_TYPES = [
+    'image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif',
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/csv',
+    'text/plain'
+  ];
+  var EVIDENCE_ACCEPT = '.jpg,.jpeg,.png,.webp,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,' + EVIDENCE_ALLOWED_TYPES.join(',');
+  var EVIDENCE_MAX_SIZE_BYTES = 25 * 1024 * 1024;
+  var EVIDENCE_MAX_PER_FINDING = 15;
+
   var sb = null;
   var currentUser = null;
   var currentProfile = null;
@@ -659,6 +676,7 @@
       dom.checklistRoot.addEventListener('input', onChecklistInput);
       dom.checklistRoot.addEventListener('change', onChecklistInput);
       dom.checklistRoot.addEventListener('click', onChecklistClick);
+      dom.checklistRoot.addEventListener('submit', onChecklistSubmit);
     }
 
     if (dom.exportPdf) {
@@ -2005,7 +2023,7 @@
     html += renderRiskPill(finding.risk);
     html += '    </div>';
     html += '  </div>';
-    html += '  <p class="audit-question"><i class="fa-solid fa-circle-question"></i><span><strong>Pregunta de auditor&iacute;a</strong>' + esc(textEs(clause.question)) + '</span></p>';
+    html += '  <p class="audit-question"><i class="fa-solid fa-circle-question"></i><span><strong>Pregunta de auditor&iacute;a</strong><span class="audit-question-text">' + esc(textEs(clause.question)) + '</span></span></p>';
     html += '  <details class="clause-brief">';
     html += '    <summary><span><i class="fa-solid fa-book-open"></i> Qu&eacute; debes comprobar</span><i class="fa-solid fa-chevron-down"></i></summary>';
     html += '    <div class="clause-brief-content"><p class="clause-definition">' + esc(textEs(clause.definition)) + '</p>' + renderEvidenceGuide(clause.evidence) + '</div>';
@@ -2040,11 +2058,17 @@
     html += '    </label>';
     html += '  </div>';
 
-    html += '  <div class="evidence-tools"><div><strong>Evidencia del requisito</strong><span>Adjunta documentos, registros o fotograf&iacute;as verificables.</span></div>';
-    html += '    <label class="upload-label">';
-    html += '      <i class="fa-solid fa-paperclip"></i> Adjuntar evidencia';
-    html += '      <input type="file" multiple data-field="attachment" data-clause-id="' + esc(clause.id) + '" />';
-    html += '    </label>';
+    html += '  <div class="evidence-tools"><div><strong>Evidencia del requisito</strong><span>Adjunta documentos, fotograf&iacute;as o un enlace verificable (m&aacute;x. ' + EVIDENCE_MAX_PER_FINDING + ' por punto).</span></div>';
+    html += '    <div class="evidence-actions">';
+    html += '      <label class="upload-label">';
+    html += '        <i class="fa-solid fa-paperclip"></i> Adjuntar archivo';
+    html += '        <input type="file" multiple accept="' + esc(EVIDENCE_ACCEPT) + '" data-field="attachment" data-clause-id="' + esc(clause.id) + '" />';
+    html += '      </label>';
+    html += '      <form class="link-form" data-link-form data-clause-id="' + esc(clause.id) + '">';
+    html += '        <input type="url" inputmode="url" placeholder="Pega un enlace (https://...)" data-link-input />';
+    html += '        <button type="submit" title="Agregar enlace como evidencia"><i class="fa-solid fa-link"></i></button>';
+    html += '      </form>';
+    html += '    </div>';
     html += '  </div>';
 
     html += '  <div class="evidence-list">';
@@ -2081,24 +2105,46 @@
 
   function renderAttachments(attachments, clauseId) {
     if (!attachments || !attachments.length) {
-      return '<div class="evidence-item"><span class="evidence-meta">Sin archivos adjuntos para este punto.</span></div>';
+      return '<div class="evidence-item evidence-item-empty"><span class="evidence-meta"><i class="fa-solid fa-inbox"></i> Sin archivos ni enlaces para este punto.</span></div>';
     }
 
     var html = '';
     var i;
     for (i = 0; i < attachments.length; i += 1) {
       var file = attachments[i];
+      if (file.evidenceType === 'link') {
+        html += ''
+          + '<article class="evidence-item is-link">'
+          + '  <div class="evidence-meta"><i class="fa-solid fa-link"></i><span><strong>Enlace</strong><a href="' + esc(file.externalUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(file.externalUrl) + '</a></span></div>'
+          + '  <div class="evidence-item-actions">'
+          + '    <button class="btn btn-secondary" type="button" data-action="view-attachment" data-url="' + esc(file.externalUrl) + '"><i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir</button>'
+          + '    <button class="btn btn-danger" type="button" data-action="remove-attachment" data-clause-id="' + esc(clauseId) + '" data-file-id="' + esc(file.id) + '"><i class="fa-solid fa-trash"></i> Quitar</button>'
+          + '  </div>'
+          + '</article>';
+        continue;
+      }
+
       html += ''
         + '<article class="evidence-item">'
-        + '  <div class="evidence-meta">'
-        + '    <strong>' + esc(file.name) + '</strong><br />'
-        + '    Tipo: ' + esc(file.type || 'N/D') + ' | Tamaño: ' + esc(formatBytes(file.size || 0))
+        + '  <div class="evidence-meta"><i class="fa-solid ' + evidenceFileIcon(file.type) + '"></i><span><strong>' + esc(file.name) + '</strong>' + esc(file.type || 'N/D') + ' &middot; ' + esc(formatBytes(file.size || 0)) + '</span></div>'
+        + '  <div class="evidence-item-actions">'
+        + (file.storagePath ? '  <button class="btn btn-secondary" type="button" data-action="view-attachment" data-path="' + esc(file.storagePath) + '"><i class="fa-solid fa-eye"></i> Ver</button>' : '')
+        + (file.storagePath ? '  <button class="btn btn-secondary" type="button" data-action="download-attachment" data-path="' + esc(file.storagePath) + '" data-name="' + esc(file.name) + '"><i class="fa-solid fa-download"></i> Descargar</button>' : '')
+        + '    <button class="btn btn-danger" type="button" data-action="remove-attachment" data-clause-id="' + esc(clauseId) + '" data-file-id="' + esc(file.id) + '"><i class="fa-solid fa-trash"></i> Quitar</button>'
         + '  </div>'
-        + (file.storagePath ? '  <button class="btn btn-secondary" data-action="download-attachment" data-path="' + esc(file.storagePath) + '"><i class="fa-solid fa-download"></i> Descargar</button>' : '')
-        + '  <button class="btn btn-danger" data-action="remove-attachment" data-clause-id="' + esc(clauseId) + '" data-file-id="' + esc(file.id) + '"><i class="fa-solid fa-trash"></i> Quitar</button>'
         + '</article>';
     }
     return html;
+  }
+
+  function evidenceFileIcon(mimeType) {
+    var type = String(mimeType || '');
+    if (type.indexOf('image/') === 0) return 'fa-file-image';
+    if (type === 'application/pdf') return 'fa-file-pdf';
+    if (type.indexOf('word') !== -1) return 'fa-file-word';
+    if (type.indexOf('sheet') !== -1 || type.indexOf('excel') !== -1 || type === 'text/csv') return 'fa-file-excel';
+    if (type.indexOf('text/') === 0) return 'fa-file-lines';
+    return 'fa-file';
   }
 
   function onChecklistInput(event) {
@@ -2178,8 +2224,17 @@
       removeAttachment(button.getAttribute('data-clause-id'), button.getAttribute('data-file-id'));
       return;
     }
+    if (action === 'view-attachment') {
+      var url = button.getAttribute('data-url');
+      if (url) {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      } else {
+        viewAttachment(button.getAttribute('data-path'));
+      }
+      return;
+    }
     if (action === 'download-attachment') {
-      downloadAttachment(button.getAttribute('data-path'));
+      downloadAttachment(button.getAttribute('data-path'), button.getAttribute('data-name'));
       return;
     }
     if (action === 'nora-explain-clause') {
@@ -2191,20 +2246,75 @@
     }
   }
 
-  async function downloadAttachment(path) {
+  function onChecklistSubmit(event) {
+    var form = event.target.closest ? event.target.closest('[data-link-form]') : null;
+    if (!form) return;
+    event.preventDefault();
+    if (isReadOnlyUser()) return;
+
+    var input = form.querySelector('[data-link-input]');
+    var url = input ? input.value.trim() : '';
+    if (!url) return;
+    if (!/^https?:\/\//i.test(url)) {
+      showToast('El enlace debe comenzar con http:// o https://');
+      return;
+    }
+
+    addLinkToClause(form.getAttribute('data-clause-id'), url);
+    if (input) input.value = '';
+  }
+
+  async function viewAttachment(path) {
     if (!path || !sb) return;
     var result = await sb.storage.from(EVIDENCE_BUCKET).createSignedUrl(path, 300);
+    if (result.error || !result.data) {
+      showToast('No se pudo generar el enlace para visualizar el archivo.');
+      return;
+    }
+    window.open(result.data.signedUrl, '_blank', 'noopener,noreferrer');
+  }
+
+  async function downloadAttachment(path, filename) {
+    if (!path || !sb) return;
+    var result = await sb.storage.from(EVIDENCE_BUCKET).createSignedUrl(path, 300, { download: filename || true });
     if (result.error || !result.data) {
       showToast('No se pudo generar el enlace de descarga.');
       return;
     }
-    window.open(result.data.signedUrl, '_blank', 'noopener');
+    window.open(result.data.signedUrl, '_blank', 'noopener,noreferrer');
   }
 
   async function addAttachmentsToClause(clauseId, fileList) {
     if (isReadOnlyUser() || !sb || !currentAudit || !currentUser) return;
     var iso = findIsoById(state.selectedIsoId);
     if (!iso) return;
+
+    var finding = state.findings[clauseId] || newEmptyFinding();
+    var existingCount = (finding.attachments || []).length;
+    var files = Array.prototype.slice.call(fileList);
+
+    if (existingCount + files.length > EVIDENCE_MAX_PER_FINDING) {
+      showToast('Este punto admite máximo ' + EVIDENCE_MAX_PER_FINDING + ' evidencias (ya tiene ' + existingCount + '). Quita alguna o sube menos archivos a la vez.');
+      return;
+    }
+
+    var rejected = [];
+    files = files.filter(function (file) {
+      if (file.size > EVIDENCE_MAX_SIZE_BYTES) {
+        rejected.push(file.name + ' (pesa más de ' + formatBytes(EVIDENCE_MAX_SIZE_BYTES) + ')');
+        return false;
+      }
+      if (file.type && EVIDENCE_ALLOWED_TYPES.indexOf(file.type) === -1) {
+        rejected.push(file.name + ' (tipo no permitido)');
+        return false;
+      }
+      return true;
+    });
+
+    if (rejected.length) {
+      showToast('No se subieron: ' + rejected.join(', ') + '. Usa imágenes, PDF, Word, Excel, CSV o texto.');
+    }
+    if (!files.length) return;
 
     var findingResult = await sb.from('audit_findings').upsert({
       audit_id: currentAudit.id,
@@ -2222,11 +2332,10 @@
     }
 
     var findingId = findingResult.data.id;
-    var finding = state.findings[clauseId] || newEmptyFinding();
     var i;
 
-    for (i = 0; i < fileList.length; i += 1) {
-      var file = fileList[i];
+    for (i = 0; i < files.length; i += 1) {
+      var file = files[i];
       var path = currentUser.id + '/' + currentAudit.id + '/' + clauseId + '/' + Date.now() + '_' + Math.floor(Math.random() * 100000) + '_' + file.name;
 
       var uploadResult = await sb.storage.from(EVIDENCE_BUCKET).upload(path, file, {
@@ -2240,6 +2349,7 @@
 
       var evidenceResult = await sb.from('audit_evidence').insert({
         finding_id: findingId,
+        evidence_type: 'file',
         storage_path: path,
         file_name: file.name,
         mime_type: file.type || 'application/octet-stream',
@@ -2248,13 +2358,15 @@
       }).select().single();
 
       if (evidenceResult.error) {
-        showToast('El archivo se subió pero no se pudo registrar.');
+        await sb.storage.from(EVIDENCE_BUCKET).remove([path]);
+        showToast(evidenceResult.error.message || ('No se pudo registrar "' + file.name + '".'));
         continue;
       }
 
       finding.attachments = finding.attachments || [];
       finding.attachments.push({
         id: evidenceResult.data.id,
+        evidenceType: 'file',
         name: file.name,
         size: file.size,
         type: file.type || 'application/octet-stream',
@@ -2268,6 +2380,58 @@
     renderChecklist(iso);
     renderMetrics(iso);
     showToast('Archivo(s) agregado(s) al punto ' + clauseId + '.');
+  }
+
+  async function addLinkToClause(clauseId, url) {
+    if (isReadOnlyUser() || !sb || !currentAudit || !currentUser) return;
+    var iso = findIsoById(state.selectedIsoId);
+    if (!iso) return;
+
+    var finding = state.findings[clauseId] || newEmptyFinding();
+    if ((finding.attachments || []).length >= EVIDENCE_MAX_PER_FINDING) {
+      showToast('Este punto ya tiene el máximo de ' + EVIDENCE_MAX_PER_FINDING + ' evidencias.');
+      return;
+    }
+
+    var findingResult = await sb.from('audit_findings').upsert({
+      audit_id: currentAudit.id,
+      clause_id: clauseId,
+      status: finding.status || '',
+      risk: finding.risk || '',
+      note: finding.note || '',
+      action: finding.action || '',
+      updated_by: currentUser.id
+    }, { onConflict: 'audit_id,clause_id' }).select().single();
+
+    if (findingResult.error) {
+      showToast('No se pudo guardar el hallazgo antes de agregar el enlace.');
+      return;
+    }
+
+    var evidenceResult = await sb.from('audit_evidence').insert({
+      finding_id: findingResult.data.id,
+      evidence_type: 'link',
+      external_url: url,
+      uploaded_by: currentUser.id
+    }).select().single();
+
+    if (evidenceResult.error) {
+      showToast(evidenceResult.error.message || 'No se pudo agregar el enlace.');
+      return;
+    }
+
+    finding.attachments = finding.attachments || [];
+    finding.attachments.push({
+      id: evidenceResult.data.id,
+      evidenceType: 'link',
+      externalUrl: url,
+      createdAt: evidenceResult.data.created_at
+    });
+    state.findings[clauseId] = finding;
+
+    renderChecklist(iso);
+    renderMetrics(iso);
+    showToast('Enlace agregado al punto ' + clauseId + '.');
   }
 
   async function removeAttachment(clauseId, fileId) {
@@ -2709,11 +2873,12 @@
   }
 
   function attachmentsToText(attachments) {
-    if (!attachments || !attachments.length) return 'Sin archivos';
+    if (!attachments || !attachments.length) return 'Sin archivos ni enlaces';
     var parts = [];
     var i;
     for (i = 0; i < attachments.length; i += 1) {
-      parts.push(attachments[i].name);
+      var item = attachments[i];
+      parts.push(item.evidenceType === 'link' ? ('Enlace: ' + item.externalUrl) : item.name);
     }
     return parts.join('; ');
   }
@@ -3168,10 +3333,12 @@
         if (!clauseId || !state.findings[clauseId]) continue;
         state.findings[clauseId].attachments.push({
           id: ev.id,
+          evidenceType: ev.evidence_type || 'file',
           name: ev.file_name,
           size: ev.size_bytes || 0,
           type: ev.mime_type || 'application/octet-stream',
           storagePath: ev.storage_path,
+          externalUrl: ev.external_url,
           createdAt: ev.created_at
         });
       }

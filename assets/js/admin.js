@@ -11,9 +11,12 @@
   var activity = [];
   var exports = [];
   var connections = [];
+  var organizations = [];
   var searchQuery = "";
   var vaultQuery = "";
   var connectionsQuery = "";
+  var orgSearchQuery = "";
+  var userOrgFilter = "";
   var toastTimer;
 
   document.addEventListener("DOMContentLoaded", init);
@@ -104,6 +107,14 @@
       connectionsQuery = event.target.value.trim().toLowerCase();
       renderConnections();
     });
+    on("user-org-filter", "change", function (event) {
+      userOrgFilter = event.target.value;
+      renderUsers();
+    });
+    on("org-search", "input", function (event) {
+      orgSearchQuery = event.target.value.trim().toLowerCase();
+      renderOrganizations();
+    });
 
     on("users-table-body", "change", onUserTableChange);
     on("users-table-body", "click", onUserTableClick);
@@ -112,6 +123,18 @@
     on("vault-wipe-data", "click", openWipeDialog);
     on("wipe-data-form", "submit", submitWipeData);
     on("wipe-confirm-input", "input", syncWipeConfirmState);
+
+    on("open-create-organization", "click", function () {
+      var form = document.getElementById("create-organization-form");
+      var feedback = document.getElementById("create-organization-feedback");
+      var dialog = document.getElementById("create-organization-dialog");
+      if (form) form.reset();
+      if (feedback) feedback.textContent = "";
+      if (dialog) dialog.showModal();
+    });
+    on("create-organization-form", "submit", createOrganization);
+    on("edit-organization-form", "submit", saveOrganizationEdits);
+    on("organizations-table-body", "click", onOrganizationTableClick);
   }
 
   async function apiRequest(path, options) {
@@ -150,7 +173,8 @@
       sb.from("audits").select("id,created_by,auditor_id,status,created_at"),
       sb.from("audit_activity_log").select("id,actor_id,audit_id,action,detail,created_at").order("created_at", { ascending: false }).limit(250),
       sb.from("audit_exports").select("id,audit_id,actor_id,filename,storage_path,iso_code,file_size,progress,created_at,expires_at").order("created_at", { ascending: false }).limit(200),
-      sb.from("login_events").select("id,user_id,email,ip,user_agent,created_at").order("created_at", { ascending: false }).limit(200)
+      sb.from("login_events").select("id,user_id,email,ip,user_agent,created_at").order("created_at", { ascending: false }).limit(200),
+      sb.from("organizations").select("*").order("name", { ascending: true })
     ]);
     setSyncing(false);
 
@@ -164,6 +188,7 @@
     activity = results[2].data || [];
     exports = results[3].data || [];
     connections = results[4].data || [];
+    organizations = results[5].data || [];
     renderAll();
     purgeExpiredExports();
   }
@@ -193,17 +218,42 @@
     document.getElementById("metric-audits").textContent = audits.length;
     document.getElementById("metric-completed").textContent = audits.filter(function (audit) { return audit.status === "completed"; }).length + " concluidas";
     document.getElementById("metric-exports").textContent = exportCount;
+    populateOrganizationSelects();
     renderUsers();
+    renderOrganizations();
     renderActivity();
     renderVault();
     renderConnections();
+  }
+
+  function populateOrganizationSelects() {
+    var optionsHtml = '<option value="">Sin empresa</option>' + organizations.map(function (org) {
+      return '<option value="' + esc(org.id) + '">' + esc(org.name) + (org.active ? '' : ' (archivada)') + '</option>';
+    }).join("");
+
+    document.querySelectorAll(".organization-select").forEach(function (select) {
+      var previous = select.value;
+      select.innerHTML = optionsHtml;
+      if (previous) select.value = previous;
+    });
+
+    var filter = document.getElementById("user-org-filter");
+    if (filter) {
+      var previousFilter = filter.value;
+      filter.innerHTML = '<option value="">Todas las empresas</option><option value="__none__">Sin empresa</option>'
+        + organizations.map(function (org) { return '<option value="' + esc(org.id) + '">' + esc(org.name) + '</option>'; }).join("");
+      filter.value = previousFilter;
+    }
   }
 
   function renderUsers() {
     var tbody = document.getElementById("users-table-body");
     var visible = profiles.filter(function (profile) {
       var haystack = String(profile.full_name || "") + " " + String(profile.email || "");
-      return !searchQuery || haystack.toLowerCase().includes(searchQuery);
+      var matchesSearch = !searchQuery || haystack.toLowerCase().includes(searchQuery);
+      var matchesOrg = !userOrgFilter
+        || (userOrgFilter === "__none__" ? !profile.organization_id : profile.organization_id === userOrgFilter);
+      return matchesSearch && matchesOrg;
     });
     document.getElementById("users-empty").classList.toggle("hidden", Boolean(visible.length));
     tbody.innerHTML = visible.map(function (profile) {
@@ -223,6 +273,7 @@
         + roleOption("auditor", "Auditor", profile.role)
         + roleOption("viewer", "Solo lectura", profile.role)
         + '</select></td>'
+        + '<td><select class="role-select" data-action="organization">' + organizationOptionsHtml(profile.organization_id) + '</select></td>'
         + '<td>' + formatDate(profile.last_login_at) + '</td>'
         + '<td><strong>' + userAudits + '</strong></td>'
         + '<td><strong>' + userExports + '</strong></td>'
@@ -230,6 +281,40 @@
         + '<button class="icon-button" data-action="edit" title="Editar cuenta"><i class="fa-solid fa-pen"></i></button>'
         + '<button class="icon-button" data-action="toggle" title="' + (profile.active ? "Desactivar acceso" : "Activar acceso") + '" ' + (self ? "disabled" : "") + '><i class="fa-solid ' + (profile.active ? "fa-user-lock" : "fa-user-check") + '"></i></button>'
         + '<button class="icon-button" data-action="delete" title="Eliminar usuario" ' + (self ? "disabled" : "") + '><i class="fa-solid fa-trash"></i></button>'
+        + '</div></td></tr>';
+    }).join("");
+  }
+
+  function organizationOptionsHtml(selectedId) {
+    var html = '<option value=""' + (selectedId ? "" : " selected") + '>Sin empresa</option>';
+    html += organizations.map(function (org) {
+      return '<option value="' + esc(org.id) + '"' + (org.id === selectedId ? " selected" : "") + '>' + esc(org.name) + '</option>';
+    }).join("");
+    return html;
+  }
+
+  function renderOrganizations() {
+    var tbody = document.getElementById("organizations-table-body");
+    if (!tbody) return;
+    var visible = organizations.filter(function (org) {
+      return !orgSearchQuery || String(org.name || "").toLowerCase().includes(orgSearchQuery);
+    });
+    document.getElementById("organizations-empty").classList.toggle("hidden", Boolean(visible.length));
+    tbody.innerHTML = visible.map(function (org) {
+      var members = profiles.filter(function (profile) { return profile.organization_id === org.id; });
+      var activeMembers = members.filter(function (profile) { return profile.active; });
+      var status = org.active
+        ? '<span class="status-pill online">Activa</span>'
+        : '<span class="status-pill inactive">Archivada</span>';
+      return '<tr data-org-id="' + esc(org.id) + '">'
+        + '<td><strong>' + esc(org.name) + '</strong>' + (org.notes ? '<br><small>' + esc(org.notes) + '</small>' : '') + '</td>'
+        + '<td>' + status + '</td>'
+        + '<td><strong>' + members.length + '</strong></td>'
+        + '<td><strong>' + activeMembers.length + '</strong></td>'
+        + '<td><div class="row-actions">'
+        + '<button class="icon-button" data-action="edit" title="Editar empresa"><i class="fa-solid fa-pen"></i></button>'
+        + '<button class="icon-button" data-action="revoke-all" title="' + (activeMembers.length ? "Revocar acceso a todas sus personas" : "No hay accesos activos que revocar") + '" ' + (activeMembers.length ? "" : "disabled") + '><i class="fa-solid fa-user-slash"></i></button>'
+        + '<button class="icon-button" data-action="delete" title="' + (members.length ? "Reasigna o quita a las personas de esta empresa antes de eliminarla" : "Eliminar empresa") + '" ' + (members.length ? "disabled" : "") + '><i class="fa-solid fa-trash"></i></button>'
         + '</div></td></tr>';
     }).join("");
   }
@@ -298,9 +383,14 @@
   }
 
   async function onUserTableChange(event) {
-    if (event.target.dataset.action !== "role") return;
+    var action = event.target.dataset.action;
+    if (action !== "role" && action !== "organization") return;
     var row = event.target.closest("[data-user-id]");
-    await updateProfile(row.dataset.userId, { role: event.target.value }, "Rol actualizado.");
+    if (action === "role") {
+      await updateProfile(row.dataset.userId, { role: event.target.value }, "Rol actualizado.");
+      return;
+    }
+    await updateProfile(row.dataset.userId, { organization_id: event.target.value || null }, "Empresa actualizada.");
   }
 
   async function onUserTableClick(event) {
@@ -416,6 +506,7 @@
     form.querySelector('[name="email"]').value = profile.email || "";
     form.querySelector('[name="phone"]').value = profile.phone || "";
     form.querySelector('[name="department"]').value = profile.department || "";
+    form.querySelector('[name="organizationId"]').value = profile.organization_id || "";
     form.querySelector('[name="role"]').value = profile.role;
     form.querySelector('[name="active"]').checked = Boolean(profile.active);
     form.querySelector('[name="role"]').disabled = profile.id === currentProfile.id;
@@ -447,6 +538,7 @@
         email: values.get("email"),
         phone: values.get("phone"),
         department: values.get("department"),
+        organizationId: values.get("organizationId") || null,
         password: values.get("password") || undefined,
         role: values.get("role"),
         active: values.get("active") === "on",
@@ -489,6 +581,7 @@
         email: values.get("email"),
         phone: values.get("phone"),
         department: values.get("department"),
+        organizationId: values.get("organizationId") || null,
         role: values.get("role"),
         active: values.get("active") === "on"
       })
@@ -546,6 +639,120 @@
     });
     if (!response.ok) return showToast((response.data && response.data.error) || "No se pudo eliminar el usuario.");
     showToast("Usuario eliminado.");
+    await loadDashboard();
+  }
+
+  async function createOrganization(event) {
+    event.preventDefault();
+    var form = event.currentTarget;
+    var feedback = document.getElementById("create-organization-feedback");
+    var submit = form.querySelector('[type="submit"]');
+    var values = new FormData(form);
+    var name = values.get("name").trim();
+    if (!name) return;
+
+    submit.disabled = true;
+    feedback.textContent = "Creando empresa…";
+
+    var result = await sb.from("organizations").insert({
+      name: name,
+      notes: values.get("notes").trim() || null,
+      created_by: currentProfile.id
+    });
+    submit.disabled = false;
+
+    if (result.error) {
+      feedback.textContent = result.error.code === "23505"
+        ? "Ya existe una empresa con ese nombre."
+        : "No se pudo crear la empresa.";
+      return;
+    }
+    feedback.textContent = "";
+    form.reset();
+    document.getElementById("create-organization-dialog").close();
+    showToast("Empresa creada.");
+    await loadDashboard();
+  }
+
+  function openEditOrganizationDialog(org) {
+    var form = document.getElementById("edit-organization-form");
+    form.reset();
+    document.getElementById("edit-organization-feedback").textContent = "";
+    form.querySelector('[name="organizationId"]').value = org.id;
+    form.querySelector('[name="name"]').value = org.name || "";
+    form.querySelector('[name="notes"]').value = org.notes || "";
+    form.querySelector('[name="active"]').checked = Boolean(org.active);
+    document.getElementById("edit-organization-dialog").showModal();
+  }
+
+  async function saveOrganizationEdits(event) {
+    event.preventDefault();
+    var form = event.currentTarget;
+    var feedback = document.getElementById("edit-organization-feedback");
+    var submit = form.querySelector('[type="submit"]');
+    var values = new FormData(form);
+    var name = values.get("name").trim();
+    if (!name) return;
+
+    submit.disabled = true;
+    feedback.textContent = "Guardando…";
+
+    var result = await sb.from("organizations").update({
+      name: name,
+      notes: values.get("notes").trim() || null,
+      active: values.get("active") === "on"
+    }).eq("id", values.get("organizationId"));
+    submit.disabled = false;
+
+    if (result.error) {
+      feedback.textContent = result.error.code === "23505"
+        ? "Ya existe una empresa con ese nombre."
+        : "No se pudo guardar la empresa.";
+      return;
+    }
+    feedback.textContent = "";
+    document.getElementById("edit-organization-dialog").close();
+    showToast("Empresa actualizada.");
+    await loadDashboard();
+  }
+
+  async function onOrganizationTableClick(event) {
+    var button = event.target.closest("[data-action]");
+    if (!button || button.tagName !== "BUTTON" || button.disabled) return;
+    var row = button.closest("[data-org-id]");
+    var org = organizations.find(function (item) { return item.id === row.dataset.orgId; });
+    if (!org) return;
+
+    if (button.dataset.action === "edit") {
+      openEditOrganizationDialog(org);
+    }
+    if (button.dataset.action === "revoke-all") {
+      await revokeOrganizationAccess(org);
+    }
+    if (button.dataset.action === "delete") {
+      await deleteOrganization(org);
+    }
+  }
+
+  async function revokeOrganizationAccess(org) {
+    var activeMembers = profiles.filter(function (profile) { return profile.organization_id === org.id && profile.active; });
+    if (!activeMembers.length) return;
+    if (!window.confirm("¿Revocar el acceso de " + activeMembers.length + " persona(s) activa(s) de \"" + org.name + "\"? Podrás reactivarlas una por una después desde Personas y accesos.")) return;
+
+    var result = await sb.from("profiles").update({ active: false }).eq("organization_id", org.id).eq("active", true);
+    if (result.error) return showToast("No se pudo revocar el acceso de la empresa.");
+    showToast("Acceso revocado para " + activeMembers.length + " persona(s) de " + org.name + ".");
+    await loadDashboard();
+  }
+
+  async function deleteOrganization(org) {
+    var members = profiles.filter(function (profile) { return profile.organization_id === org.id; });
+    if (members.length) return showToast("Reasigna o quita a las " + members.length + " persona(s) de esta empresa antes de eliminarla.");
+    if (!window.confirm("¿Eliminar la empresa \"" + org.name + "\"? Esta acción no se puede deshacer.")) return;
+
+    var result = await sb.from("organizations").delete().eq("id", org.id);
+    if (result.error) return showToast("No se pudo eliminar la empresa.");
+    showToast("Empresa eliminada.");
     await loadDashboard();
   }
 

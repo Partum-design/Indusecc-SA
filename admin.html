@@ -30,6 +30,7 @@
       <nav aria-label="Navegación administrativa">
         <a class="active" href="#overview"><i class="fa-solid fa-chart-line"></i> Vista general</a>
         <a href="#users"><i class="fa-solid fa-users"></i> Personas y accesos</a>
+        <a href="#organizations"><i class="fa-solid fa-building"></i> Empresas</a>
         <a href="#vault"><i class="fa-solid fa-box-archive"></i> Bóveda de exportaciones</a>
         <a href="#connections"><i class="fa-solid fa-network-wired"></i> Conexiones</a>
         <a href="#activity"><i class="fa-solid fa-clock-rotate-left"></i> Actividad reciente</a>
@@ -86,10 +87,16 @@
             <p class="eyebrow">Personas y accesos</p>
             <h2>Directorio operativo</h2>
           </div>
-          <label class="admin-search">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input id="user-search" type="search" placeholder="Buscar por nombre o correo">
-          </label>
+          <div class="panel-title-actions">
+            <label class="admin-search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input id="user-search" type="search" placeholder="Buscar por nombre o correo">
+            </label>
+            <select id="user-org-filter" class="role-select" aria-label="Filtrar por empresa">
+              <option value="">Todas las empresas</option>
+              <option value="__none__">Sin empresa</option>
+            </select>
+          </div>
         </div>
         <div class="table-wrap">
           <table>
@@ -98,6 +105,7 @@
                 <th>Persona</th>
                 <th>Estado</th>
                 <th>Rol</th>
+                <th>Empresa</th>
                 <th>Último acceso</th>
                 <th>Auditorías</th>
                 <th>Exportaciones</th>
@@ -107,6 +115,37 @@
             <tbody id="users-table-body"></tbody>
           </table>
           <div id="users-empty" class="empty-state hidden">No hay personas que coincidan con la búsqueda.</div>
+        </div>
+      </section>
+
+      <section id="organizations" class="admin-panel">
+        <div class="panel-title">
+          <div>
+            <p class="eyebrow">Empresas y accesos por organización</p>
+            <h2>Empresas</h2>
+          </div>
+          <div class="panel-title-actions">
+            <label class="admin-search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input id="org-search" type="search" placeholder="Buscar empresa">
+            </label>
+            <button id="open-create-organization" class="button primary" type="button"><i class="fa-solid fa-circle-plus"></i> Nueva empresa</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Empresa</th>
+                <th>Estado</th>
+                <th>Personas</th>
+                <th>Accesos activos</th>
+                <th aria-label="Acciones"></th>
+              </tr>
+            </thead>
+            <tbody id="organizations-table-body"></tbody>
+          </table>
+          <div id="organizations-empty" class="empty-state hidden">Aún no hay empresas registradas.</div>
         </div>
       </section>
 
@@ -209,6 +248,9 @@
           <option value="admin">Administrador</option>
         </select>
       </label>
+      <label>Empresa
+        <select name="organizationId" class="organization-select"><option value="">Sin empresa</option></select>
+      </label>
       <label class="switch-row"><span><b>Activar acceso</b><small>Puede iniciar sesión de inmediato</small></span><input name="active" type="checkbox" checked></label>
       <label class="switch-row"><span><b>Enviar correo de acceso</b><small>Supabase le envía un enlace para crear su propia contraseña (requiere SMTP configurado)</small></span><input name="sendEmail" type="checkbox"></label>
       <p id="create-user-feedback" class="form-feedback" aria-live="polite"></p>
@@ -233,9 +275,39 @@
           <option value="admin">Administrador</option>
         </select>
       </label>
+      <label>Empresa
+        <select name="organizationId" class="organization-select"><option value="">Sin empresa</option></select>
+      </label>
       <label class="switch-row"><span><b>Acceso activo</b><small>Puede iniciar sesión</small></span><input name="active" type="checkbox"></label>
       <button id="edit-user-reset-password" type="button" class="button secondary full"><i class="fa-solid fa-key"></i> Generar y enviar nueva contraseña</button>
       <p id="edit-user-feedback" class="form-feedback" aria-live="polite"></p>
+      <button class="button primary full" type="submit">Guardar cambios</button>
+    </form>
+  </dialog>
+
+  <dialog id="create-organization-dialog">
+    <form id="create-organization-form" method="dialog">
+      <button class="dialog-close" type="button" data-close-dialog aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+      <p class="eyebrow">Nueva empresa</p>
+      <h2>Registrar empresa</h2>
+      <p class="dialog-intro">Después podrás asignarle personas desde "Personas y accesos".</p>
+      <label>Nombre de la empresa<input name="name" required autocomplete="off" placeholder="Ej. Grupo Industrial S.A. de C.V."></label>
+      <label>Notas<input name="notes" type="text" autocomplete="off" placeholder="Opcional"></label>
+      <p id="create-organization-feedback" class="form-feedback" aria-live="polite"></p>
+      <button class="button primary full" type="submit">Crear empresa</button>
+    </form>
+  </dialog>
+
+  <dialog id="edit-organization-dialog">
+    <form id="edit-organization-form" method="dialog">
+      <button class="dialog-close" type="button" data-close-dialog aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+      <p class="eyebrow">Editar empresa</p>
+      <h2>Modificar empresa</h2>
+      <input name="organizationId" type="hidden">
+      <label>Nombre de la empresa<input name="name" required autocomplete="off"></label>
+      <label>Notas<input name="notes" type="text" autocomplete="off"></label>
+      <label class="switch-row"><span><b>Empresa activa</b><small>Archívala para ocultarla de la lista de asignación; no quita el acceso ya otorgado a sus personas</small></span><input name="active" type="checkbox"></label>
+      <p id="edit-organization-feedback" class="form-feedback" aria-live="polite"></p>
       <button class="button primary full" type="submit">Guardar cambios</button>
     </form>
   </dialog>

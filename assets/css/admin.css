@@ -195,6 +195,7 @@ main { min-width: 0; padding: clamp(1.5rem, 4vw, 3.5rem); }
   border-bottom: 1px solid var(--line);
 }
 .panel-title h2 { margin: 0; font: 750 1.22rem "Manrope"; }
+.panel-title-actions { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
 .admin-search {
   display: flex; align-items: center; gap: .7rem;
   width: min(100%, 330px);
@@ -297,6 +298,8 @@ dialog input:focus, dialog select:focus { border-color: var(--wine); box-shadow:
   .metric-grid { grid-template-columns: 1fr 1fr; }
   .panel-title { align-items: stretch; flex-direction: column; }
   .admin-search { width: 100%; }
+  .panel-title-actions { width: 100%; }
+  .panel-title-actions .button { width: 100%; }
 }
 @media (max-width: 460px) {
   .metric-grid { grid-template-columns: 1fr; }

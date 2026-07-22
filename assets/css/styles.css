@@ -1562,6 +1562,13 @@ h5 {
   margin-top: 8px;
 }
 
+.evidence-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
 .upload-label {
   display: inline-flex;
   align-items: center;
@@ -1585,6 +1592,47 @@ h5 {
   filter: brightness(1.03);
 }
 
+.link-form {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  border-radius: 10px;
+  border: 1px solid var(--audit-line-strong);
+  background: var(--audit-paper);
+  overflow: hidden;
+}
+
+.link-form input[type='url'] {
+  width: 200px;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--audit-ink);
+  font-size: 0.78rem;
+}
+
+.link-form input[type='url']:focus {
+  outline: 0;
+  box-shadow: none;
+}
+
+.link-form button {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 0;
+  border-left: 1px solid var(--audit-line-strong);
+  background: var(--audit-brass-soft);
+  color: var(--audit-wine);
+  cursor: pointer;
+  transition: filter .18s ease;
+}
+
+.link-form button:hover {
+  filter: brightness(0.97);
+}
+
 .evidence-list {
   margin-top: 8px;
   display: grid;
@@ -1592,21 +1640,62 @@ h5 {
 }
 
 .evidence-item {
-  border: 1px dashed #cfbc9f;
+  border: 1px solid var(--audit-line);
   border-radius: 10px;
-  background: #fbfdff;
-  padding: 8px;
+  background: var(--audit-paper);
+  padding: 10px 12px;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+}
+
+.evidence-item-empty {
+  border-style: dashed;
+  color: var(--audit-muted);
+}
+
+.evidence-item.is-link {
+  background: var(--audit-brass-soft);
+  border-color: rgba(200, 138, 26, 0.35);
 }
 
 .evidence-meta {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
   font-size: 0.78rem;
-  line-height: 1.35;
-  color: #664d35;
+  line-height: 1.4;
+  color: var(--audit-muted);
+}
+
+.evidence-meta > i {
+  margin-top: 2px;
+  color: var(--audit-brass);
+}
+
+.evidence-meta span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.evidence-meta strong {
+  color: var(--audit-ink);
+  word-break: break-word;
+}
+
+.evidence-meta a {
+  color: var(--audit-wine);
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.evidence-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .evidence-item .btn {
@@ -1742,19 +1831,27 @@ h5 {
 
 .nora-toggle {
   position: fixed;
-  right: 18px;
-  bottom: calc(112px + env(safe-area-inset-bottom, 0px));
+  left: auto;
+  right: 24px;
+  bottom: 24px;
   z-index: 980;
-  border: 0;
-  border-radius: 999px;
-  background: linear-gradient(120deg, #730e0e, #9f1f1f);
+  width: auto;
+  min-width: 0;
+  max-width: calc(100vw - 32px);
+  height: 58px;
+  min-height: 58px;
+  padding: 8px 15px 8px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  background: var(--audit-wine-deep);
   color: #fff7ec;
-  box-shadow: 0 18px 34px rgba(44, 6, 12, 0.34);
-  min-height: 56px;
-  padding: 10px 16px 10px 10px;
+  box-shadow: 0 18px 38px rgba(33, 5, 12, 0.35), 0 0 0 1px rgba(255, 220, 165, 0.12);
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
+  flex: none;
+  white-space: nowrap;
   font: 800 0.84rem 'Sora', sans-serif;
   cursor: pointer;
   transition: transform 0.2s ease, filter 0.2s ease;
@@ -1770,14 +1867,34 @@ h5 {
 }
 
 .nora-toggle-mark {
-  width: 34px;
-  height: 34px;
-  border-radius: 999px;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #f2c46a, #d98e04);
-  color: #5f1b26;
+  border-radius: 11px;
+  background: var(--audit-brass);
+  color: #35180b;
   font-size: 0.95rem;
+  font-weight: 900;
+}
+
+.nora-toggle > span:last-child {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  line-height: 1;
+}
+
+.nora-toggle strong {
+  color: #fff8ee;
+  font-size: .78rem;
+}
+
+.nora-toggle small {
+  color: rgba(255, 244, 230, .58);
+  font-size: .58rem;
+  font-weight: 600;
 }
 
 .nora-panel {
@@ -3693,6 +3810,15 @@ body {
 .audit-question strong {
   color: var(--audit-ink);
   font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.audit-question-text {
+  display: block;
+  color: #443b37;
+  font-size: .86rem;
+  line-height: 1.5;
 }
 
 .clause-brief {
@@ -3921,46 +4047,6 @@ body {
 }
 
 /* NORA y soporte */
-.nora-toggle {
-  left: auto;
-  right: 24px;
-  bottom: 24px;
-  width: auto;
-  height: 58px;
-  max-width: none;
-  padding: 8px 15px 8px 9px;
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: 16px;
-  background: var(--audit-wine-deep);
-  box-shadow: 0 18px 46px rgba(40, 8, 17, .28);
-}
-
-.nora-toggle-mark {
-  width: 38px;
-  height: 38px;
-  flex: 0 0 38px;
-  border-radius: 11px;
-  background: var(--audit-brass);
-  color: #35180b;
-}
-
-.nora-toggle > span:last-child {
-  display: grid;
-  gap: 2px;
-  text-align: left;
-}
-
-.nora-toggle strong {
-  color: #fff8ee;
-  font-size: .78rem;
-}
-
-.nora-toggle small {
-  color: rgba(255,244,230,.58);
-  font-size: .58rem;
-  font-weight: 600;
-}
-
 .nora-panel {
   left: auto;
   right: 24px;
@@ -4432,9 +4518,24 @@ body {
     display: flex;
   }
 
+  .evidence-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .upload-label {
     width: 100%;
     justify-content: center;
+  }
+
+  .link-form {
+    width: 100%;
+  }
+
+  .link-form input[type='url'] {
+    width: auto;
+    flex: 1 1 auto;
   }
 
   .onboarding {
@@ -4614,40 +4715,6 @@ body {
 
 
 /* NORA chatbot overrides */
-.nora-toggle {
-  left: 16px;
-  right: auto;
-  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
-  width: auto;
-  inline-size: auto;
-  max-width: calc(100vw - 32px);
-  min-width: 112px;
-  height: 48px;
-  min-height: 48px;
-  justify-content: center;
-  flex: none;
-  white-space: nowrap;
-  padding: 8px 14px 8px 8px;
-  border-radius: 999px;
-  background: linear-gradient(125deg, #7e1d2f, #b12a27 58%, #f3b33d 130%);
-  box-shadow:
-    0 18px 38px rgba(33, 5, 12, 0.35),
-    0 0 0 1px rgba(255, 220, 165, 0.12);
-}
-
-.nora-toggle span:last-child {
-  line-height: 1;
-}
-
-.nora-toggle-mark {
-  width: 28px;
-  height: 28px;
-  flex: 0 0 28px;
-  background: linear-gradient(135deg, #fff1cf, #f0b94c);
-  color: #5a1020;
-  font-weight: 900;
-}
-
 .nora-panel {
   left: 16px;
   right: auto;
@@ -4805,17 +4872,21 @@ body {
 
 @media (max-width: 719px) {
   .nora-toggle {
-    left: 12px;
-    right: auto;
-    bottom: calc(18px + env(safe-area-inset-bottom, 0px));
-    width: auto;
-    inline-size: auto;
+    left: auto;
+    right: 12px;
+    bottom: calc(146px + env(safe-area-inset-bottom, 0px));
+    width: 50px;
+    min-width: 50px;
     max-width: calc(100vw - 24px);
-    min-width: 104px;
-    height: 46px;
-    min-height: 46px;
+    height: 50px;
+    min-height: 50px;
     justify-content: center;
-    padding: 7px 13px 7px 7px;
+    padding: 6px;
+    border-radius: 14px;
+  }
+
+  .nora-toggle > span:last-child {
+    display: none;
   }
 
   .nora-panel {
@@ -4846,28 +4917,6 @@ body {
 }
 
 /* NORA premium precedence: mantiene el panel nuevo sobre reglas heredadas. */
-.nora-toggle.nora-toggle {
-  left: auto;
-  right: 24px;
-  bottom: 24px;
-  width: auto;
-  min-width: 0;
-  height: 58px;
-  min-height: 58px;
-  padding: 8px 15px 8px 9px;
-  border-radius: 16px;
-  background: var(--audit-wine-deep);
-}
-
-.nora-toggle.nora-toggle .nora-toggle-mark {
-  width: 38px;
-  height: 38px;
-  flex-basis: 38px;
-  border-radius: 11px;
-  background: var(--audit-brass);
-  color: #35180b;
-}
-
 .nora-panel.nora-panel {
   left: auto;
   right: 24px;
@@ -4956,22 +5005,6 @@ body {
 }
 
 @media (max-width: 719px) {
-  .nora-toggle.nora-toggle {
-    left: auto;
-    right: 12px;
-    bottom: calc(146px + env(safe-area-inset-bottom, 0px));
-    width: 50px;
-    min-width: 50px;
-    height: 50px;
-    min-height: 50px;
-    padding: 6px;
-    border-radius: 14px;
-  }
-
-  .nora-toggle.nora-toggle > span:last-child {
-    display: none;
-  }
-
   .nora-panel.nora-panel {
     left: 10px;
     right: 10px;

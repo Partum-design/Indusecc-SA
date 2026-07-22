@@ -91,6 +91,7 @@ export default async function handler(req, res) {
     const role = ["admin", "auditor", "viewer"].includes(body.role) ? body.role : "viewer";
     const phone = String(body.phone || "").trim();
     const department = String(body.department || "").trim();
+    const organizationId = body.organizationId ? String(body.organizationId) : null;
     const autoPassword = !body.password;
     const password = autoPassword ? generatePassword() : String(body.password);
 
@@ -115,7 +116,7 @@ export default async function handler(req, res) {
     await new Promise((resolve) => setTimeout(resolve, 180));
     const profileResponse = await supabaseFetch(`/rest/v1/profiles?id=eq.${encodeURIComponent(created.id)}`, {
       method: "PATCH",
-      body: JSON.stringify({ full_name: fullName, role, active: body.active !== false, phone, department })
+      body: JSON.stringify({ full_name: fullName, role, active: body.active !== false, phone, department, organization_id: organizationId })
     });
     if (!profileResponse.ok) {
       await supabaseFetch(`/auth/v1/admin/users/${created.id}`, { method: "DELETE" });
@@ -142,6 +143,7 @@ export default async function handler(req, res) {
     if (typeof body.active === "boolean") patch.active = body.active;
     if (typeof body.phone === "string") patch.phone = body.phone.trim();
     if (typeof body.department === "string") patch.department = body.department.trim();
+    if ("organizationId" in body) patch.organization_id = body.organizationId ? String(body.organizationId) : null;
 
     if (userId === admin.id && (patch.role || typeof patch.active === "boolean")) {
       return send(res, 400, { error: "No puedes cambiar tu propio rol o estado desde este panel." });
