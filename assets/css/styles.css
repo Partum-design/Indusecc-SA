@@ -36,6 +36,9 @@ body {
   margin: 0;
   min-height: 100%;
   max-width: 100%;
+}
+
+html {
   overflow-x: hidden;
 }
 
@@ -44,7 +47,6 @@ body {
   color: #f8efe5;
   background: #5a0d1b;
   position: relative;
-  overflow-x: hidden;
 }
 
 h1,
@@ -4429,8 +4431,6 @@ body {
   }
 
   .audit-command-bar {
-    position: relative;
-    top: auto;
     grid-template-columns: 1fr auto;
     gap: 14px;
   }
@@ -4445,14 +4445,9 @@ body {
     grid-row: 1;
   }
 
-  .workspace {
-    grid-template-columns: 1fr;
-  }
-
   .project-panel {
-    position: relative;
-    top: auto;
-    max-height: none;
+    top: 190px;
+    max-height: calc(100vh - 208px);
   }
 
   .onboarding-layout {
@@ -4476,6 +4471,8 @@ body {
   }
 
   .audit-command-bar {
+    position: relative;
+    top: auto;
     min-height: 0;
     padding: 14px;
     border-radius: 15px;
@@ -4501,6 +4498,16 @@ body {
   .project-panel,
   .checklist-panel {
     padding: 18px;
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .project-panel {
+    position: relative;
+    top: auto;
+    max-height: none;
   }
 
   .panel-section-heading {
@@ -4763,10 +4770,6 @@ body {
   }
 
   .project-panel {
-    position: sticky;
-    top: 14px;
-    max-height: calc(100vh - 28px);
-    overflow: auto;
     padding-right: 12px;
   }
 
