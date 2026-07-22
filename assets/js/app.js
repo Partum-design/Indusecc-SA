@@ -95,6 +95,7 @@
       return;
     }
     currentUser = session.user;
+    window.NORA_AUTH_TOKEN = session.access_token;
 
     var profileResult = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
     if (profileResult.error || !profileResult.data || !profileResult.data.active) {
@@ -107,8 +108,13 @@
     touchPresence();
     window.setInterval(touchPresence, 60000);
 
-    sb.auth.onAuthStateChange(function (event) {
-      if (event === 'SIGNED_OUT') window.location.replace(ROUTES.login);
+    sb.auth.onAuthStateChange(function (event, updatedSession) {
+      if (event === 'SIGNED_OUT') {
+        window.NORA_AUTH_TOKEN = null;
+        window.location.replace(ROUTES.login);
+        return;
+      }
+      window.NORA_AUTH_TOKEN = updatedSession ? updatedSession.access_token : window.NORA_AUTH_TOKEN;
     });
 
     cacheDom();
@@ -1465,9 +1471,10 @@
       var item = history[i];
       var roleClass = item.role === 'user' ? 'user' : 'assistant';
       var roleLabel = item.role === 'user' ? 'Tú' : 'NORA';
+      var roleIcon = item.role === 'user' ? '' : '<i class="fa-solid fa-sparkles"></i> ';
       html += ''
         + '<article class="nora-message ' + roleClass + '">'
-        + '  <span class="nora-message-role">' + esc(roleLabel) + '</span>'
+        + '  <span class="nora-message-role">' + roleIcon + esc(roleLabel) + '</span>'
         + '  <div class="nora-message-bubble">' + formatNoraText(item.text) + '</div>'
         + '</article>';
     }
@@ -1475,7 +1482,7 @@
     if (dom.noraSend && dom.noraSend.disabled) {
       html += ''
         + '<article class="nora-message assistant is-typing">'
-        + '  <span class="nora-message-role">NORA</span>'
+        + '  <span class="nora-message-role"><i class="fa-solid fa-sparkles"></i> NORA</span>'
         + '  <div class="nora-message-bubble">Analizando tu pregunta...</div>'
         + '</article>';
     }
@@ -1640,7 +1647,10 @@
         var remoteText = extractNoraText(result);
         if (remoteText) return remoteText;
         return buildLocalNoraAnswer(question, options, 'Gemini respondió vacío, así que te comparto la guía interna.');
-      }).catch(function () {
+      }).catch(function (err) {
+        if (err && err.code === 'RATE_LIMIT') {
+          return buildLocalNoraAnswer(question, options, (err.message || 'Se alcanzó el límite diario de consultas a NORA.') + ' Mientras tanto, te respondo con la guía interna.');
+        }
         return buildLocalNoraAnswer(question, options, 'No pude conectar con Gemini, así que te respondo con la guía interna.');
       });
     }

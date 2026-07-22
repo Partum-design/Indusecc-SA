@@ -3349,12 +3349,21 @@ body {
 
 .iso-detail-card:not(.iso-detail-card-onboarding) {
   grid-template-columns: minmax(180px, .55fr) minmax(0, 1fr) auto;
-  gap: 14px 22px;
+  grid-template-rows: auto auto;
+  grid-template-areas:
+    "title   focus   meta"
+    "title   summary meta";
+  gap: 4px 22px;
   align-items: center;
   padding: 0;
   border: 0;
   background: transparent;
   color: var(--audit-ink);
+}
+
+.iso-detail-card:not(.iso-detail-card-onboarding) .iso-detail-title {
+  grid-area: title;
+  align-self: center;
 }
 
 .iso-detail-card:not(.iso-detail-card-onboarding) .iso-detail-title > span {
@@ -3372,8 +3381,21 @@ body {
   color: var(--audit-ink);
 }
 
+.iso-detail-card:not(.iso-detail-card-onboarding) .iso-detail-focus {
+  grid-area: focus;
+  align-self: end;
+}
+
+.iso-detail-card:not(.iso-detail-card-onboarding) .iso-detail-summary {
+  grid-area: summary;
+  align-self: start;
+}
+
 .iso-detail-card:not(.iso-detail-card-onboarding) .iso-detail-meta {
-  justify-content: flex-end;
+  grid-area: meta;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
 }
 
 .iso-detail-card:not(.iso-detail-card-onboarding) .iso-detail-badge {
@@ -4219,6 +4241,25 @@ body {
 
   .iso-detail-card:not(.iso-detail-card-onboarding) {
     grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    grid-template-areas:
+      "title"
+      "focus"
+      "summary"
+      "meta";
+    row-gap: 10px;
+  }
+
+  .iso-detail-card:not(.iso-detail-card-onboarding) .iso-detail-focus,
+  .iso-detail-card:not(.iso-detail-card-onboarding) .iso-detail-summary {
+    align-self: start;
+  }
+
+  .iso-detail-card:not(.iso-detail-card-onboarding) .iso-detail-meta {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
   }
 }
 
@@ -4687,6 +4728,18 @@ body {
 .nora-message-role {
   color: #8f6572;
   font-size: 0.68rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.nora-message-role i {
+  color: #d98e04;
+  font-size: 0.72rem;
+}
+
+.nora-message.user .nora-message-role {
+  color: #a4677a;
 }
 
 .nora-message-bubble {

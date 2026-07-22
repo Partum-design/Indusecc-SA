@@ -1,3 +1,8 @@
+var SUPABASE_URL = process.env.SUPABASE_URL;
+var SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+var NORA_DAILY_LIMIT_PER_USER = parseInt(process.env.NORA_DAILY_LIMIT_PER_USER, 10) || 40;
+var NORA_DAILY_LIMIT_GLOBAL = parseInt(process.env.NORA_DAILY_LIMIT_GLOBAL, 10) || 300;
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
@@ -11,6 +16,11 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({
       error: 'Falta configurar GOOGLE_API_KEY o GEMINI_API_KEY en el servidor.'
     });
+  }
+
+  var quota = await checkNoraQuota(req);
+  if (quota && quota.allowed === false) {
+    return res.status(429).json({ error: quota.message });
   }
 
   var payload = req.body || {};
@@ -203,4 +213,73 @@ function normalizeText(value) {
 
 function safeText(value) {
   return normalizeText(value);
+}
+
+function clientIp(req) {
+  var forwarded = req.headers['x-forwarded-for'];
+  if (typeof forwarded === 'string' && forwarded.length) return forwarded.split(',')[0].trim();
+  return (req.socket && req.socket.remoteAddress) || 'unknown';
+}
+
+async function resolveNoraIdentity(req) {
+  var token = String((req.headers && req.headers.authorization) || '').replace(/^Bearer\s+/i, '');
+  if (token) {
+    try {
+      var userResponse = await fetch(SUPABASE_URL + '/auth/v1/user', {
+        headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: 'Bearer ' + token }
+      });
+      if (userResponse.ok) {
+        var user = await userResponse.json();
+        if (user && user.id) return 'user:' + user.id;
+      }
+    } catch (error) {
+      // Si falla la validación de sesión, se usa la IP como respaldo.
+    }
+  }
+  return 'ip:' + clientIp(req);
+}
+
+async function registerNoraUsage(identity, max) {
+  var response = await fetch(SUPABASE_URL + '/rest/v1/rpc/nora_register_usage', {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: 'Bearer ' + SUPABASE_SERVICE_ROLE_KEY,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ p_identity: identity, p_max: max })
+  });
+  if (!response.ok) return null;
+  var data = await response.json();
+  return Array.isArray(data) ? data[0] : data;
+}
+
+// Límite antiabuso: si Supabase no está configurado o la comprobación falla,
+// se deja pasar la solicitud (el gasto ya está acotado por maxOutputTokens y
+// el modelo económico por defecto); esto solo añade un tope diario extra.
+async function checkNoraQuota(req) {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return null;
+
+  try {
+    var globalResult = await registerNoraUsage('__global__', NORA_DAILY_LIMIT_GLOBAL);
+    if (globalResult && globalResult.allowed === false) {
+      return {
+        allowed: false,
+        message: 'NORA alcanzó su límite diario de uso en toda la plataforma. Vuelve a intentarlo mañana.'
+      };
+    }
+
+    var identity = await resolveNoraIdentity(req);
+    var identityResult = await registerNoraUsage(identity, NORA_DAILY_LIMIT_PER_USER);
+    if (identityResult && identityResult.allowed === false) {
+      return {
+        allowed: false,
+        message: 'Alcanzaste tu límite diario de ' + NORA_DAILY_LIMIT_PER_USER + ' consultas a NORA. Vuelve a intentarlo mañana.'
+      };
+    }
+
+    return { allowed: true };
+  } catch (error) {
+    return null;
+  }
 }
