@@ -251,6 +251,8 @@
       <label>Empresa
         <select name="organizationId" class="organization-select"><option value="">Sin empresa</option></select>
       </label>
+      <label>Límite de auditorías<input name="auditLimit" type="number" min="1" step="1" placeholder="Sin límite" disabled></label>
+      <label class="switch-row"><span><b>Auditorías ilimitadas</b><small>Los administradores nunca tienen límite</small></span><input name="auditUnlimited" class="audit-unlimited-toggle" type="checkbox" checked></label>
       <label class="switch-row"><span><b>Activar acceso</b><small>Puede iniciar sesión de inmediato</small></span><input name="active" type="checkbox" checked></label>
       <label class="switch-row"><span><b>Enviar correo de acceso</b><small>Supabase le envía un enlace para crear su propia contraseña (requiere SMTP configurado)</small></span><input name="sendEmail" type="checkbox"></label>
       <p id="create-user-feedback" class="form-feedback" aria-live="polite"></p>
@@ -278,6 +280,8 @@
       <label>Empresa
         <select name="organizationId" class="organization-select"><option value="">Sin empresa</option></select>
       </label>
+      <label>Límite de auditorías<input name="auditLimit" type="number" min="1" step="1" placeholder="Sin límite"></label>
+      <label class="switch-row"><span><b>Auditorías ilimitadas</b><small>Los administradores nunca tienen límite</small></span><input name="auditUnlimited" class="audit-unlimited-toggle" type="checkbox"></label>
       <label class="switch-row"><span><b>Acceso activo</b><small>Puede iniciar sesión</small></span><input name="active" type="checkbox"></label>
       <button id="edit-user-reset-password" type="button" class="button secondary full"><i class="fa-solid fa-key"></i> Generar y enviar nueva contraseña</button>
       <p id="edit-user-feedback" class="form-feedback" aria-live="polite"></p>

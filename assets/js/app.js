@@ -3332,7 +3332,10 @@
       }).select().single();
 
       if (insertResult.error) {
-        showToast('No se pudo crear la auditoría en el servidor.');
+        var limitReached = String(insertResult.error.message || '').indexOf('audit_limit_reached') !== -1;
+        showToast(limitReached
+          ? 'Alcanzaste el límite de auditorías de tu cuenta. Contacta a tu administrador para ampliarlo.'
+          : 'No se pudo crear la auditoría en el servidor.');
         return;
       }
       row = insertResult.data;

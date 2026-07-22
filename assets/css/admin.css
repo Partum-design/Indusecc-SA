@@ -220,6 +220,10 @@ tbody tr:hover { background: #faf9f7; }
 .person-avatar { width: 36px; height: 36px; display: grid; place-items: center; color: #fff; background: var(--wine); border-radius: 50%; font-weight: 800; }
 .person-cell strong, .person-cell small { display: block; }
 .person-cell small { color: var(--muted); margin-top: .13rem; }
+.audit-usage { display: inline-flex; align-items: baseline; gap: .3rem; }
+.audit-usage small { color: var(--muted); font-size: .74rem; }
+.audit-usage.at-limit strong { color: var(--danger); }
+.audit-usage.at-limit small { color: var(--danger); }
 .status-pill, .role-select {
   display: inline-flex; align-items: center; gap: .45rem;
   padding: .35rem .55rem;

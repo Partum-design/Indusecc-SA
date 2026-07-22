@@ -41,6 +41,13 @@ async function requireAdmin(req) {
   return profile && profile.active && profile.role === "admin" ? user : null;
 }
 
+function parseAuditLimit(value) {
+  if (value === null || value === undefined || value === "") return { ok: true, value: null };
+  const n = Number(value);
+  if (!Number.isInteger(n) || n <= 0) return { ok: false };
+  return { ok: true, value: n };
+}
+
 function generatePassword() {
   const bytes = randomBytes(16);
   let out = "";
@@ -99,6 +106,12 @@ export default async function handler(req, res) {
       return send(res, 400, { error: "Escribe un correo válido y una contraseña de al menos 8 caracteres." });
     }
 
+    const auditLimitParsed = parseAuditLimit(body.auditLimit);
+    if (!auditLimitParsed.ok) {
+      return send(res, 400, { error: "El límite de auditorías debe ser un entero positivo, o vacío para ilimitadas." });
+    }
+    const auditLimit = auditLimitParsed.value;
+
     const createResponse = await supabaseFetch("/auth/v1/admin/users", {
       method: "POST",
       body: JSON.stringify({
@@ -116,7 +129,7 @@ export default async function handler(req, res) {
     await new Promise((resolve) => setTimeout(resolve, 180));
     const profileResponse = await supabaseFetch(`/rest/v1/profiles?id=eq.${encodeURIComponent(created.id)}`, {
       method: "PATCH",
-      body: JSON.stringify({ full_name: fullName, role, active: body.active !== false, phone, department, organization_id: organizationId })
+      body: JSON.stringify({ full_name: fullName, role, active: body.active !== false, phone, department, organization_id: organizationId, audit_limit: auditLimit })
     });
     if (!profileResponse.ok) {
       await supabaseFetch(`/auth/v1/admin/users/${created.id}`, { method: "DELETE" });
@@ -144,6 +157,13 @@ export default async function handler(req, res) {
     if (typeof body.phone === "string") patch.phone = body.phone.trim();
     if (typeof body.department === "string") patch.department = body.department.trim();
     if ("organizationId" in body) patch.organization_id = body.organizationId ? String(body.organizationId) : null;
+    if ("auditLimit" in body) {
+      const auditLimitParsed = parseAuditLimit(body.auditLimit);
+      if (!auditLimitParsed.ok) {
+        return send(res, 400, { error: "El límite de auditorías debe ser un entero positivo, o vacío para ilimitadas." });
+      }
+      patch.audit_limit = auditLimitParsed.value;
+    }
 
     if (userId === admin.id && (patch.role || typeof patch.active === "boolean")) {
       return send(res, 400, { error: "No puedes cambiar tu propio rol o estado desde este panel." });

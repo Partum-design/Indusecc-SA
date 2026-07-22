@@ -64,7 +64,14 @@
       var dialog = document.getElementById("create-user-dialog");
       if (form) form.reset();
       if (feedback) feedback.textContent = "";
+      syncAuditLimitField(form);
       if (dialog) dialog.showModal();
+    });
+
+    document.querySelectorAll(".audit-unlimited-toggle").forEach(function (checkbox) {
+      checkbox.addEventListener("change", function () {
+        syncAuditLimitField(checkbox.closest("form"));
+      });
     });
 
     document.querySelectorAll("[data-close-dialog]").forEach(function (button) {
@@ -151,6 +158,15 @@
     } catch (networkError) {
       return { ok: false, status: 0, data: { error: "No se pudo conectar con el servidor. Revisa tu conexión e intenta otra vez." } };
     }
+  }
+
+  function syncAuditLimitField(form) {
+    if (!form) return;
+    var checkbox = form.querySelector('[name="auditUnlimited"]');
+    var input = form.querySelector('[name="auditLimit"]');
+    if (!checkbox || !input) return;
+    input.disabled = checkbox.checked;
+    if (checkbox.checked) input.value = "";
   }
 
   function generatePasswordClient() {
@@ -260,6 +276,11 @@
     tbody.innerHTML = visible.map(function (profile) {
       var userAudits = audits.filter(function (audit) { return audit.created_by === profile.id || audit.auditor_id === profile.id; }).length;
       var userExports = activity.filter(function (item) { return item.actor_id === profile.id && isExport(item); }).length;
+      var auditLimit = profile.audit_limit;
+      var unlimited = auditLimit == null || profile.role === "admin";
+      var atLimit = !unlimited && userAudits >= auditLimit;
+      var auditUsage = '<span class="audit-usage' + (atLimit ? " at-limit" : "") + '"><strong>' + userAudits + '</strong><small>'
+        + (unlimited ? "ilimitadas" : "/ " + auditLimit) + '</small></span>';
       var status = !profile.active
         ? '<span class="status-pill inactive">Inactivo</span>'
         : isOnline(profile)
@@ -276,7 +297,7 @@
         + '</select></td>'
         + '<td><select class="role-select" data-action="organization">' + organizationOptionsHtml(profile.organization_id) + '</select></td>'
         + '<td>' + formatDate(profile.last_login_at) + '</td>'
-        + '<td><strong>' + userAudits + '</strong></td>'
+        + '<td>' + auditUsage + '</td>'
         + '<td><strong>' + userExports + '</strong></td>'
         + '<td><div class="row-actions">'
         + '<button class="icon-button" data-action="edit" title="Editar cuenta"><i class="fa-solid fa-pen"></i></button>'
@@ -529,6 +550,9 @@
     form.querySelector('[name="active"]').checked = Boolean(profile.active);
     form.querySelector('[name="role"]').disabled = profile.id === currentProfile.id;
     form.querySelector('[name="active"]').disabled = profile.id === currentProfile.id;
+    form.querySelector('[name="auditLimit"]').value = profile.audit_limit || "";
+    form.querySelector('[name="auditUnlimited"]').checked = profile.audit_limit == null;
+    syncAuditLimitField(form);
     document.getElementById("edit-user-dialog").showModal();
   }
 
@@ -560,7 +584,8 @@
         password: values.get("password") || undefined,
         role: values.get("role"),
         active: values.get("active") === "on",
-        sendEmail: values.get("sendEmail") === "on"
+        sendEmail: values.get("sendEmail") === "on",
+        auditLimit: values.get("auditUnlimited") === "on" ? null : (values.get("auditLimit") || null)
       })
     });
     submit.disabled = false;
@@ -600,6 +625,7 @@
         phone: values.get("phone"),
         department: values.get("department"),
         organizationId: values.get("organizationId") || null,
+        auditLimit: values.get("auditUnlimited") === "on" ? null : (values.get("auditLimit") || null),
         role: values.get("role"),
         active: values.get("active") === "on"
       })
