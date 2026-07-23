@@ -119,6 +119,7 @@
       userOrgFilter = event.target.value;
       renderUsers();
     });
+    on("resend-all-access", "click", resendAllAccess);
     on("org-search", "input", function (event) {
       orgSearchQuery = event.target.value.trim().toLowerCase();
       renderOrganizations();
@@ -301,6 +302,7 @@
         + '<td><strong>' + userExports + '</strong></td>'
         + '<td><div class="row-actions">'
         + '<button class="icon-button" data-action="edit" title="Editar cuenta"><i class="fa-solid fa-pen"></i></button>'
+        + '<button class="icon-button" data-action="resend" title="' + (profile.active ? "Reenviar correo de acceso" : "Activa el acceso antes de reenviar el correo") + '" ' + (profile.active ? "" : "disabled") + '><i class="fa-solid fa-paper-plane"></i></button>'
         + '<button class="icon-button" data-action="toggle" title="' + (profile.active ? "Desactivar acceso" : "Activar acceso") + '" ' + (self ? "disabled" : "") + '><i class="fa-solid ' + (profile.active ? "fa-user-lock" : "fa-user-check") + '"></i></button>'
         + '<button class="icon-button" data-action="delete" title="Eliminar usuario" ' + (self ? "disabled" : "") + '><i class="fa-solid fa-trash"></i></button>'
         + '</div></td></tr>';
@@ -441,6 +443,9 @@
 
     if (button.dataset.action === "edit") {
       openEditDialog(profile);
+    }
+    if (button.dataset.action === "resend") {
+      await resendUserAccess(profile);
     }
     if (button.dataset.action === "toggle") {
       await updateProfile(profile.id, { active: !profile.active }, profile.active ? "Acceso desactivado." : "Acceso activado.");
@@ -667,6 +672,35 @@
     showPasswordReveal(result.tempPassword, result.emailSent
       ? "Se está enviando un correo a " + email + " para que configure su nueva contraseña. Esta es la temporal por si la necesitas."
       : "Comparte esta contraseña temporal de forma segura.");
+  }
+
+  async function resendUserAccess(profile) {
+    var response = await apiRequest("/api/admin-users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.access_token },
+      body: JSON.stringify({ userId: profile.id, resendAccessEmail: true, currentEmail: profile.email })
+    });
+    if (!response.ok) {
+      showToast((response.data && response.data.error) || "No se pudo reenviar el correo.");
+      return false;
+    }
+    showToast("Correo de acceso reenviado a " + profile.email + ".");
+    return true;
+  }
+
+  async function resendAllAccess() {
+    var targets = profiles.filter(function (profile) { return profile.active; });
+    if (!targets.length) return showToast("No hay personas activas a quienes reenviar el acceso.");
+    if (!window.confirm("¿Reenviar el correo de acceso a las " + targets.length + " persona(s) activa(s)? No cambia sus contraseñas actuales.")) return;
+
+    showToast("Reenviando acceso a " + targets.length + " persona(s)…");
+    var sent = 0;
+    var i;
+    for (i = 0; i < targets.length; i += 1) {
+      if (await resendUserAccess(targets[i])) sent += 1;
+      await new Promise(function (resolve) { window.setTimeout(resolve, 350); });
+    }
+    showToast("Listo: correo de acceso reenviado a " + sent + " de " + targets.length + " persona(s).");
   }
 
   function showPasswordReveal(password, note) {

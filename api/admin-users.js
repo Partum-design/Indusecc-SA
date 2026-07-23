@@ -199,6 +199,14 @@ export default async function handler(req, res) {
         requestPasswordEmail(req, targetEmail);
         emailSent = true;
       }
+    } else if (body.resendAccessEmail) {
+      // A diferencia de resetPassword, esto NO genera ni cambia la contraseña:
+      // solo reenvía el enlace de acceso, así que no invalida la sesión ni la
+      // contraseña de alguien que ya está usando su cuenta con normalidad.
+      const targetEmail = email || String(body.currentEmail || "");
+      if (!targetEmail) return send(res, 400, { error: "Falta el correo de la persona." });
+      requestPasswordEmail(req, targetEmail);
+      emailSent = true;
     }
 
     if (Object.keys(patch).length) {
