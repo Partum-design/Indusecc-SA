@@ -402,7 +402,17 @@ async function onForgotPassword() {
 function showFeedback(message, isError) {
     if (!loginFeedback) return;
     loginFeedback.textContent = message || "";
-    loginFeedback.style.color = isError ? "#ffb8a0" : "#ffd18d";
+    loginFeedback.style.color = isError ? "#a6322b" : "#23845b";
+}
+
+function consumePasswordResetFlag() {
+    try {
+        if (sessionStorage.getItem("indusecc:passwordReset") === "1") {
+            sessionStorage.removeItem("indusecc:passwordReset");
+            return true;
+        }
+    } catch (e) {}
+    return false;
 }
 
 function shakeLogin() {
@@ -614,7 +624,11 @@ async function initLoginForm() {
         gsap.set(twoFingers, { transformOrigin: "bottom left", rotation: 30, x: -9, y: -2, ease: "power2.inOut" });
     }
 
-    showFeedback("", false);
+    if (consumePasswordResetFlag()) {
+        showFeedback("Tu contraseña se actualizó. Inicia sesión con tu nueva contraseña.", false);
+    } else {
+        showFeedback("", false);
+    }
 }
 
 function getRoutes() {

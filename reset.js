@@ -58,9 +58,13 @@
             return;
         }
 
-        showFeedback("Contraseña actualizada. Redirigiendo...", false);
+        showFeedback("Contraseña actualizada. Redirigiendo a tu acceso...", false);
+        try {
+            sessionStorage.setItem("indusecc:passwordReset", "1");
+        } catch (e) {}
+        await sb.auth.signOut();
         window.setTimeout(function () {
-            window.location.href = "index.html";
+            window.location.href = "login.html";
         }, 900);
     });
 }());

@@ -13,7 +13,8 @@
     <link rel="stylesheet" href="./login.css">
     <style>
         .reset-shell {
-            display: grid;
+            display: flex;
+            flex-direction: column;
             gap: 1.4rem;
             width: min(calc(100% - 40px), 440px);
             margin: 10vh auto;
@@ -22,6 +23,7 @@
             border: 1px solid rgba(42, 31, 26, .1);
             border-radius: 26px;
             box-shadow: var(--ind-shadow);
+            box-sizing: border-box;
         }
         .reset-shell .field-brand { position: static; margin: 0 auto; }
         .reset-shell h1 { margin: 0; font-family: "Playfair Display", Georgia, serif; font-size: 1.7rem; color: #171a1f; text-align: center; }
